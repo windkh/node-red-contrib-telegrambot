@@ -11,7 +11,7 @@
         }
    },
   "keywords": [
-    "node-red"
+    "node-red", "telegram", "bot"
   ],
   "repository" :
   { "type" : "git"

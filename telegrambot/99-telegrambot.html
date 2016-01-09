@@ -1,0 +1,96 @@
+<!-- Created by Karl-Heinz Wind -->
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram-bot', {
+        category: 'config',
+        defaults: {
+            botname: { value: "fooBot", required: true }
+        },
+        credentials: {
+            token: { type: "text" }
+        },
+        label: function () {
+            return this.botname;
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram-bot">
+    <div class="form-row">
+        <label for="node-config-input-botname"><i class="icon-bookmark"></i> Bot-Name</label>
+        <input type="text" id="node-config-input-botname">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-token"><i class="icon-bookmark"></i> Token</label>
+        <input type="text" id="node-config-input-token">
+    </div>
+</script>
+
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram-in', {
+        category: 'input',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: "" },
+            bot: { value:"", type: "telegram-bot", required: true }
+        },
+        inputs: 0,
+        outputs: 1,
+        icon: "file.png",
+        label: function () {
+            return this.name || "Telegram-In";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram-in">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-bot"><i class="icon-tag"></i> Bot</label>
+        <input type="text" id="node-input-bot" placeholder="Bot">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="telegram-in">
+    <p>A telegram node.</p>
+</script>
+
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram-out', {
+        category: 'output',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: "" },
+            bot: { value: "", type: "telegram-bot", required: true }
+        },
+        inputs: 1,
+        outputs: 0,
+        icon: "file.png",
+        label: function () {
+            return this.name || "Telegram-Out";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram-out">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-bot"><i class="icon-tag"></i> Bot</label>
+        <input type="text" id="node-input-bot" placeholder="Bot">
+    </div>
+</script>
+
+<!-- ------------------------------------------------------------------------------------------ -->
+
+

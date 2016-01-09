@@ -20,7 +20,7 @@ The simplest echo flow looks like:
 ![Alt text](TelegramBotFlow.png?raw=true "Sample Flow")
 
 # Warning
-Right now only text messages are supported.
+Only text messages are supported at the moment.
 The project is under heavy construction right now.
 
 Author: Karl-Heinz Wind

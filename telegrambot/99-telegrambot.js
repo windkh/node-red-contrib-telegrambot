@@ -9,7 +9,9 @@ module.exports = function(RED) {
     var telegramBot = require('node-telegram-bot-api');
     
     // --------------------------------------------------------------------------------------------
-    // The configuration node holds the token and establishes the connection to the telegram bot
+    // The configuration node 
+    // holds the token
+    // and establishes the connection to the telegram bot
     function TelegramBotNode(n) {
         RED.nodes.createNode(this,n);
 
@@ -17,6 +19,9 @@ module.exports = function(RED) {
 
         if (this.credentials) {
             this.token = this.credentials.token;
+            if (this.token) {
+                this.telegramBot = new telegramBot(this.token, { polling: true });
+            }
         }
     }
     RED.nodes.registerType("telegram-bot", TelegramBotNode, {
@@ -27,6 +32,10 @@ module.exports = function(RED) {
 
     // --------------------------------------------------------------------------------------------
     // The input node receives messages from the bot
+    // the message details are stored in the playload
+    // chatId
+    // text
+    // The original message is stored next to payload.
     function TelegramInNode(config) {
         RED.nodes.createNode(this, config);
         var node = this;
@@ -36,14 +45,18 @@ module.exports = function(RED) {
         if (this.config) {
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-            node.telegramBot = connectionPool.get(this.config.token);
+            node.telegramBot = this.config.telegramBot;
+            if (node.telegramBot) {
+                this.status({ fill: "green", shape: "ring", text: "connected" });
+            
+                node.telegramBot.on('message', function (botMsg) {
+                    var messageDetails = { chatId : botMsg.chat.id, text: botMsg.text };
+                    var msg = { payload: messageDetails, originalMessage : botMsg };
+                    node.send(msg);
+                });
 
-            node.telegramBot.on('message', function (botMsg) {
-                var messageDetails = { chatId : botMsg.chat.id, text: botMsg.text };
-                var msg = { payload: messageDetails, originalMessage : botMsg };
-                node.send(msg);
-            });
-
+            }
+            
             this.status({ fill: "green", shape: "ring", text: "connected" });
         } else {
             node.warn("TelegramInNode: no config.");
@@ -57,7 +70,11 @@ module.exports = function(RED) {
 
 
     // --------------------------------------------------------------------------------------------
-    // The output node receives messages from the bot
+    // The output node sends messages to the chat
+    // The payload needs two fields
+    // chatId
+    // text
+    // Right now only text is supported.
     function TelegramOutNode(config) {
         RED.nodes.createNode(this, config);
         var node = this;
@@ -66,17 +83,18 @@ module.exports = function(RED) {
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
-            
-            node.connection = connectionPool.get(this.config.token);
-                        
-            this.status({ fill: "green", shape: "ring", text: "connected" });
+
+            node.telegramBot = this.config.telegramBot;
+            if (node.telegramBot) {
+                this.status({ fill: "green", shape: "ring", text: "connected" });
+            }
         } else {
             node.warn("TelegramInNode: no config.");
         }
         
         this.on('input', function (msg) {
             var chatId = msg.payload.chatId;
-            node.connection.telegramBot.sendMessage(chatId, "Received: " + msg.payload.text);
+            node.telegramBot.sendMessage(chatId, msg.payload.text);
         });
         
         
@@ -84,44 +102,5 @@ module.exports = function(RED) {
            
         });
     }
-    RED.nodes.registerType("telegram-out", TelegramOutNode);
-    
-
-    // --------------------------------------------------------------------------------------------
-    var connectionPool = function () {
-        var connections = {};
-        return {
-            get: function (token) {
-                var id = token;
-                if (!connections[id]) {
-                    connections[id] = function () {
-                        var obj = {
-                            _emitter: new events.EventEmitter(),
-                            telegramBot: null,
-                            on: function (a, b) { this._emitter.on(a, b); },
-                        }
-
-                        var setupConnection = function () {
-                            obj.telegramBot = new telegramBot(token, { polling: true });
-
-                            obj.telegramBot.on('message', function (msg) {
-                                obj._emitter.emit('message', msg);
-                            });
-                        }
-
-                        setupConnection();
-                        return obj;
-                    }();
-                }
-                return connections[id];
-            },
-            close: function (token, done) {
-                if (connections[token]) {
-                    delete connections[token];
-                } else {
-                    done();
-                }
-            }
-        }
-    }();
+    RED.nodes.registerType("telegram-out", TelegramOutNode);   
 }

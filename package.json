@@ -9,8 +9,7 @@
         "nodes": {
             "telegrambot": "telegrambot/99-telegrambot.js"
         }
-   }
-
+   },
   "keywords": [
     "node-red"
   ],

@@ -33,8 +33,8 @@
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
-    RED.nodes.registerType('telegram-in', {
-        category: 'input',
+    RED.nodes.registerType('receiver', {
+        category: 'telegram',
         color: '#a6bbcf',
         defaults: {
             name: { value: "" },
@@ -49,7 +49,7 @@
     });
 </script>
 
-<script type="text/x-red" data-template-name="telegram-in">
+<script type="text/x-red" data-template-name="receiver">
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -67,8 +67,8 @@
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
-    RED.nodes.registerType('telegram-command', {
-        category: 'input',
+    RED.nodes.registerType('command', {
+        category: 'telegram',
         color: '#a6bbcf',
         defaults: {
             name: { value: "" },
@@ -84,7 +84,7 @@
     });
 </script>
 
-<script type="text/x-red" data-template-name="telegram-command">
+<script type="text/x-red" data-template-name="command">
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -105,8 +105,8 @@
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
-    RED.nodes.registerType('telegram-out', {
-        category: 'output',
+    RED.nodes.registerType('sender', {
+        category: 'telegram',
         color: '#a6bbcf',
         defaults: {
             name: { value: "" },
@@ -121,7 +121,7 @@
     });
 </script>
 
-<script type="text/x-red" data-template-name="telegram-out">
+<script type="text/x-red" data-template-name="sender">
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">

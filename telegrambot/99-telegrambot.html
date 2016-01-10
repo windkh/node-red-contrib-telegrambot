@@ -27,6 +27,9 @@
     </div>
 </script>
 
+<script type="text/x-red" data-help-name="telegram-bot">
+    <p>A configuration node that holds the token of the telegram bot.</p>
+</script>
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
@@ -39,7 +42,7 @@
         },
         inputs: 0,
         outputs: 1,
-        icon: "file.png",
+        icon: "feed.png",
         label: function () {
             return this.name || "Telegram-In";
         }
@@ -58,9 +61,47 @@
 </script>
 
 <script type="text/x-red" data-help-name="telegram-in">
-    <p>A telegram node.</p>
+    <p>A telegram node that triggers the output when some message is received from the chat.</p>
 </script>
 
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram-command', {
+        category: 'input',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: "" },
+            command: { value: ""},
+            bot: { value: "", type: "telegram-bot", required: true }
+        },
+        inputs: 0,
+        outputs: 1,
+        icon: "arrow-in.png",
+        label: function () {
+            return this.name || "Telegram-Command";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram-command">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-command"><i class="icon-tag"></i> Command</label>
+        <input type="text" id="node-input-command" placeholder="Command">
+    </div>
+    <div class="form-row">
+        <label for="node-input-bot"><i class="icon-tag"></i> Bot</label>
+        <input type="text" id="node-input-bot" placeholder="Bot">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="telegram-command">
+    <p>A telegram node that triggers the output when a specified command is received from the chat.</p>
+</script>
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
@@ -73,7 +114,7 @@
         },
         inputs: 1,
         outputs: 0,
-        icon: "file.png",
+        icon: "feed.png",
         label: function () {
             return this.name || "Telegram-Out";
         }
@@ -91,6 +132,9 @@
     </div>
 </script>
 
+<script type="text/x-red" data-help-name="telegram-out">
+    <p>A telegram node that sends the content to the chat.</p>
+</script>
 <!-- ------------------------------------------------------------------------------------------ -->
 
 

@@ -107,6 +107,61 @@ module.exports = function(RED) {
     }
     RED.nodes.registerType("telegram-in", TelegramInNode);
 
+    
+    
+    // --------------------------------------------------------------------------------------------
+    // The input node receives a command from the chat.
+    // The message details are stored in the playload
+    // chatId
+    // type
+    // content
+    // depending on type caption and date is part of the output, too.
+    // The original message is stored next to payload.
+    // 
+    // message : content string
+    function TelegramCommandNode(config) {
+        RED.nodes.createNode(this, config);
+        var node = this;
+        var command = config.command;
+        this.bot = config.bot;
+        
+        this.config = RED.nodes.getNode(this.bot);
+        if (this.config) {
+            this.status({ fill: "red", shape: "ring", text: "disconnected" });
+            
+            node.telegramBot = this.config.telegramBot;
+            if (node.telegramBot) {
+                this.status({ fill: "green", shape: "ring", text: "connected" });
+                
+                node.telegramBot.on('message', function (botMsg) {
+                    
+                    var messageDetails;
+                    if (botMsg.text) {
+                        var message = botMsg.text;
+                        if (message.startsWith(command)) {
+                            var remainingText = message.replace(command, "");
+                            messageDetails = { chatId : botMsg.chat.id, type : 'message', content: remainingText };
+                        }
+                    }
+                    else {
+                        // unknown type --> no output
+                    }
+                    
+                    if (messageDetails) {
+                        var msg = { payload: messageDetails, originalMessage : botMsg };
+                        node.send(msg);
+                    }
+                });
+            }
+            
+            this.status({ fill: "green", shape: "ring", text: "connected" });
+        } else {
+            node.warn("TelegramCommandNode: no config.");
+        }
+    }
+    RED.nodes.registerType("telegram-command", TelegramCommandNode);
+    
+    
 
     // --------------------------------------------------------------------------------------------
     // The output node sends to the chat

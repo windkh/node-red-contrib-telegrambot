@@ -9,8 +9,9 @@ The nodes are a simple wrapper around the  [node-telegram-bot-api](https://githu
 # Usage
 The input node receives messages from the bot and sends a message object with the following layout:
 - **payload** contains the message details
-  - **chatId** : the unique id of the chat. This value needs to be passed to the out node when responding to the same chat.
-  - **text**   : received message
+  - **chatId**  : the unique id of the chat. This value needs to be passed to the out node when responding to the same chat.
+  - **type**    : the type of message received: message, photo, audio, location, video, voice, contact
+  - **content** : received message content: string or file_id, or object with full data (location, contact)
 
 - **originalMessage** contains the original message object from the underlying [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api) lib.
 

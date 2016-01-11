@@ -2,7 +2,7 @@
 
 This package contains a receiver and a sender node which act as a telegram bot.
 The only thing required is the token that can be retrieved by the @botfather telegram bot.
-[https://core.telegram.org/bots]
+https://core.telegram.org/bots
 
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
 
@@ -16,7 +16,7 @@ The input node receives messages from the bot and sends a message object with th
 - **originalMessage** contains the original message object from the underlying [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api) lib.
 
 
-The simplest echo flow looks like:
+The simple echo flow looks like:
 ![Alt text](TelegramBotFlow.png?raw=true "Sample Flow")
 
 # Warning

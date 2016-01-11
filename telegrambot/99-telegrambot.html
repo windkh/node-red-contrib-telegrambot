@@ -2,7 +2,7 @@
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
-    RED.nodes.registerType('telegram-bot', {
+    RED.nodes.registerType('telegram bot', {
         category: 'config',
         defaults: {
             botname: { value: "fooBot", required: true }
@@ -16,7 +16,7 @@
     });
 </script>
 
-<script type="text/x-red" data-template-name="telegram-bot">
+<script type="text/x-red" data-template-name="telegram bot">
     <div class="form-row">
         <label for="node-config-input-botname"><i class="icon-bookmark"></i> Bot-Name</label>
         <input type="text" id="node-config-input-botname">
@@ -27,29 +27,29 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="telegram-bot">
+<script type="text/x-red" data-help-name="telegram bot">
     <p>A configuration node that holds the token of the telegram bot.</p>
 </script>
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
-    RED.nodes.registerType('receiver', {
+    RED.nodes.registerType('telegram receiver', {
         category: 'telegram',
         color: '#a6bbcf',
         defaults: {
             name: { value: "" },
-            bot: { value:"", type: "telegram-bot", required: true }
+            bot: { value:"", type: "telegram bot", required: true }
         },
         inputs: 0,
         outputs: 1,
         icon: "feed.png",
         label: function () {
-            return this.name || "Telegram-In";
+            return this.name || "Telegram Receiver";
         }
     });
 </script>
 
-<script type="text/x-red" data-template-name="receiver">
+<script type="text/x-red" data-template-name="telegram receiver">
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -60,31 +60,31 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="telegram-in">
+<script type="text/x-red" data-help-name="telegram receiver">
     <p>A telegram node that triggers the output when some message is received from the chat.</p>
 </script>
 
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
-    RED.nodes.registerType('command', {
+    RED.nodes.registerType('telegram command', {
         category: 'telegram',
         color: '#a6bbcf',
         defaults: {
             name: { value: "" },
             command: { value: ""},
-            bot: { value: "", type: "telegram-bot", required: true }
+            bot: { value: "", type: "telegram bot", required: true }
         },
         inputs: 0,
-        outputs: 1,
+        outputs: 2,
         icon: "arrow-in.png",
         label: function () {
-            return this.name || "Telegram-Command";
+            return this.name || "Telegram Command";
         }
     });
 </script>
 
-<script type="text/x-red" data-template-name="command">
+<script type="text/x-red" data-template-name="telegram command">
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -99,29 +99,29 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="telegram-command">
+<script type="text/x-red" data-help-name="telegram command">
     <p>A telegram node that triggers the output when a specified command is received from the chat.</p>
 </script>
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
-    RED.nodes.registerType('sender', {
+    RED.nodes.registerType('telegram sender', {
         category: 'telegram',
         color: '#a6bbcf',
         defaults: {
             name: { value: "" },
-            bot: { value: "", type: "telegram-bot", required: true }
+            bot: { value: "", type: "telegram bot", required: true }
         },
         inputs: 1,
         outputs: 0,
         icon: "feed.png",
         label: function () {
-            return this.name || "Telegram-Out";
+            return this.name || "Telegram Sender";
         }
     });
 </script>
 
-<script type="text/x-red" data-template-name="sender">
+<script type="text/x-red" data-template-name="telegram sender">
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -132,7 +132,7 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="telegram-out">
+<script type="text/x-red" data-help-name="telegram sender">
     <p>A telegram node that sends the content to the chat.</p>
 </script>
 <!-- ------------------------------------------------------------------------------------------ -->

@@ -18,11 +18,13 @@ module.exports = function(RED) {
         if (this.credentials) {
             this.token = this.credentials.token;
             if (this.token) {
-                this.telegramBot = new telegramBot(this.token, { polling: true });
+                if (!this.telegramBot) {
+                    this.telegramBot = new telegramBot(this.token, { polling: true });
+                }
             }
         }
     }
-    RED.nodes.registerType("telegram-bot", TelegramBotNode, {
+    RED.nodes.registerType("telegram bot", TelegramBotNode, {
         credentials: {
             token: { type: "text" }
         }
@@ -63,31 +65,31 @@ module.exports = function(RED) {
 
                     var messageDetails;
                     if (botMsg.text) {
-                        messageDetails =  { chatId : botMsg.chat.id, type : 'message', content: botMsg.text };
+                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'message', content: botMsg.text };
                     }
                     else if (botMsg.photo) {
-                        messageDetails = { chatId : botMsg.chat.id, type : 'photo', content: botMsg.photo[0].file_id, caption : botMsg.caption, date : botMsg.date };
+                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'photo', content: botMsg.photo[0].file_id, caption : botMsg.caption, date : botMsg.date };
                     }
                     else if (botMsg.audio) {
-                        messageDetails = { chatId : botMsg.chat.id, type : 'audio', content: botMsg.audio.file_id, caption : botMsg.caption, date : botMsg.date };
+                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'audio', content: botMsg.audio.file_id, caption : botMsg.caption, date : botMsg.date };
                     }
                     else if (botMsg.document) {
-                        messageDetails = { chatId : botMsg.chat.id, type : 'document', content: botMsg.document.file_id, caption : botMsg.caption, date : botMsg.date };
+                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'document', content: botMsg.document.file_id, caption : botMsg.caption, date : botMsg.date };
                     }
                     else if (botMsg.sticker) {
-                        messageDetails = { chatId : botMsg.chat.id, type : 'sticker', content: botMsg.sticker.file_id };
+                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'sticker', content: botMsg.sticker.file_id };
                     }
                     else if (botMsg.video) {
-                        messageDetails = { chatId : botMsg.chat.id, type : 'video', content: botMsg.video.file_id, caption : botMsg.caption, date : botMsg.date };
+                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'video', content: botMsg.video.file_id, caption : botMsg.caption, date : botMsg.date };
                     }
                     else if (botMsg.voice) {
-                        messageDetails = { chatId : botMsg.chat.id, type : 'voice', content: botMsg.voice.file_id, caption : botMsg.caption, date : botMsg.date };
+                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'voice', content: botMsg.voice.file_id, caption : botMsg.caption, date : botMsg.date };
                     } 
                     else if (botMsg.location) {
-                        messageDetails = { chatId : botMsg.chat.id, type : 'location', content: botMsg.location };
+                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'location', content: botMsg.location };
                     }
                     else if (botMsg.contact) {
-                        messageDetails = { chatId : botMsg.chat.id, type : 'contact', content: botMsg.contact };
+                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'contact', content: botMsg.contact };
                     }
                     else {
                         // unknown type --> no output
@@ -105,7 +107,7 @@ module.exports = function(RED) {
             node.warn("TelegramInNode: no config.");
         }
     }
-    RED.nodes.registerType("telegram-in", TelegramInNode);
+    RED.nodes.registerType("telegram receiver", TelegramInNode);
 
     
     
@@ -134,22 +136,25 @@ module.exports = function(RED) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
                 
                 node.telegramBot.on('message', function (botMsg) {
-                    
+
+                    var msg;
                     var messageDetails;
                     if (botMsg.text) {
                         var message = botMsg.text;
                         if (message.startsWith(command)) {
                             var remainingText = message.replace(command, "");
-                            messageDetails = { chatId : botMsg.chat.id, type : 'message', content: remainingText };
+
+                            messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'message', content: remainingText };
+                            msg = { payload: messageDetails, originalMessage : botMsg };
+                            node.send([msg, null]);
+                        } else {
+                            messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'message', content: botMsg.text };
+                            msg = { payload: messageDetails, originalMessage : botMsg };
+                            node.send([null, msg]);
                         }
                     }
                     else {
                         // unknown type --> no output
-                    }
-                    
-                    if (messageDetails) {
-                        var msg = { payload: messageDetails, originalMessage : botMsg };
-                        node.send(msg);
                     }
                 });
             }
@@ -159,7 +164,7 @@ module.exports = function(RED) {
             node.warn("TelegramCommandNode: no config.");
         }
     }
-    RED.nodes.registerType("telegram-command", TelegramCommandNode);
+    RED.nodes.registerType("telegram command", TelegramCommandNode);
     
     
 
@@ -202,33 +207,33 @@ module.exports = function(RED) {
             
             switch (type) {
                 case 'message':
-                    node.telegramBot.sendMessage(chatId, msg.payload.content);
+                    node.telegramBot.sendMessage(chatId, msg.payload.content, msg.payload.options);
                     break;
                 case 'photo':
-                    node.telegramBot.sendPhoto(chatId, msg.payload.content);
+                    node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options);
                     break;
                 case 'audio':
-                    node.telegramBot.sendAudio(chatId, msg.payload.content);
+                    node.telegramBot.sendAudio(chatId, msg.payload.content, msg.payload.options);
                     break;
                 case 'document':
-                    node.telegramBot.sendDocument(chatId, msg.payload.content);
+                    node.telegramBot.sendDocument(chatId, msg.payload.content, msg.payload.options);
                     break;
                 case 'sticker':
-                    node.telegramBot.sendSticker(chatId, msg.payload.content);
+                    node.telegramBot.sendSticker(chatId, msg.payload.content, msg.payload.options);
                     break;
                 case 'video':
-                    node.telegramBot.sendVideo(chatId, msg.payload.content, msg.payload.caption);
+                    node.telegramBot.sendVideo(chatId, msg.payload.content, msg.payload.options);
                     break;
                 case 'voice':
-                    node.telegramBot.sendVoice(chatId, msg.payload.content);
+                    node.telegramBot.sendVoice(chatId, msg.payload.content, msg.payload.options);
                     break;
                 case 'location':
-                    node.telegramBot.sendLocation(chatId, msg.payload.content.latitude, msg.payload.content.longitude);
+                    node.telegramBot.sendLocation(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options);
                     break;
                 default:
                     // unknown type nothing to send.
             }            
         });
     }
-    RED.nodes.registerType("telegram-out", TelegramOutNode);   
+    RED.nodes.registerType("telegram sender", TelegramOutNode);   
 }

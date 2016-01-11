@@ -1,0 +1,1 @@
+[{"id":"ff78bc5a.00874","type":"telegram bot","z":"70c3f45a.8f3c0c","botname":"HeinzBot"},{"id":"cd57aa38.32a858","type":"telegram receiver","z":"70c3f45a.8f3c0c","name":"","bot":"ff78bc5a.00874","x":183,"y":357,"wires":[["93665bc.f6c99a8"]]},{"id":"93665bc.f6c99a8","type":"telegram sender","z":"70c3f45a.8f3c0c","name":"","bot":"ff78bc5a.00874","x":432,"y":357,"wires":[]}]

@@ -45,39 +45,49 @@ It has two outputs
 - 1. is triggered when the command is received
 - 2. is triggered when the command is not received
 
-The second one is userful when you want to use a keyboard. 
+The second one is useful when you want to use a keyboard. 
 See example below.
 
+
 ## Implementing a simple echo 
-![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")
 This example is self-explaining. The received message is returned to the sender.
+![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")
+
 
 ## Implementing a /help command
+This flow returns the help message of your bot. It receives the command and creates a new message, which is returned:
 ![Alt text](images/TelegramBotHelp.png?raw=true "Help Command Flow")
-This flow returns the help message of your bot. It receives the command and creates a new message,
-which is returned:
+
 ![Alt text](images/TelegramBotHelp2.png?raw=true "Help Function")
+
 Note: You can access the sender's data via the originalMessage property.
 
+
 ## Implementing a keyboard
-![Alt text](images/TelegramBotConfirmationMessage.png?raw=true "Keyboard Flow")
 Keyboards are very useful for getting additional data from the sender.
 When the command is received the first output is triggered and a dialog is opened:
+![Alt text](images/TelegramBotConfirmationMessage.png?raw=true "Keyboard Flow")
+
 ![Alt text](images/TelegramBotConfirmationMessage2.png?raw=true "Keyboard Function 1")
+
 The answer is send to the second output triggering the lower flow. Data is passed via global properties here.
+
 ![Alt text](images/TelegramBotConfirmationMessage3.png?raw=true "Keyboard Function 2")
+
  
 ## Receiving a location
 Locations can be send to the chat. The bot can receive the longitude and latitude:
 ![Alt text](images/TelegramBotLocation.png?raw=true "Location Function")
 
+
  ## Sending messages to a specified chat 
-![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending a message")
 If you have the chatId, you can send any message without the need of having received something before.
+![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending a message")
+
 
 ## Implementing a simple bot 
+Putting all pieces together you will have a simple bot implementing some useful functions.
 ![Alt text](images/TelegramBotExample.png?raw=true "Bot example")
-Putting all pieces together you will have a simple bot implementing some userful functions.
 
 All example flows can be found in the examples folder of this package. 
 

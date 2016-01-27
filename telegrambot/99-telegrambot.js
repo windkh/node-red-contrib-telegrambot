@@ -18,6 +18,7 @@ module.exports = function(RED) {
         if (this.credentials) {
             this.token = this.credentials.token;
             if (this.token) {
+                this.token = this.token.trim();
                 if (!this.telegramBot) {
                     this.telegramBot = new telegramBot(this.token, { polling: true });
                 }
@@ -202,37 +203,55 @@ module.exports = function(RED) {
         }
         
         this.on('input', function (msg) {
-            var chatId = msg.payload.chatId;
-            var type = msg.payload.type;
-            
-            switch (type) {
-                case 'message':
-                    node.telegramBot.sendMessage(chatId, msg.payload.content, msg.payload.options);
-                    break;
-                case 'photo':
-                    node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options);
-                    break;
-                case 'audio':
-                    node.telegramBot.sendAudio(chatId, msg.payload.content, msg.payload.options);
-                    break;
-                case 'document':
-                    node.telegramBot.sendDocument(chatId, msg.payload.content, msg.payload.options);
-                    break;
-                case 'sticker':
-                    node.telegramBot.sendSticker(chatId, msg.payload.content, msg.payload.options);
-                    break;
-                case 'video':
-                    node.telegramBot.sendVideo(chatId, msg.payload.content, msg.payload.options);
-                    break;
-                case 'voice':
-                    node.telegramBot.sendVoice(chatId, msg.payload.content, msg.payload.options);
-                    break;
-                case 'location':
-                    node.telegramBot.sendLocation(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options);
-                    break;
-                default:
-                    // unknown type nothing to send.
-            }            
+
+            if (msg.payload) {
+                if (msg.payload.content) {
+                    if (msg.payload.chatId) {
+                        if (msg.payload.type) {
+                            var chatId = msg.payload.chatId;
+                            var type = msg.payload.type;
+
+                            switch (type) {
+                            case 'message':
+                                node.telegramBot.sendMessage(chatId, msg.payload.content, msg.payload.options);
+                                break;
+                            case 'photo':
+                                node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options);
+                                break;
+                            case 'audio':
+                                node.telegramBot.sendAudio(chatId, msg.payload.content, msg.payload.options);
+                                break;
+                            case 'document':
+                                node.telegramBot.sendDocument(chatId, msg.payload.content, msg.payload.options);
+                                break;
+                            case 'sticker':
+                                node.telegramBot.sendSticker(chatId, msg.payload.content, msg.payload.options);
+                                break;
+                            case 'video':
+                                node.telegramBot.sendVideo(chatId, msg.payload.content, msg.payload.options);
+                                break;
+                            case 'voice':
+                                node.telegramBot.sendVoice(chatId, msg.payload.content, msg.payload.options);
+                                break;
+                            case 'location':
+                                node.telegramBot.sendLocation(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options);
+                                break;
+                            default:
+                                // unknown type nothing to send.
+                            }
+
+                        } else {
+                            node.warn("msg.payload.type is empty");
+                        }
+                    } else {
+                        node.warn("msg.payload.chatId is empty");
+                    }
+                } else {
+                    node.warn("msg.payload.content is empty");
+                }
+            } else {
+                node.warn("msg.payload is empty");
+            }
         });
     }
     RED.nodes.registerType("telegram sender", TelegramOutNode);   

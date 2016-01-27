@@ -80,7 +80,7 @@ Locations can be send to the chat. The bot can receive the longitude and latitud
 ![Alt text](images/TelegramBotLocation.png?raw=true "Location Function")
 
 
- ## Sending messages to a specified chat 
+## Sending messages to a specified chat 
 If you have the chatId, you can send any message without the need of having received something before.
 ![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending a message")
 

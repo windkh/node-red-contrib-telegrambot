@@ -13,6 +13,7 @@ module.exports = function(RED) {
     function TelegramBotNode(n) {
         RED.nodes.createNode(this,n);
 
+        var self = this;
         this.botname = n.botname;
 
         if (this.credentials) {
@@ -24,6 +25,20 @@ module.exports = function(RED) {
                 }
             }
         }
+
+        this.on('close', function (done) {
+            
+            // Workaround: the api does not support stopping the polling timer which is neccessary on redeploy.
+            // see https://github.com/yagop/node-telegram-bot-api/issues/69
+            //self.telegramBot.stopPolling();
+            
+            if (self.telegramBot._polling) {
+                self.telegramBot._polling.abort = true;
+                self.telegramBot._polling.lastRequest.cancel('Polling stopped');
+            }
+
+            done();
+        });
     }
     RED.nodes.registerType("telegram bot", TelegramBotNode, {
         credentials: {
@@ -213,7 +228,24 @@ module.exports = function(RED) {
 
                             switch (type) {
                             case 'message':
-                                node.telegramBot.sendMessage(chatId, msg.payload.content, msg.payload.options);
+
+                                var chunkSize = 4000;
+                                var message = msg.payload.content;
+
+                                var done = false;
+                                do {
+                                    var messageToSend;
+                                    if (message.length > chunkSize) {
+                                            messageToSend = message.substr(0, chunkSize);
+                                            message = message.substr(chunkSize); 
+                                    } else {
+                                        messageToSend = message;
+                                        done = true;
+                                    }
+                                    node.telegramBot.sendMessage(chatId, messageToSend, msg.payload.options);
+                                } while (!done)
+                                    
+
                                 break;
                             case 'photo':
                                 node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options);

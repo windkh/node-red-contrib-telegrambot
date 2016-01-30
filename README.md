@@ -4,7 +4,15 @@ This package contains a receiver and a sender node which act as a telegram bot.
 The only thing required is the token that can be retrieved by the @botfather telegram bot.
 https://core.telegram.org/bots
 
+
+# Dependencies
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
+
+
+# Warning
+The scripts inside the nodes make use of ECMAScript 6 string operations. This requires a nodejs version 
+with ECMAScript 6 support. The nodes are tested with v4.2.1.
+
 
 # Usage
 The input node receives messages from the bot and sends a message object with the following layout:
@@ -91,8 +99,8 @@ Putting all pieces together you will have a simple bot implementing some useful 
 
 All example flows can be found in the examples folder of this package. 
 
-# Warning
-The project is under heavy construction right now.
+
+# License
 
 Author: Karl-Heinz Wind
 

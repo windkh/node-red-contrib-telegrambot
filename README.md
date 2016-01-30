@@ -10,8 +10,8 @@ The nodes are a simple wrapper around the  [node-telegram-bot-api](https://githu
 
 
 # Warning
-The scripts inside the nodes make use of ECMAScript 6 string operations. This requires a nodejs version 
-with ECMAScript 6 support. The nodes are tested with v4.2.1.
+The nodes are tested with v4.2.1  (ECMAScript 6).
+The project is still under construction.
 
 
 # Usage

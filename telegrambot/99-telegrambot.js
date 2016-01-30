@@ -157,7 +157,8 @@ module.exports = function(RED) {
                     var messageDetails;
                     if (botMsg.text) {
                         var message = botMsg.text;
-                        if (message.startsWith(command)) {
+                        if(message.slice(0, command.length) == command){
+                        //if (message.startsWith(command)) { // ECMA 6 required
                             var remainingText = message.replace(command, "");
 
                             messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'message', content: remainingText };

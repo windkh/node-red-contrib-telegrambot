@@ -1,11 +1,14 @@
 <!-- Created by Karl-Heinz Wind -->
 
+
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
     RED.nodes.registerType('telegram bot', {
         category: 'config',
         defaults: {
-            botname: { value: "fooBot", required: true }
+            botname: { value: "fooBot", required: true },
+            usernames: { value: "[]", required: false },
+            chatids: { value: "[]", required: false }
         },
         credentials: {
             token: { type: "text" }
@@ -22,14 +25,27 @@
         <input type="text" id="node-config-input-botname">
     </div>
     <div class="form-row">
-        <label for="node-config-input-token"><i class="icon-bookmark"></i> Token</label>
+        <label for="node-config-input-token"><i class="icon-tag"></i> Token</label>
         <input type="text" id="node-config-input-token">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-usernames"><i class="icon-user"></i> Users</label>
+        <input type="text" id="node-config-input-usernames">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-chatids"><i class="icon-comment"></i> ChatIds</label>
+        <input type="text" id="node-config-input-chatids">
     </div>
 </script>
 
 <script type="text/x-red" data-help-name="telegram bot">
     <p>A configuration node that holds the token of the telegram bot.</p>
+    <p>It communicates with the telegram server. Do not create several configurations nodes with the same token!</p>
+    <p>The usernames and chat ids properties can be used to limit authorization to the bot. Enter values in json array format e.g. [a,b,c]</p>
+    <p>Usernames and chat ids are optional. Leave field blank if you do not want to use this feature.</p>
 </script>
+
+
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
@@ -55,7 +71,7 @@
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
     <div class="form-row">
-        <label for="node-input-bot"><i class="icon-tag"></i> Bot</label>
+        <label for="node-input-bot"><i class="icon-bookmark"></i> Bot</label>
         <input type="text" id="node-input-bot" placeholder="Bot">
     </div>
 </script>
@@ -63,6 +79,7 @@
 <script type="text/x-red" data-help-name="telegram receiver">
     <p>A telegram node that triggers the output when some message is received from the chat.</p>
 </script>
+
 
 
 <!-- ------------------------------------------------------------------------------------------ -->
@@ -90,11 +107,11 @@
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
     <div class="form-row">
-        <label for="node-input-command"><i class="icon-tag"></i> Command</label>
+        <label for="node-input-command"><i class="icon-envelope"></i> Command</label>
         <input type="text" id="node-input-command" placeholder="Command">
     </div>
     <div class="form-row">
-        <label for="node-input-bot"><i class="icon-tag"></i> Bot</label>
+        <label for="node-input-bot"><i class="icon-bookmark"></i> Bot</label>
         <input type="text" id="node-input-bot" placeholder="Bot">
     </div>
 </script>
@@ -102,6 +119,8 @@
 <script type="text/x-red" data-help-name="telegram command">
     <p>A telegram node that triggers the output when a specified command is received from the chat.</p>
 </script>
+
+
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
@@ -127,7 +146,7 @@
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
     <div class="form-row">
-        <label for="node-input-bot"><i class="icon-tag"></i> Bot</label>
+        <label for="node-input-bot"><i class="icon-bookmark"></i> Bot</label>
         <input type="text" id="node-input-bot" placeholder="Bot">
     </div>
 </script>

@@ -11,10 +11,20 @@ module.exports = function(RED) {
     // holds the token
     // and establishes the connection to the telegram bot
     function TelegramBotNode(n) {
-        RED.nodes.createNode(this,n);
+        RED.nodes.createNode(this, n);
 
         var self = this;
         this.botname = n.botname;
+
+        this.usernames = [];
+        if (n.usernames) {
+            this.usernames = n.usernames.split(',');
+        }
+
+        this.chatids = [];
+        if (n.chatids) {
+            this.chatids = n.chatids.split(',');
+        }
 
         if (this.credentials) {
             this.token = this.credentials.token;
@@ -25,6 +35,7 @@ module.exports = function(RED) {
                 }
             }
         }
+
 
         this.on('close', function (done) {
             
@@ -39,6 +50,39 @@ module.exports = function(RED) {
 
             done();
         });
+        
+        this.isAuthorizedUser = function (user) {
+            var isAuthorized = false;
+            if (self.usernames.length > 0) {
+                if (self.usernames.indexOf(user) >= 0) {
+                    isAuthorized = true;
+                }
+            } else {
+                isAuthorized = true;
+            }
+                
+            return isAuthorized;
+        }
+
+        this.isAuthorizedChat = function (chatid) {
+            var isAuthorized = false;
+            if (self.usernames.length > 0) {
+                if (self.chatids.indexOf(chatid) >= 0) {
+                    isAuthorized = true;
+                }
+            } else {
+                isAuthorized = true;
+            }
+                
+            return isAuthorized;
+        }
+
+        this.isAuthorized = function (chatid, user) {
+            var isAuthorizedUser = self.isAuthorizedUser(user);
+            var isAuthorizedChatId = self.isAuthorizedChat(chatid);
+
+            return isAuthorizedUser || isAuthorizedChatId;
+        }
     }
     RED.nodes.registerType("telegram bot", TelegramBotNode, {
         credentials: {
@@ -77,50 +121,47 @@ module.exports = function(RED) {
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
             
-                node.telegramBot.on('message', function (botMsg) {
+                node.telegramBot.on('message', function(botMsg) {
+                    var username = botMsg.chat.username;
+                    var chatid = botMsg.chat.id;
+                    if (node.config.isAuthorized(chatid, username)) {
+                        var messageDetails;
+                        if (botMsg.text) {
+                            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
+                        } else if (botMsg.photo) {
+                            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'photo', content: botMsg.photo[0].file_id, caption: botMsg.caption, date: botMsg.date };
+                        } else if (botMsg.audio) {
+                            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'audio', content: botMsg.audio.file_id, caption: botMsg.caption, date: botMsg.date };
+                        } else if (botMsg.document) {
+                            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'document', content: botMsg.document.file_id, caption: botMsg.caption, date: botMsg.date };
+                        } else if (botMsg.sticker) {
+                            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'sticker', content: botMsg.sticker.file_id };
+                        } else if (botMsg.video) {
+                            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video', content: botMsg.video.file_id, caption: botMsg.caption, date: botMsg.date };
+                        } else if (botMsg.voice) {
+                            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'voice', content: botMsg.voice.file_id, caption: botMsg.caption, date: botMsg.date };
+                        } else if (botMsg.location) {
+                            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'location', content: botMsg.location };
+                        } else if (botMsg.contact) {
+                            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'contact', content: botMsg.contact };
+                        } else {
+                            // unknown type --> no output
+                        }
 
-                    var messageDetails;
-                    if (botMsg.text) {
-                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'message', content: botMsg.text };
-                    }
-                    else if (botMsg.photo) {
-                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'photo', content: botMsg.photo[0].file_id, caption : botMsg.caption, date : botMsg.date };
-                    }
-                    else if (botMsg.audio) {
-                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'audio', content: botMsg.audio.file_id, caption : botMsg.caption, date : botMsg.date };
-                    }
-                    else if (botMsg.document) {
-                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'document', content: botMsg.document.file_id, caption : botMsg.caption, date : botMsg.date };
-                    }
-                    else if (botMsg.sticker) {
-                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'sticker', content: botMsg.sticker.file_id };
-                    }
-                    else if (botMsg.video) {
-                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'video', content: botMsg.video.file_id, caption : botMsg.caption, date : botMsg.date };
-                    }
-                    else if (botMsg.voice) {
-                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'voice', content: botMsg.voice.file_id, caption : botMsg.caption, date : botMsg.date };
-                    } 
-                    else if (botMsg.location) {
-                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'location', content: botMsg.location };
-                    }
-                    else if (botMsg.contact) {
-                        messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'contact', content: botMsg.contact };
-                    }
-                    else {
-                        // unknown type --> no output
-                    }
-                    
-                    if (messageDetails) {
-                        var msg = { payload: messageDetails, originalMessage : botMsg };
-                        node.send(msg);  
+                        if (messageDetails) {
+                            var msg = { payload: messageDetails, originalMessage: botMsg };
+                            node.send(msg);
+                        }
+                    } else {
+                        // ignoring unauthorized calls
+                        node.warn("Unauthorized incoming call from " + username);
                     }
                 });
+            } else {
+                node.warn("no bot in config.");
             }
-            
-            this.status({ fill: "green", shape: "ring", text: "connected" });
         } else {
-            node.warn("TelegramInNode: no config.");
+            node.warn("no config.");
         }
     }
     RED.nodes.registerType("telegram receiver", TelegramInNode);
@@ -152,33 +193,38 @@ module.exports = function(RED) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
                 
                 node.telegramBot.on('message', function (botMsg) {
+                    var username = botMsg.chat.username;
+                    var chatid = botMsg.chat.id;
+                    if (node.config.isAuthorized(chatid, username)) {
+                        var msg;
+                        var messageDetails;
+                        if (botMsg.text) {
+                            var message = botMsg.text;
+                            if (message.slice(0, command.length) == command) {
+                                //if (message.startsWith(command)) { // replaced with line above as as this requires ECMA-Standard 6!
+                                var remainingText = message.replace(command, "");
 
-                    var msg;
-                    var messageDetails;
-                    if (botMsg.text) {
-                        var message = botMsg.text;
-                        if(message.slice(0, command.length) == command){
-                        //if (message.startsWith(command)) { // ECMA 6 required
-                            var remainingText = message.replace(command, "");
-
-                            messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'message', content: remainingText };
-                            msg = { payload: messageDetails, originalMessage : botMsg };
-                            node.send([msg, null]);
+                                messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: remainingText };
+                                msg = { payload: messageDetails, originalMessage: botMsg };
+                                node.send([msg, null]);
+                            } else {
+                                messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
+                                msg = { payload: messageDetails, originalMessage: botMsg };
+                                node.send([null, msg]);
+                            }
                         } else {
-                            messageDetails = { chatId : botMsg.chat.id, messageId : botMsg.message_id, type : 'message', content: botMsg.text };
-                            msg = { payload: messageDetails, originalMessage : botMsg };
-                            node.send([null, msg]);
+                            // unknown type --> no output
                         }
-                    }
-                    else {
-                        // unknown type --> no output
+                    } else {
+                        // ignoring unauthorized calls
+                        node.warn("Unauthorized incoming call from " + username);
                     }
                 });
+            } else {
+                node.warn("no bot in config.");
             }
-            
-            this.status({ fill: "green", shape: "ring", text: "connected" });
         } else {
-            node.warn("TelegramCommandNode: no config.");
+            node.warn("no config.");
         }
     }
     RED.nodes.registerType("telegram command", TelegramCommandNode);
@@ -213,9 +259,11 @@ module.exports = function(RED) {
             node.telegramBot = this.config.telegramBot;
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
+            } else {
+                node.warn("no bot in config.");
             }
         } else {
-            node.warn("TelegramInNode: no config.");
+            node.warn("no config.");
         }
         
         this.on('input', function (msg) {

@@ -31,6 +31,11 @@ The simple echo flow looks like:
 ## Configuration Node
 The only thing to be entered here is the token which you received from @botfather when creating a new bot.
 The string is automatically trimmed.
+The node contains two optional properties: users and chatids. You may enter a list of names and/or chatids that
+are authorized to use this bot. This is useful, if the bot should only accept incoming calls from dedicated persons.
+The values in the property fields must be separated by a , e.g.:
+Hugo,Sepp,Egon 
+Leave the fields blank if you do not want to use this feature.
 
 ## Receiver Node
 This node receives all messages from a chat. Simply invite the bot to a chat. 

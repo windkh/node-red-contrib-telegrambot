@@ -132,7 +132,7 @@
             bot: { value: "", type: "telegram bot", required: true }
         },
         inputs: 1,
-        outputs: 0,
+        outputs: 1,
         icon: "feed.png",
         label: function () {
             return this.name || "Telegram Sender";
@@ -157,3 +157,36 @@
 <!-- ------------------------------------------------------------------------------------------ -->
 
 
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram reply', {
+        category: 'telegram',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: "" },
+            bot: { value: "", type: "telegram bot", required: true }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "envelope.png",
+        label: function () {
+            return this.name || "Telegram Reply";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram reply">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-bot"><i class="icon-bookmark"></i> Bot</label>
+        <input type="text" id="node-input-bot" placeholder="Bot">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="telegram reply">
+    <p>A telegram node that receives the reply for a specified message.</p>
+</script>
+<!-- ------------------------------------------------------------------------------------------ -->

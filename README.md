@@ -87,6 +87,21 @@ The answer is send to the second output triggering the lower flow. Data is passe
 
 ![Alt text](images/TelegramBotConfirmationMessage3.png?raw=true "Keyboard Function 2")
 
+
+## Implementing a on reply node
+Next to the keyboard the bot could also ask a question and wait for the answer.
+When the user responds to a specified message the telegram reply node can be used:
+![Alt text](images/TelegramBotOnReplyMessage.png?raw=true "OnReply Flow")
+
+![Alt text](images/TelegramBotOnReplyMessage2.png?raw=true "Create question")
+
+The question is sent to the chat. This node triggers the on reply node waiting for the answer.
+Note that the user has to explicitly respond to this message. If the user only writes some text,
+the node will not be triggered.
+
+![Alt text](images/TelegramBotOnReplyMessage3.png?raw=true "Switch function")
+The last function shows how to evaluate the answer using a function node with two outputs.
+
  
 ## Receiving a location
 Locations can be send to the chat. The bot can receive the longitude and latitude:

@@ -151,7 +151,7 @@ module.exports = function(RED) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
             
                 node.telegramBot.on('message', function(botMsg) {
-                    var username = botMsg.chat.username;
+                    var username = botMsg.from.username;
                     var chatid = botMsg.chat.id;
                     if (node.config.isAuthorized(chatid, username)) {
 
@@ -201,7 +201,7 @@ module.exports = function(RED) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
                 
                 node.telegramBot.on('message', function (botMsg) {
-                    var username = botMsg.chat.username;
+                    var username = botMsg.from.username;
                     var chatid = botMsg.chat.id;
                     if (node.config.isAuthorized(chatid, username)) {
                         var msg;

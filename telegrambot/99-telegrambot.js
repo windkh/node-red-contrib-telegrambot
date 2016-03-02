@@ -32,6 +32,7 @@ module.exports = function(RED) {
                 this.token = this.token.trim();
                 if (!this.telegramBot) {
                     this.telegramBot = new telegramBot(this.token, { polling: true });
+                    this.telegramBot.setMaxListeners(0);
                 }
             }
         }

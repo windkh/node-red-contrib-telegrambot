@@ -208,8 +208,9 @@ module.exports = function(RED) {
                         var messageDetails;
                         if (botMsg.text) {
                             var message = botMsg.text;
-                            if (message.slice(0, command.length) == command) {
-                                //if (message.startsWith(command)) { // replaced with line above as as this requires ECMA-Standard 6!
+                            var tokens = message.split(" ");
+                            
+                            if (tokens[0] == command) {
                                 var remainingText = message.replace(command, "");
 
                                 messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: remainingText };

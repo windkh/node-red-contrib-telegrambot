@@ -198,6 +198,7 @@ module.exports = function(RED) {
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
             
             node.telegramBot = this.config.telegramBot;
+            node.botname = this.config.botname;
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
                 
@@ -210,8 +211,9 @@ module.exports = function(RED) {
                         if (botMsg.text) {
                             var message = botMsg.text;
                             var tokens = message.split(" ");
-                            
-                            if (tokens[0] == command) {
+
+                            var command2 = command + "@" + node.botname;
+                            if (tokens[0] == command || tokens[0] == command2) {
                                 var remainingText = message.replace(command, "");
 
                                 messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: remainingText };

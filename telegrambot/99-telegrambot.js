@@ -129,6 +129,9 @@ module.exports = function(RED) {
     // depending on type caption and date is part of the output, too.
     // The original message is stored next to payload.
     // 
+    // The message ist send to output 1 if the message is from an authorized user
+    // and to output2 if the message is not from an authorized user.
+    //
     // message : content string
     // photo   : content file_id of first image in array
     // audio   : content file_id
@@ -154,16 +157,16 @@ module.exports = function(RED) {
                 node.telegramBot.on('message', function(botMsg) {
                     var username = botMsg.from.username;
                     var chatid = botMsg.chat.id;
-                    if (node.config.isAuthorized(chatid, username)) {
+                    var messageDetails = getMessageDetails(botMsg);
+                    if (messageDetails) {
+                        var msg = { payload: messageDetails, originalMessage: botMsg };
 
-                        var messageDetails = getMessageDetails(botMsg);
-                        if (messageDetails) {
-                            var msg = { payload: messageDetails, originalMessage: botMsg };
-                            node.send(msg);
+                        if (node.config.isAuthorized(chatid, username)) {
+                            node.send([msg, null]);
+                        } else {
+                            node.warn("Unauthorized incoming call from " + username);
+                            node.send([null, msg]);
                         }
-                    } else {
-                        // ignoring unauthorized calls
-                        node.warn("Unauthorized incoming call from " + username);
                     }
                 });
             } else {

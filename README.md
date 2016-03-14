@@ -37,6 +37,7 @@ The values in the property fields must be separated by a , e.g.:
 Hugo,Sepp,Egon 
 Leave the fields blank if you do not want to use this feature.
 
+
 ## Receiver Node
 This node receives all messages from a chat. Simply invite the bot to a chat. 
 (You can control if the bot receives every message by calling /setprivacy @botfather.)
@@ -44,12 +45,15 @@ The original message from the underlying node library is stored in msg.originalM
 msg.payload contains the most important data like chatId, type and content. The content depends
 on the message type. E.g. if you receive a message then the content is a string. If you receive a location,
 then the content is an object containing latitude and logitude. 
+The second output is triggered when security is applied. See below.
+
 
 ## Sender Node
 This node sends the payload to the chat. The payload must contain the floowing fields:
 msg.payload.chatId  - chatId
 msg.payload.type    - e.g. "message"
 msg.payload.content - your message text
+
 
 ## Command Node
 The command node can be used for triggering a message when a specified command is received: e.g. help.
@@ -111,6 +115,24 @@ Locations can be send to the chat. The bot can receive the longitude and latitud
 ## Sending messages to a specified chat 
 If you have the chatId, you can send any message without the need of having received something before.
 ![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending a message")
+
+
+## Configuring security 
+The configuation node contains two properties for applying security to your bot. You can choose between configuring
+the single usernames or configure one or more chat-ids that are allowed to access the bot. The values must be separated using 
+a comma like shown in the screenshot.
+![Alt text](images/TelegramBotSecurity.png?raw=true "Applying security")
+Note that the chat-ids are positive in chats where you talk to the bot in an 1:1 manner. A negative chat-id indicates a group-chat.
+Everybody in this group is allowed to use the bot if you enter the chat-id of the group into the lower field of the configuration node.
+
+
+## Detecting unauthorized access.
+The receiver node has a second output, that is triggered when authorization fails. The message is send to this output for further processing.
+You can reply on that message or log it to a file to see who wanted to access your bot.
+![Alt text](images/TelegramBotUnauthorizedAccess.png?raw=true "Logging unauthorized access")
+
+The message needs to be formatted before the log to file node can be triggered. A simple function could look like this:
+![Alt text](images/TelegramBotUnauthorizedAccess2.png?raw=true "Create logging string with full information.")
 
 
 ## Implementing a simple bot 

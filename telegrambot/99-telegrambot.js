@@ -23,7 +23,9 @@ module.exports = function(RED) {
 
         this.chatids = [];
         if (n.chatids) {
-            this.chatids = n.chatids.split(',');
+            this.chatids = n.chatids.split(',').map(function (item) {
+                return parseInt(item, 10);
+            });
         }
 
         if (this.credentials) {
@@ -67,10 +69,16 @@ module.exports = function(RED) {
 
         this.isAuthorizedChat = function (chatid) {
             var isAuthorized = false;
-            if (self.usernames.length > 0) {
-                if (self.chatids.indexOf(chatid) >= 0) {
-                    isAuthorized = true;
+            var length = self.chatids.length;
+            if (length > 0) {
+                for (var i = 0; i < length; i++) {
+                    var id = self.chatids[i];
+                    if (id == chatid) {
+                        isAuthorized = true;
+                        break;
+                    }
                 }
+
             } else {
                 isAuthorized = true;
             }

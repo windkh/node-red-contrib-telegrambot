@@ -41,16 +41,6 @@ module.exports = function(RED) {
 
 
         this.on('close', function (done) {
-            
-            // Workaround: the api does not support stopping the polling timer which is neccessary on redeploy.
-            // see https://github.com/yagop/node-telegram-bot-api/issues/69
-            //self.telegramBot.stopPolling();
-            
-            if (self.telegramBot._polling) {
-                self.telegramBot._polling.abort = true;
-                self.telegramBot._polling.lastRequest.cancel('Polling stopped');
-            }
-
             done();
         });
         

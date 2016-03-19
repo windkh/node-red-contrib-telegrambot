@@ -170,7 +170,7 @@ module.exports = function(RED) {
                         if (node.config.isAuthorized(chatid, username)) {
                             node.send([msg, null]);
                         } else {
-                            node.warn("Unauthorized incoming call from " + username);
+                            // node.warn("Unauthorized incoming call from " + username);
                             node.send([null, msg]);
                         }
                     }
@@ -238,7 +238,7 @@ module.exports = function(RED) {
                         }
                     } else {
                         // ignoring unauthorized calls
-                        node.warn("Unauthorized incoming call from " + username);
+                        // node.warn("Unauthorized incoming call from " + username);
                     }
                 });
             } else {

@@ -41,6 +41,14 @@ module.exports = function(RED) {
 
 
         this.on('close', function (done) {
+            
+            // Workaround as the underlying bot api does not offer a stop function.
+            if (self.telegramBot._polling) {
+                self.telegramBot._polling.abort = true;
+                self.telegramBot._polling.lastRequest.cancel('Closing node.');
+                self.telegramBot._polling = undefined;
+            }
+
             done();
         });
         

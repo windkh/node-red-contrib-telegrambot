@@ -117,6 +117,26 @@ If you have the chatId, you can send any message without the need of having rece
 ![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending a message")
 
 
+## Sending photos, videos, ...
+Next to sending text messages you can send almost any content like photos and videos. Set the right type and content and you are done.
+If you want to respond to a received message with a picture you could write:
+msg.payload.content = 'foo.jpg';
+msg.payload.type = 'photo';
+Note that the chatId is already the correct one when you reuse the received msg object.
+
+You can use one of the follwing types to send your file as content:
+- photo
+- audio
+- video
+- sticker
+- voice
+- document
+
+The following types require a special content format to be used. See the underlying node api for further details.
+- location
+- contact 
+
+
 ## Configuring security 
 The configuation node contains two properties for applying security to your bot. You can choose between configuring
 the single usernames or configure one or more chat-ids that are allowed to access the bot. The values must be separated using 

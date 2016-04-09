@@ -136,6 +136,10 @@ The following types require a special content format to be used. See the underly
 - location
 - contact 
 
+![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")
+![Alt text](images/TelegramBotSendPhoto2.png?raw=true "Setting the correct content type.")
+
+
 
 ## Configuring security 
 The configuation node contains two properties for applying security to your bot. You can choose between configuring

@@ -140,6 +140,15 @@ The following types require a special content format to be used. See the underly
 ![Alt text](images/TelegramBotSendPhoto2.png?raw=true "Setting the correct content type.")
 
 
+## Advanced options when sending messages.
+Text messages can be in markdown format to support fat and italic style. To enable markdown format 
+set the parse_mode options property as follows:
+msg.payload.options = {parse_mode : "Markdown"};
+
+Telegram always adds a preview when you send a web link. To suppress this behavior you can disable the preview 
+by settings the options property as follows:
+msg.payload.options = {disable_web_page_preview : true};
+
 
 ## Configuring security 
 The configuation node contains two properties for applying security to your bot. You can choose between configuring

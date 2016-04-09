@@ -49,7 +49,7 @@ The second output is triggered when security is applied. See below.
 
 
 ## Sender Node
-This node sends the payload to the chat. The payload must contain the floowing fields:
+This node sends the payload to the chat. The payload must contain the following fields:
 msg.payload.chatId  - chatId
 msg.payload.type    - e.g. "message"
 msg.payload.content - your message text
@@ -120,8 +120,10 @@ If you have the chatId, you can send any message without the need of having rece
 ## Sending photos, videos, ...
 Next to sending text messages you can send almost any content like photos and videos. Set the right type and content and you are done.
 If you want to respond to a received message with a picture you could write:
+```
 msg.payload.content = 'foo.jpg';
 msg.payload.type = 'photo';
+```
 Note that the chatId is already the correct one when you reuse the received msg object.
 
 You can use one of the follwing types to send your file as content:
@@ -143,12 +145,15 @@ The following types require a special content format to be used. See the underly
 ## Advanced options when sending messages.
 Text messages can be in markdown format to support fat and italic style. To enable markdown format 
 set the parse_mode options property as follows:
+```
 msg.payload.options = {parse_mode : "Markdown"};
+```
 
 Telegram always adds a preview when you send a web link. To suppress this behavior you can disable the preview 
 by settings the options property as follows:
+```
 msg.payload.options = {disable_web_page_preview : true};
-
+```
 
 ## Configuring security 
 The configuation node contains two properties for applying security to your bot. You can choose between configuring

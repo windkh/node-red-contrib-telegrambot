@@ -58,9 +58,7 @@ module.exports = function(RED) {
                 if (self.usernames.indexOf(user) >= 0) {
                     isAuthorized = true;
                 }
-            } else {
-                isAuthorized = true;
-            }
+            } 
                 
             return isAuthorized;
         }
@@ -76,9 +74,6 @@ module.exports = function(RED) {
                         break;
                     }
                 }
-
-            } else {
-                isAuthorized = true;
             }
                 
             return isAuthorized;
@@ -87,8 +82,18 @@ module.exports = function(RED) {
         this.isAuthorized = function (chatid, user) {
             var isAuthorizedUser = self.isAuthorizedUser(user);
             var isAuthorizedChatId = self.isAuthorizedChat(chatid);
+            
+            var isAuthorized = false;
 
-            return isAuthorizedUser || isAuthorizedChatId;
+            if (isAuthorizedUser || isAuthorizedChatId) {
+                isAuthorized = true;
+            } else {
+                if (self.chatids.length == 0 && self.usernames.length == 0) {
+                    isAuthorized = true;
+                }
+            }
+
+            return isAuthorized;
         }
     }
     RED.nodes.registerType("telegram bot", TelegramBotNode, {

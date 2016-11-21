@@ -137,6 +137,7 @@ You can use one of the follwing types to send your file as content:
 The following types require a special content format to be used. See the underlying node api for further details.
 - location
 - contact 
+- venue
 
 ![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")
 ![Alt text](images/TelegramBotSendPhoto2.png?raw=true "Setting the correct content type.")

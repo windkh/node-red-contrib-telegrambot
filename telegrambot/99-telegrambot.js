@@ -15,7 +15,7 @@ module.exports = function (RED) {
         
         var self = this;
         this.botname = n.botname;
-        
+
         this.usernames = [];
         if (n.usernames) {
             this.usernames = n.usernames.split(',');
@@ -41,15 +41,16 @@ module.exports = function (RED) {
         
         
         this.on('close', function (done) {
-            
-            // Workaround as the underlying bot api does not offer a stop function.
-            if (self.telegramBot._polling) {
-                self.telegramBot._polling.abort = true;
-                self.telegramBot._polling.lastRequest.cancel('Closing node.');
-                self.telegramBot._polling = undefined;
+            if (self.telegramBot != null && self.telegramBot._polling) {
+                self.telegramBot.stopPolling()
+                    .then(function () {
+                    self.telegramBot = null;
+                    done();
+                });
             }
-            
-            done();
+            else {
+                done();
+            }
         });
         
         this.isAuthorizedUser = function (user) {

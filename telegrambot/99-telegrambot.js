@@ -110,17 +110,17 @@ module.exports = function (RED) {
         if (botMsg.text) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
         } else if (botMsg.photo) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'photo', content: botMsg.photo[0].file_id, caption: botMsg.caption, date: botMsg.date };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'photo', content: botMsg.photo[0].file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.audio) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'audio', content: botMsg.audio.file_id, caption: botMsg.caption, date: botMsg.date };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'audio', content: botMsg.audio.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.document) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'document', content: botMsg.document.file_id, caption: botMsg.caption, date: botMsg.date };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'document', content: botMsg.document.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.sticker) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'sticker', content: botMsg.sticker.file_id };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'sticker', content: botMsg.sticker.file_id, blob: true };
         } else if (botMsg.video) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video', content: botMsg.video.file_id, caption: botMsg.caption, date: botMsg.date };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video', content: botMsg.video.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.voice) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'voice', content: botMsg.voice.file_id, caption: botMsg.caption, date: botMsg.date };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'voice', content: botMsg.voice.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.location) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'location', content: botMsg.location };
         } else if (botMsg.venue) {
@@ -176,7 +176,16 @@ module.exports = function (RED) {
                         var msg = { payload: messageDetails, originalMessage: botMsg };
                         
                         if (node.config.isAuthorized(chatid, username)) {
-                            node.send([msg, null]);
+                            // downloadable "blob" message? download and provide with path
+                            if (config.saveDataDir && messageDetails.blob) {
+                                node.telegramBot.downloadFile(messageDetails.content, config.saveDataDir).then(function(path) {
+                                    msg.payload.path = path;
+                                    node.send([msg, null]);
+                                });
+                            // vanilla message
+                            } else {
+                                node.send([msg, null]);
+                            }
                         } else {
                             // node.warn("Unauthorized incoming call from " + username);
                             node.send([null, msg]);

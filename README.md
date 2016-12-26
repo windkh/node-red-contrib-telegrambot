@@ -4,6 +4,10 @@ This package contains a receiver and a sender node which act as a telegram bot.
 The only thing required is the token that can be retrieved by the @botfather telegram bot.
 https://core.telegram.org/bots
 
+# Credits
+dvv (Vladimir Dronnikov) for providing the saveDataDir configuration option.
+snippet-java for adding venue messages.
+
 
 # Dependencies
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
@@ -36,6 +40,7 @@ are authorized to use this bot. This is useful, if the bot should only accept in
 The values in the property fields must be separated by a , e.g.:
 Hugo,Sepp,Egon 
 Leave the fields blank if you do not want to use this feature.
+saveDataDir is an optional configuration value that can be set to automatically download all contents like music, video, documents, etc.
 
 
 ## Receiver Node
@@ -133,6 +138,7 @@ You can use one of the follwing types to send your file as content:
 - sticker
 - voice
 - document
+The content can be downloaded automatically to a local folder by setting the saveDataDir entry in the configuration node.
 
 The following types require a special content format to be used. See the underlying node api for further details.
 - location

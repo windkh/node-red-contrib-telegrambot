@@ -103,6 +103,19 @@ module.exports = function (RED) {
         }
     });
     
+    // adds the caption of the message into the options.
+    function addCaptionToMessageOptions(msg) {
+        var options = msg.payload.options;
+        if (options === undefined) {
+            options = {};
+        }
+        
+        options.caption = msg.payload.caption
+        msg.payload.options = options;
+        
+        return msg;
+    }
+
     // creates the message details object from the original message
     function getMessageDetails(botMsg) {
         
@@ -313,7 +326,8 @@ module.exports = function (RED) {
                             
                             var chatId = msg.payload.chatId;
                             var type = msg.payload.type;
-                            
+                            addCaptionToMessageOptions(msg);
+
                             switch (type) {
                                 case 'message':
                                     

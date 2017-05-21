@@ -41,7 +41,7 @@ module.exports = function (RED) {
         
         
         this.on('close', function (done) {
-            if (self.telegramBot != null && self.telegramBot._polling) {
+            if (self.telegramBot !== null && self.telegramBot._polling) {
                 self.telegramBot.stopPolling()
                     .then(function () {
                     self.telegramBot = null;
@@ -70,7 +70,7 @@ module.exports = function (RED) {
             if (length > 0) {
                 for (var i = 0; i < length; i++) {
                     var id = self.chatids[i];
-                    if (id == chatid) {
+                    if (id === chatid) {
                         isAuthorized = true;
                         break;
                     }
@@ -89,7 +89,7 @@ module.exports = function (RED) {
             if (isAuthorizedUser || isAuthorizedChatId) {
                 isAuthorized = true;
             } else {
-                if (self.chatids.length == 0 && self.usernames.length == 0) {
+                if (self.chatids.length === 0 && self.usernames.length === 0) {
                     isAuthorized = true;
                 }
             }
@@ -252,7 +252,7 @@ module.exports = function (RED) {
                             var tokens = message.split(" ");
                             
                             var command2 = command + "@" + node.botname;
-                            if (tokens[0] == command || tokens[0] == command2) {
+                            if (tokens[0] === command || tokens[0] === command2) {
                                 var remainingText = message.replace(command, "");
                                 
                                 messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: remainingText };
@@ -455,8 +455,8 @@ module.exports = function (RED) {
     // --------------------------------------------------------------------------------------------
     // The output node receices the reply for a specified message and passes the msg through.
     // The payload needs three fields
-    // chatId  : string destination chat
-    // type    : string type of message to send
+    // chatId        : string destination chat
+    // sentMessageId : string the id of the message the reply coresponds to.
     // content : message content
     function TelegramReplyNode(config) {
         RED.nodes.createNode(this, config);
@@ -496,7 +496,7 @@ module.exports = function (RED) {
                         });
 
                     } else {
-                        node.warn("msg.payload.type is empty");
+                        node.warn("msg.payload.messageId is empty");
                     }
                 } else {
                     node.warn("msg.payload.chatId is empty");

@@ -50,7 +50,7 @@ The original message from the underlying node library is stored in msg.originalM
 msg.payload contains the most important data like chatId, type and content. The content depends
 on the message type. E.g. if you receive a message then the content is a string. If you receive a location,
 then the content is an object containing latitude and logitude. 
-The second output is triggered when security is applied. See below.
+The second output is triggered when security is applied and the user is not authorized to access the bot. See below.
 
 
 ## Sender Node
@@ -58,6 +58,7 @@ This node sends the payload to the chat. The payload must contain the following 
 msg.payload.chatId  - chatId
 msg.payload.type    - e.g. "message"
 msg.payload.content - your message text
+msg.error           - is set when an exception occured
 
 
 ## Command Node
@@ -68,6 +69,11 @@ It has two outputs
 - 2. is triggered when the command is not received
 
 The second one is useful when you want to use a keyboard. 
+See example below.
+
+
+## Reply Node
+The reply node waits for an answer to a specified message. It should be used in conjunction with the sender node: 
 See example below.
 
 
@@ -164,8 +170,7 @@ msg.payload.options = {disable_web_page_preview : true};
 
 ## Configuring security 
 The configuation node contains two properties for applying security to your bot. You can choose between configuring
-the single usernames or configure one or more chat-ids that are allowed to access the bot. The values must be separated using 
-a comma like shown in the screenshot.
+the single usernames or configure one or more chat-ids that are allowed to access the bot. The values must be separated using a comma like shown in the screenshot.
 ![Alt text](images/TelegramBotSecurity.png?raw=true "Applying security")
 Note that the chat-ids are positive in chats where you talk to the bot in an 1:1 manner. A negative chat-id indicates a group-chat.
 Everybody in this group is allowed to use the bot if you enter the chat-id of the group into the lower field of the configuration node.

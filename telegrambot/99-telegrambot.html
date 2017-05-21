@@ -76,7 +76,7 @@
         <input type="text" id="node-input-bot" placeholder="Bot">
     </div>
     <div class="form-row">
-        <label for="node-input-saveDataDir"><i class="icon-tag"></i> Download directory</label>
+        <label for="node-input-saveDataDir"><i class="icon-hdd"></i> Download Directory</label>
         <input type="text" id="node-input-saveDataDir" placeholder="Download directory">
     </div>
 </script>
@@ -84,7 +84,10 @@
 <script type="text/x-red" data-help-name="telegram receiver">
     <p>A telegram node that triggers the output when some message is received from the chat.
     Message is send to output 1 if it comes from an authorized user.
-    Message is send to output 2 if it comes from an non-authorized user.</p>
+    Message is send to output 2 if it comes from an non-authorized user.
+    
+    msg.payload contains the parsed data.
+    msg.originalMessage contains the raw data object from the underlying library.</p>
 </script>
 
 
@@ -124,7 +127,9 @@
 </script>
 
 <script type="text/x-red" data-help-name="telegram command">
-    <p>A telegram node that triggers the output when a specified command is received from the chat.</p>
+    <p>A telegram node that triggers the output when a specified command is received from the chat.
+        Message is send to output 1 if it comes from an authorized user and contains the command at the beginning of the message.
+        Message is send to output 2 if it comes from an authorized user if it does not contain the command.</p>
 </script>
 
 
@@ -159,7 +164,7 @@
 </script>
 
 <script type="text/x-red" data-help-name="telegram sender">
-    <p>A telegram node that sends the content to the chat.</p>
+    <p>A telegram node that sends the content to the chat. The message contains an error property if an exception occured.</p>
 </script>
 <!-- ------------------------------------------------------------------------------------------ -->
 

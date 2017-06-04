@@ -135,9 +135,9 @@ If you want to respond to a received message with a picture you could write:
 msg.payload.content = 'foo.jpg';
 msg.payload.type = 'photo';
 ```
-Note that the chatId is already the correct one when you reuse the received msg object.
+Note that the chatId is already the correct one when you reuse the received msg object from a receiver node.
 
-You can use one of the follwing types to send your file as content:
+You can use one of the following types to send your file as content:
 - photo
 - audio
 - video
@@ -145,6 +145,10 @@ You can use one of the follwing types to send your file as content:
 - voice
 - document
 The content can be downloaded automatically to a local folder by setting the saveDataDir entry in the configuration node.
+You can add a caption to photo, audio, document, video, voice by setting the caption property as follows:
+```
+msg.payload.caption = "You must have a look at this!";
+```
 
 The following types require a special content format to be used. See the underlying node api for further details.
 - location
@@ -163,10 +167,11 @@ msg.payload.options = {parse_mode : "Markdown"};
 ```
 
 Telegram always adds a preview when you send a web link. To suppress this behavior you can disable the preview 
-by settings the options property as follows:
+by setting the options property as follows:
 ```
 msg.payload.options = {disable_web_page_preview : true};
 ```
+
 
 ## Configuring security 
 The configuation node contains two properties for applying security to your bot. You can choose between configuring

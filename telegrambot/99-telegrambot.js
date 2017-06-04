@@ -15,6 +15,9 @@ module.exports = function (RED) {
         
         var self = this;
         this.botname = n.botname;
+        this.status = "disconnected";
+        
+        this.nodes = [];
 
         this.usernames = [];
         if (n.usernames) {
@@ -35,23 +38,44 @@ module.exports = function (RED) {
                 if (!this.telegramBot) {
                     this.telegramBot = new telegramBot(this.token, { polling: true });
                     this.telegramBot.setMaxListeners(0);
+                    self.status = "connected";
+
+                    this.telegramBot.on('polling_error', function(error) {
+                        if (error.message === "ETELEGRAM: 401 Unauthorized") {
+                            self.warn(error.message);
+                            self.abortBot(function () {
+                                self.warn("Bot stopped. Please check if the bot token is valid: " + self.credentials.token);
+                            });
+                        }
+                    });
+
+                    this.telegramBot.on('webhook_error', function(error) {
+                        self.warn(error.message);
+                    });
                 }
             }
         }
         
-        
         this.on('close', function (done) {
+            self.abortBot(done);
+        });
+        
+        this.abortBot = function(done) {
             if (self.telegramBot !== null && self.telegramBot._polling) {
                 self.telegramBot.stopPolling()
                     .then(function () {
                     self.telegramBot = null;
+                    self.status = "disconnected";
+                    self.setNodesStatus({ fill: "red", shape: "ring", text: "bot stopped." })
                     done();
                 });
             }
             else {
+                self.status = "disconnected";
+                self.setNodesStatus({ fill: "red", shape: "ring", text: "bot stopped." })
                 done();
             }
-        });
+        }
         
         this.isAuthorizedUser = function (user) {
             var isAuthorized = false;
@@ -96,6 +120,22 @@ module.exports = function (RED) {
             
             return isAuthorized;
         }
+
+        this.register = function (node) {
+            if (!self.nodes.includes(node)){
+                self.nodes.push(node);
+            }
+            else {
+                self.warn("Node " + node.id + " registered twice at the configuration node: ignoring.");
+            }
+        }
+
+        this.setNodesStatus = function (status) {
+            self.nodes.forEach(function (node) {
+                node.status(status);
+            });
+        }
+
     }
     RED.nodes.registerType("telegram bot", TelegramBotNode, {
         credentials: {
@@ -110,7 +150,10 @@ module.exports = function (RED) {
             options = {};
         }
         
-        options.caption = msg.payload.caption
+        if (msg.payload.caption !== undefined) {
+            options.caption = msg.payload.caption;
+        }
+
         msg.payload.options = options;
         
         return msg;
@@ -175,6 +218,8 @@ module.exports = function (RED) {
         
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
+            this.config.register(node);
+
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
             
             node.telegramBot = this.config.telegramBot;
@@ -206,10 +251,12 @@ module.exports = function (RED) {
                     }
                 });
             } else {
-                node.warn("no bot in config.");
+                node.warn("bot not initialized");
+                this.status({ fill: "red", shape: "ring", text: "bot not initialized" });
             }
         } else {
-            node.warn("no config.");
+            node.warn("config node failed to initialize.");
+            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." }); 
         }
     }
     RED.nodes.registerType("telegram receiver", TelegramInNode);
@@ -234,6 +281,8 @@ module.exports = function (RED) {
         
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
+            this.config.register(node);
+
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
             
             node.telegramBot = this.config.telegramBot;
@@ -272,10 +321,12 @@ module.exports = function (RED) {
                     }
                 });
             } else {
-                node.warn("no bot in config.");
+                node.warn("bot not initialized.");
+                this.status({ fill: "red", shape: "ring", text: "no bot token found in config" });
             }
         } else {
-            node.warn("no config.");
+            node.warn("config node failed to initialize.");
+            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
         }
     }
     RED.nodes.registerType("telegram command", TelegramCommandNode);
@@ -305,16 +356,20 @@ module.exports = function (RED) {
         
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
+            this.config.register(node);
+
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
             
             node.telegramBot = this.config.telegramBot;
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
             } else {
-                node.warn("no bot in config.");
+                node.warn("bot not initialized.");
+                this.status({ fill: "red", shape: "ring", text: "bot not initialized" });
             }
         } else {
-            node.warn("no config.");
+            node.warn("config node failed to initialize.");
+            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
         }
         
         this.on('input', function (msg) {
@@ -465,16 +520,20 @@ module.exports = function (RED) {
         
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
+            this.config.register(node);
+
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
             
             node.telegramBot = this.config.telegramBot;
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
             } else {
-                node.warn("no bot in config.");
+                node.warn("bot not initialized.");
+                this.status({ fill: "red", shape: "ring", text: "bot not initialized" });
             }
         } else {
-            node.warn("no config.");
+            node.warn("config node failed to initialize.");
+            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
         }
         
         this.on('input', function (msg) {

@@ -122,14 +122,14 @@ module.exports = function (RED) {
         }
 
         this.register = function (node) {
-            if (!self.nodes.includes(node)){
+            if (self.nodes.indexOf(node) === -1){
                 self.nodes.push(node);
             }
             else {
                 self.warn("Node " + node.id + " registered twice at the configuration node: ignoring.");
             }
         }
-
+        
         this.setNodesStatus = function (status) {
             self.nodes.forEach(function (node) {
                 node.status(status);

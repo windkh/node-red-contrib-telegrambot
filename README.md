@@ -8,6 +8,8 @@ https://core.telegram.org/bots
 dvv (Vladimir Dronnikov) for providing the saveDataDir configuration option.
 snippet-java for adding venue messages.
 
+greenstone7 for providing the callback query node.
+
 
 # Dependencies
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
@@ -72,6 +74,11 @@ The second one is useful when you want to use a keyboard.
 See example below.
 
 
+## Callback Query Node
+The node receives the callback querys of inline keyboards.
+See example-flow inlinekeyboard in examples folder.
+
+
 ## Reply Node
 The reply node waits for an answer to a specified message. It should be used in conjunction with the sender node: 
 See example below.
@@ -117,6 +124,19 @@ the node will not be triggered.
 ![Alt text](images/TelegramBotOnReplyMessage3.png?raw=true "Switch function")
 The last function shows how to evaluate the answer using a function node with two outputs.
 
+
+## Implementing a inline keyboard
+A inline keyboard contains buttons that can send a callback query back to the bot to trigger any kind of function.
+When the command is received the first output is triggered and a inline keyboard is shown:
+![Alt text](images/TelegramBotInlineKeyboard1.png?raw=true "Inline Keyboard Flow")
+
+![Alt text](images/TelegramBotInlineKeyboard2.png?raw=true "Inline Keyboard Function 1")
+
+The callback query is received by the receiver node. It must be answered like shown as follows:
+Here you can add your code to trigger the desired bot command. The answer contains the callback query data in msg.payload.content.
+
+![Alt text](images/TelegramBotInlineKeyboard3.png?raw=true "Inline Keyboard Function 2")
+ 
  
 ## Receiving a location
 Locations can be send to the chat. The bot can receive the longitude and latitude:
@@ -154,6 +174,7 @@ The following types require a special content format to be used. See the underly
 - location
 - contact 
 - venue
+- callback_query
 
 ![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")
 ![Alt text](images/TelegramBotSendPhoto2.png?raw=true "Setting the correct content type.")
@@ -170,6 +191,12 @@ Telegram always adds a preview when you send a web link. To suppress this behavi
 by setting the options property as follows:
 ```
 msg.payload.options = {disable_web_page_preview : true};
+```
+
+The callback query answer has a show_alert option to control the visiblity of the answer on the client.
+It is directly mapped to the options property.
+```
+msg.payload.options = true;
 ```
 
 

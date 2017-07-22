@@ -106,7 +106,17 @@
         outputs: 2,
         icon: "arrow-in.png",
         label: function () {
-            return this.name || "Telegram Command";
+            var text = this.name;
+
+            if (!text) {
+                text = this.command;
+            }
+
+            if (!text) {
+                text = "Telegram Command";
+            }
+
+            return text;
         }
     });
 </script>

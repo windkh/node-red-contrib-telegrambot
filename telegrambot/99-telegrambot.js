@@ -369,7 +369,7 @@ module.exports = function (RED) {
                         
                         if (botMsg.data) {
                             
-                            messageDetails = { chatId: botMsg.message.chat.id, messageId: botMsg.message_id, type: 'callback_query', content: botMsg.data };
+                            messageDetails = { chatId: botMsg.message.chat.id, messageId: botMsg.message_id, type: 'callback_query', content: botMsg.data, callbackQueryId : botMsg.id };
                             
                             msg = { payload: messageDetails, originalMessage: botMsg };
                             
@@ -393,7 +393,7 @@ module.exports = function (RED) {
     }
     RED.nodes.registerType("telegram callback_query", TelegramCallbackQueryNode);
     
-    
+
     
     // --------------------------------------------------------------------------------------------
     // The output node sends to the chat and passes the msg through.
@@ -472,9 +472,17 @@ module.exports = function (RED) {
                                         });
 
                                     } while (!done)
-                                    
-                                    
                                     break;
+                                case 'callback_query':
+                                    node.telegramBot.answerCallbackQuery(msg.payload.callbackQueryId, msg.payload.content, msg.payload.options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    }).catch(function (err) {
+                                        msg.error = err;
+                                        node.send(msg);
+                                    });
+                                    break;
+
                                 case 'photo':
                                     node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
                                         msg.payload.sentMessageId = sent.message_id;
@@ -548,7 +556,8 @@ module.exports = function (RED) {
                                     });
                                     break;
                                 default:
-                                // unknown type nothing to send.
+                                    // unknown type nothing to send.
+                                    // TODO: new_chat_participant, left_chat_participant, new_chat_title, new_chat_photo, delete_chat_photo, group_chat_created
                             }
 
                         } else {

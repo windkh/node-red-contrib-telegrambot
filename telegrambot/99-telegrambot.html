@@ -136,6 +136,45 @@
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
+    RED.nodes.registerType('telegram callback_query', {
+        category: 'telegram',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: "" },
+            command: { value: ""},
+            bot: { value: "", type: "telegram bot", required: true }
+        },
+        inputs: 0,
+        outputs: 1,
+        icon: "arrow-in.png",
+        label: function () {
+            return this.name || "Telegram callback_query";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram callback_query">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-bot"><i class="icon-bookmark"></i> Bot</label>
+        <input type="text" id="node-input-bot" placeholder="Bot">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="telegram callback_query">
+    <p>A telegram node that triggers the output when a callback_query is received from the chat.
+        Message is send to the output if it comes from an authorized user.
+        msg.payload.content contains the callback_query data (callback_data see https://core.telegram.org/bots/api#inlinekeyboardbutton).
+    </p>
+</script>
+
+
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
     RED.nodes.registerType('telegram sender', {
         category: 'telegram',
         color: '#a6bbcf',

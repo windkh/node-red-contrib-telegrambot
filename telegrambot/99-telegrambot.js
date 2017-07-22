@@ -331,6 +331,68 @@ module.exports = function (RED) {
     }
     RED.nodes.registerType("telegram command", TelegramCommandNode);
     
+        
+    
+    // --------------------------------------------------------------------------------------------
+    // The input node receives a callback_query from the chat.
+    // The message details are stored in the playload
+    // chatId
+    // type
+    // content
+    // depending on type caption and date is part of the output, too.
+    // The original message is stored next to payload.
+    // 
+    // callback_query : content string
+    function TelegramCallbackQueryNode(config) {
+        RED.nodes.createNode(this, config);
+        var node = this;
+        this.bot = config.bot;
+        
+        this.config = RED.nodes.getNode(this.bot);
+        if (this.config) {
+            this.config.register(node);
+
+            this.status({ fill: "red", shape: "ring", text: "disconnected" });
+            
+            node.telegramBot = this.config.telegramBot;
+            node.botname = this.config.botname;
+            if (node.telegramBot) {
+                this.status({ fill: "green", shape: "ring", text: "connected" });
+                
+                node.telegramBot.on('callback_query', function (botMsg) {
+                    var username = botMsg.from.username;
+                    var chatid = botMsg.message.chat.id;
+                    
+                    if (node.config.isAuthorized(chatid, username)) {
+                        var msg;
+                        var messageDetails;
+                        
+                        if (botMsg.data) {
+                            
+                            messageDetails = { chatId: botMsg.message.chat.id, messageId: botMsg.message_id, type: 'callback_query', content: botMsg.data };
+                            
+                            msg = { payload: messageDetails, originalMessage: botMsg };
+                            
+                            node.send(msg);
+                        } else {
+                            // property data not set --> no output
+                        }
+                    } else {
+                        // ignoring unauthorized calls
+                        // node.warn("Unauthorized incoming call from " + username);
+                    }
+                });
+            } else {
+                node.warn("bot not initialized.");
+                this.status({ fill: "red", shape: "ring", text: "no bot token found in config" });
+            }
+        } else {
+            node.warn("config node failed to initialize.");
+            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
+        }
+    }
+    RED.nodes.registerType("telegram callback_query", TelegramCallbackQueryNode);
+    
     
     
     // --------------------------------------------------------------------------------------------

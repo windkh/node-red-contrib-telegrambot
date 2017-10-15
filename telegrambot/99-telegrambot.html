@@ -233,7 +233,6 @@
      <ul>
      <li><code>content</code> the message contents</li>
      <li><code>type</code> the type of message contents</li>
-     <li><code>messageId</code> the messageId number</li>
      <li><code>chatId</code> the chatId number</li>
      </ul>
     <p>The output message contains an error property if an exception occured.</p>
@@ -277,7 +276,7 @@
 
 <script type="text/x-red" data-help-name="telegram reply">
     <p>A telegram node that sends the reply for a specified message.</p>
-    <p>The <code>msg.payload</code> shoudl be an object that contains:</p>
+    <p>The <code>msg.payload</code> should be an object that contains:</p>
     <ul><li><code>chatId</code> destination chatId.</li>
     <li><code>sentMessageId</code> the id of the message the reply coresponds to.</li>
     <li><code>content</code> the message content.</li></ul>

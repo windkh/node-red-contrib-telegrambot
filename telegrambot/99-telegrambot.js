@@ -5,32 +5,32 @@
 module.exports = function (RED) {
     "use strict";
     var telegramBot = require('node-telegram-bot-api');
-    
+
     // --------------------------------------------------------------------------------------------
-    // The configuration node 
+    // The configuration node
     // holds the token
     // and establishes the connection to the telegram bot
     function TelegramBotNode(n) {
         RED.nodes.createNode(this, n);
-        
+
         var self = this;
         this.botname = n.botname;
         this.status = "disconnected";
-        
+
         this.nodes = [];
 
         this.usernames = [];
         if (n.usernames) {
             this.usernames = n.usernames.split(',');
         }
-        
+
         this.chatids = [];
         if (n.chatids) {
             this.chatids = n.chatids.split(',').map(function (item) {
                 return parseInt(item, 10);
             });
         }
-        
+
         if (this.credentials) {
             this.token = this.credentials.token;
             if (this.token) {
@@ -55,11 +55,11 @@ module.exports = function (RED) {
                 }
             }
         }
-        
+
         this.on('close', function (done) {
             self.abortBot(done);
         });
-        
+
         this.abortBot = function(done) {
             if (self.telegramBot !== null && self.telegramBot._polling) {
                 self.telegramBot.stopPolling()
@@ -76,7 +76,7 @@ module.exports = function (RED) {
                 done();
             }
         }
-        
+
         this.isAuthorizedUser = function (user) {
             var isAuthorized = false;
             if (self.usernames.length > 0) {
@@ -84,10 +84,10 @@ module.exports = function (RED) {
                     isAuthorized = true;
                 }
             }
-            
+
             return isAuthorized;
         }
-        
+
         this.isAuthorizedChat = function (chatid) {
             var isAuthorized = false;
             var length = self.chatids.length;
@@ -100,16 +100,16 @@ module.exports = function (RED) {
                     }
                 }
             }
-            
+
             return isAuthorized;
         }
-        
+
         this.isAuthorized = function (chatid, user) {
             var isAuthorizedUser = self.isAuthorizedUser(user);
             var isAuthorizedChatId = self.isAuthorizedChat(chatid);
-            
+
             var isAuthorized = false;
-            
+
             if (isAuthorizedUser || isAuthorizedChatId) {
                 isAuthorized = true;
             } else {
@@ -117,7 +117,7 @@ module.exports = function (RED) {
                     isAuthorized = true;
                 }
             }
-            
+
             return isAuthorized;
         }
 
@@ -129,7 +129,7 @@ module.exports = function (RED) {
                 self.warn("Node " + node.id + " registered twice at the configuration node: ignoring.");
             }
         }
-        
+
         this.setNodesStatus = function (status) {
             self.nodes.forEach(function (node) {
                 node.status(status);
@@ -142,26 +142,26 @@ module.exports = function (RED) {
             token: { type: "text" }
         }
     });
-    
+
     // adds the caption of the message into the options.
     function addCaptionToMessageOptions(msg) {
         var options = msg.payload.options;
         if (options === undefined) {
             options = {};
         }
-        
+
         if (msg.payload.caption !== undefined) {
             options.caption = msg.payload.caption;
         }
 
         msg.payload.options = options;
-        
+
         return msg;
     }
 
     // creates the message details object from the original message
     function getMessageDetails(botMsg) {
-        
+
         var messageDetails;
         if (botMsg.text) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
@@ -186,10 +186,10 @@ module.exports = function (RED) {
         } else {
                             // unknown type --> no output
         }
-        
+
         return messageDetails;
     }
-    
+
     // --------------------------------------------------------------------------------------------
     // The input node receives messages from the chat.
     // the message details are stored in the playload
@@ -198,7 +198,7 @@ module.exports = function (RED) {
     // content
     // depending on type caption and date is part of the output, too.
     // The original message is stored next to payload.
-    // 
+    //
     // The message ist send to output 1 if the message is from an authorized user
     // and to output2 if the message is not from an authorized user.
     //
@@ -215,24 +215,24 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         var node = this;
         this.bot = config.bot;
-        
+
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             this.config.register(node);
 
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
-            
+
             node.telegramBot = this.config.telegramBot;
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
-                
+
                 node.telegramBot.on('message', function (botMsg) {
                     var username = botMsg.from.username;
                     var chatid = botMsg.chat.id;
                     var messageDetails = getMessageDetails(botMsg);
                     if (messageDetails) {
                         var msg = { payload: messageDetails, originalMessage: botMsg };
-                        
+
                         if (node.config.isAuthorized(chatid, username)) {
                             // downloadable "blob" message? download and provide with path
                             if (config.saveDataDir && messageDetails.blob) {
@@ -256,13 +256,13 @@ module.exports = function (RED) {
             }
         } else {
             node.warn("config node failed to initialize.");
-            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." }); 
+            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
         }
     }
     RED.nodes.registerType("telegram receiver", TelegramInNode);
-    
-    
-    
+
+
+
     // --------------------------------------------------------------------------------------------
     // The input node receives a command from the chat.
     // The message details are stored in the playload
@@ -271,25 +271,25 @@ module.exports = function (RED) {
     // content
     // depending on type caption and date is part of the output, too.
     // The original message is stored next to payload.
-    // 
+    //
     // message : content string
     function TelegramCommandNode(config) {
         RED.nodes.createNode(this, config);
         var node = this;
         var command = config.command;
         this.bot = config.bot;
-        
+
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             this.config.register(node);
 
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
-            
+
             node.telegramBot = this.config.telegramBot;
             node.botname = this.config.botname;
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
-                
+
                 node.telegramBot.on('message', function (botMsg) {
                     var username = botMsg.from.username;
                     var chatid = botMsg.chat.id;
@@ -299,11 +299,11 @@ module.exports = function (RED) {
                         if (botMsg.text) {
                             var message = botMsg.text;
                             var tokens = message.split(" ");
-                            
+
                             var command2 = command + "@" + node.botname;
                             if (tokens[0] === command || tokens[0] === command2) {
                                 var remainingText = message.replace(command, "");
-                                
+
                                 messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: remainingText };
                                 msg = { payload: messageDetails, originalMessage: botMsg };
                                 node.send([msg, null]);
@@ -330,9 +330,9 @@ module.exports = function (RED) {
         }
     }
     RED.nodes.registerType("telegram command", TelegramCommandNode);
-    
-        
-    
+
+
+
     // --------------------------------------------------------------------------------------------
     // The input node receives a callback_query from the chat.
     // The message details are stored in the playload
@@ -341,38 +341,38 @@ module.exports = function (RED) {
     // content
     // depending on type caption and date is part of the output, too.
     // The original message is stored next to payload.
-    // 
+    //
     // callback_query : content string
     function TelegramCallbackQueryNode(config) {
         RED.nodes.createNode(this, config);
         var node = this;
         this.bot = config.bot;
-        
+
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             this.config.register(node);
 
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
-            
+
             node.telegramBot = this.config.telegramBot;
             node.botname = this.config.botname;
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
-                
+
                 node.telegramBot.on('callback_query', function (botMsg) {
                     var username = botMsg.from.username;
                     var chatid = botMsg.message.chat.id;
-                    
+
                     if (node.config.isAuthorized(chatid, username)) {
                         var msg;
                         var messageDetails;
-                        
+
                         if (botMsg.data) {
-                            
+
                             messageDetails = { chatId: botMsg.message.chat.id, messageId: botMsg.message_id, type: 'callback_query', content: botMsg.data, callbackQueryId : botMsg.id };
-                            
+
                             msg = { payload: messageDetails, originalMessage: botMsg };
-                            
+
                             node.send(msg);
                         } else {
                             // property data not set --> no output
@@ -392,9 +392,9 @@ module.exports = function (RED) {
         }
     }
     RED.nodes.registerType("telegram callback_query", TelegramCallbackQueryNode);
-    
 
-    
+
+
     // --------------------------------------------------------------------------------------------
     // The output node sends to the chat and passes the msg through.
     // The payload needs three fields
@@ -410,18 +410,18 @@ module.exports = function (RED) {
     // video    content is String|stream.Stream|Buffer
     // voice    content is String|stream.Stream|Buffer
     // location content is an object that contains latitude and logitude
-    // contact  content is full contact object 
+    // contact  content is full contact object
     function TelegramOutNode(config) {
         RED.nodes.createNode(this, config);
         var node = this;
         this.bot = config.bot;
-        
+
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             this.config.register(node);
 
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
-            
+
             node.telegramBot = this.config.telegramBot;
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
@@ -433,25 +433,25 @@ module.exports = function (RED) {
             node.warn("config node failed to initialize.");
             this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
         }
-        
+
         this.on('input', function (msg) {
-            
+
             if (msg.payload) {
                 if (msg.payload.content) {
                     if (msg.payload.chatId) {
                         if (msg.payload.type) {
-                            
+
                             var chatId = msg.payload.chatId;
                             var type = msg.payload.type;
                             addCaptionToMessageOptions(msg);
 
                             switch (type) {
                                 case 'message':
-                                    
+
                                     // the maximum message size is 4096 so we must split the message into smaller chunks.
                                     var chunkSize = 4000;
                                     var message = msg.payload.content;
-                                    
+
                                     var done = false;
                                     do {
                                         var messageToSend;
@@ -462,7 +462,7 @@ module.exports = function (RED) {
                                             messageToSend = message;
                                             done = true;
                                         }
-                                        
+
                                         node.telegramBot.sendMessage(chatId, messageToSend, msg.payload.options).then(function (sent) {
                                             msg.payload.sentMessageId = sent.message_id;
                                             node.send(msg);
@@ -575,9 +575,9 @@ module.exports = function (RED) {
         });
     }
     RED.nodes.registerType("telegram sender", TelegramOutNode);
-    
-    
-    
+
+
+
     // --------------------------------------------------------------------------------------------
     // The output node receices the reply for a specified message and passes the msg through.
     // The payload needs three fields
@@ -588,13 +588,13 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         var node = this;
         this.bot = config.bot;
-        
+
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             this.config.register(node);
 
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
-            
+
             node.telegramBot = this.config.telegramBot;
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
@@ -606,18 +606,18 @@ module.exports = function (RED) {
             node.warn("config node failed to initialize.");
             this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
         }
-        
+
         this.on('input', function (msg) {
-            
+
             if (msg.payload) {
                 if (msg.payload.chatId) {
                     if (msg.payload.messageId) {
-                        
+
                         var chatId = msg.payload.chatId;
                         var messageId = msg.payload.sentMessageId;
-                        
+
                         node.telegramBot.onReplyToMessage(chatId, messageId, function (botMsg) {
-                            
+
                             var messageDetails = getMessageDetails(botMsg);
                             if (messageDetails) {
                                 var newMsg = { payload: messageDetails, originalMessage: botMsg };
@@ -638,5 +638,3 @@ module.exports = function (RED) {
     }
     RED.nodes.registerType("telegram reply", TelegramReplyNode);
 }
-
-

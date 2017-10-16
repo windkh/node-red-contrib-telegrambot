@@ -22,13 +22,13 @@ The project is still under construction.
 
 # Usage
 The input node receives messages from the bot and sends a message object with the following layout:
-- **payload** contains the message details
+
+ `msg.payload` contains the message details
   - **chatId**  : the unique id of the chat. This value needs to be passed to the out node when responding to the same chat.
   - **type**    : the type of message received: message, photo, audio, location, video, voice, contact
   - **content** : received message content: string or file_id, or object with full data (location, contact)
 
-- **originalMessage** contains the original message object from the underlying [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api) lib.
-
+`msg.originalMessage` contains the original message object from the underlying [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api) lib.
 
 The simple echo flow looks like:
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")
@@ -40,18 +40,18 @@ The string is automatically trimmed.
 The node contains two optional properties: users and chatids. You may enter a list of names and/or chatids that
 are authorized to use this bot. This is useful, if the bot should only accept incoming calls from dedicated persons.
 The values in the property fields must be separated by a , e.g.:
-Hugo,Sepp,Egon 
+Hugo,Sepp,Egon
 Leave the fields blank if you do not want to use this feature.
 saveDataDir is an optional configuration value that can be set to automatically download all contents like music, video, documents, etc.
 
 
 ## Receiver Node
-This node receives all messages from a chat. Simply invite the bot to a chat. 
+This node receives all messages from a chat. Simply invite the bot to a chat.
 (You can control if the bot receives every message by calling /setprivacy @botfather.)
 The original message from the underlying node library is stored in msg.originalMessage.
 msg.payload contains the most important data like chatId, type and content. The content depends
 on the message type. E.g. if you receive a message then the content is a string. If you receive a location,
-then the content is an object containing latitude and logitude. 
+then the content is an object containing latitude and longitude.
 The second output is triggered when security is applied and the user is not authorized to access the bot. See below.
 
 
@@ -60,31 +60,32 @@ This node sends the payload to the chat. The payload must contain the following 
 msg.payload.chatId  - chatId
 msg.payload.type    - e.g. "message"
 msg.payload.content - your message text
-msg.error           - is set when an exception occured
+msg.error           - is set when an exception occurred
 
 
 ## Command Node
 The command node can be used for triggering a message when a specified command is received: e.g. help.
 See example below.
 It has two outputs
-- 1. is triggered when the command is received
-- 2. is triggered when the command is not received
 
-The second one is useful when you want to use a keyboard. 
+ 1. is triggered when the command is received
+ 2. is triggered when the command is not received
+
+The second one is useful when you want to use a keyboard.
 See example below.
 
 
 ## Callback Query Node
-The node receives the callback querys of inline keyboards.
+The node receives the callback queries of inline keyboards.
 See example-flow inlinekeyboard in examples folder.
 
 
 ## Reply Node
-The reply node waits for an answer to a specified message. It should be used in conjunction with the sender node: 
+The reply node waits for an answer to a specified message. It should be used in conjunction with the sender node:
 See example below.
 
 
-## Implementing a simple echo 
+## Implementing a simple echo
 This example is self-explaining. The received message is returned to the sender.
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")
 
@@ -95,7 +96,7 @@ This flow returns the help message of your bot. It receives the command and crea
 
 ![Alt text](images/TelegramBotHelp2.png?raw=true "Help Function")
 
-Note: You can access the sender's data via the originalMessage property.
+**Note**: You can access the sender's data via the originalMessage property.
 
 
 ## Implementing a keyboard
@@ -118,7 +119,8 @@ When the user responds to a specified message the telegram reply node can be use
 ![Alt text](images/TelegramBotOnReplyMessage2.png?raw=true "Create question")
 
 The question is sent to the chat. This node triggers the on reply node waiting for the answer.
-Note that the user has to explicitly respond to this message. If the user only writes some text,
+
+**Note**: that the user has to explicitly respond to this message. If the user only writes some text,
 the node will not be triggered.
 
 ![Alt text](images/TelegramBotOnReplyMessage3.png?raw=true "Switch function")
@@ -136,14 +138,14 @@ The callback query is received by the receiver node. It must be answered like sh
 Here you can add your code to trigger the desired bot command. The answer contains the callback query data in msg.payload.content.
 
 ![Alt text](images/TelegramBotInlineKeyboard3.png?raw=true "Inline Keyboard Function 2")
- 
- 
+
+
 ## Receiving a location
 Locations can be send to the chat. The bot can receive the longitude and latitude:
 ![Alt text](images/TelegramBotLocation.png?raw=true "Location Function")
 
 
-## Sending messages to a specified chat 
+## Sending messages to a specified chat
 If you have the chatId, you can send any message without the need of having received something before.
 ![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending a message")
 
@@ -155,7 +157,8 @@ If you want to respond to a received message with a picture you could write:
 msg.payload.content = 'foo.jpg';
 msg.payload.type = 'photo';
 ```
-Note that the chatId is already the correct one when you reuse the received msg object from a receiver node.
+
+**Note**: that the chatId is already the correct one when you reuse the received msg object from a receiver node.
 
 You can use one of the following types to send your file as content:
 - photo
@@ -172,7 +175,7 @@ msg.payload.caption = "You must have a look at this!";
 
 The following types require a special content format to be used. See the underlying node api for further details.
 - location
-- contact 
+- contact
 - venue
 - callback_query
 
@@ -181,30 +184,31 @@ The following types require a special content format to be used. See the underly
 
 
 ## Advanced options when sending messages.
-Text messages can be in markdown format to support fat and italic style. To enable markdown format 
+Text messages can be in markdown format to support fat and italic style. To enable markdown format
 set the parse_mode options property as follows:
 ```
 msg.payload.options = {parse_mode : "Markdown"};
 ```
 
-Telegram always adds a preview when you send a web link. To suppress this behavior you can disable the preview 
+Telegram always adds a preview when you send a web link. To suppress this behavior you can disable the preview
 by setting the options property as follows:
 ```
 msg.payload.options = {disable_web_page_preview : true};
 ```
 
-The callback query answer has a show_alert option to control the visiblity of the answer on the client.
+The callback query answer has a show_alert option to control the visibility of the answer on the client.
 It is directly mapped to the options property.
 ```
 msg.payload.options = true;
 ```
 
 
-## Configuring security 
-The configuation node contains two properties for applying security to your bot. You can choose between configuring
+## Configuring security
+The configuration node contains two properties for applying security to your bot. You can choose between configuring
 the single usernames or configure one or more chat-ids that are allowed to access the bot. The values must be separated using a comma like shown in the screenshot.
 ![Alt text](images/TelegramBotSecurity.png?raw=true "Applying security")
-Note that the chat-ids are positive in chats where you talk to the bot in an 1:1 manner. A negative chat-id indicates a group-chat.
+
+**Note**: that the chat-ids are positive in chats where you talk to the bot in an 1:1 manner. A negative chat-id indicates a group-chat.
 Everybody in this group is allowed to use the bot if you enter the chat-id of the group into the lower field of the configuration node.
 
 
@@ -217,11 +221,11 @@ The message needs to be formatted before the log to file node can be triggered. 
 ![Alt text](images/TelegramBotUnauthorizedAccess2.png?raw=true "Create logging string with full information.")
 
 
-## Implementing a simple bot 
+## Implementing a simple bot
 Putting all pieces together you will have a simple bot implementing some useful functions.
 ![Alt text](images/TelegramBotExample.png?raw=true "Bot example")
 
-All example flows can be found in the examples folder of this package. 
+All example flows can be found in the examples folder of this package.
 
 
 # License
@@ -235,4 +239,4 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

@@ -34,6 +34,7 @@ The input node receives messages from the bot and sends a message object with th
 
 The simple echo flow looks like:
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")
+[source flow](examples/simplebot.json)
 
 
 ## Configuration Node
@@ -90,6 +91,7 @@ See example below.
 ## Implementing a simple echo
 This example is self-explaining. The received message is returned to the sender.
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")
+[source flow](examples/echo.json)
 
 
 ## Implementing a /help command
@@ -105,6 +107,7 @@ This flow returns the help message of your bot. It receives the command and crea
 Keyboards are very useful for getting additional data from the sender.
 When the command is received the first output is triggered and a dialog is opened:
 ![Alt text](images/TelegramBotConfirmationMessage.png?raw=true "Keyboard Flow")
+[source flow](examples/keyboard.json)
 
 ![Alt text](images/TelegramBotConfirmationMessage2.png?raw=true "Keyboard Function 1")
 
@@ -117,6 +120,7 @@ The answer is send to the second output triggering the lower flow. Data is passe
 Next to the keyboard the bot could also ask a question and wait for the answer.
 When the user responds to a specified message the telegram reply node can be used:
 ![Alt text](images/TelegramBotOnReplyMessage.png?raw=true "OnReply Flow")
+[source flow](examples/onreplymessage.json)
 
 ![Alt text](images/TelegramBotOnReplyMessage2.png?raw=true "Create question")
 
@@ -133,6 +137,7 @@ The last function shows how to evaluate the answer using a function node with tw
 A inline keyboard contains buttons that can send a callback query back to the bot to trigger any kind of function.
 When the command is received the first output is triggered and a inline keyboard is shown:
 ![Alt text](images/TelegramBotInlineKeyboard1.png?raw=true "Inline Keyboard Flow")
+[source flow](examples/inlinekeyboard.json)
 
 ![Alt text](images/TelegramBotInlineKeyboard2.png?raw=true "Inline Keyboard Function 1")
 
@@ -150,6 +155,7 @@ Locations can be send to the chat. The bot can receive the longitude and latitud
 ## Sending messages to a specified chat
 If you have the chatId, you can send any message without the need of having received something before.
 ![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending a message")
+[source flow](examples/sendmessagetochat.json)
 
 
 ## Sending photos, videos, ...
@@ -163,9 +169,10 @@ msg.payload.type = 'photo';
 **Note**: that the chatId is already the correct one when you reuse the received msg object from a receiver node.
 
 You can use one of the following types to send your file as content:
-- photo
+- [photo](examples/sendphoto.json)
 - audio
 - video
+- video_note
 - sticker
 - voice
 - document
@@ -226,6 +233,7 @@ The message needs to be formatted before the log to file node can be triggered. 
 ## Implementing a simple bot
 Putting all pieces together you will have a simple bot implementing some useful functions.
 ![Alt text](images/TelegramBotExample.png?raw=true "Bot example")
+[source flow](examples/simplebot.json)
 
 All example flows can be found in the examples folder of this package.
 

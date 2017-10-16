@@ -275,10 +275,13 @@
 </script>
 
 <script type="text/x-red" data-help-name="telegram reply">
-    <p>A telegram node that sends the reply for a specified message.</p>
+    <p>A telegram node that is triggered when someone answered to a specified message.</p>
+    <p>This can be useful, when the bot for example sent a message and you want to take some action</p>
+    <p>when someone responded to this specified message.</p>
+    <p>Responding to messages is done by clicking on the message in your client and choose "answer" from the popup.</p>
     <p>The <code>msg.payload</code> should be an object that contains:</p>
     <ul><li><code>chatId</code> destination chatId.</li>
-    <li><code>sentMessageId</code> the id of the message the reply coresponds to.</li>
+    <li><code>sentMessageId</code> the id of the previously sent message in the chat.</li>
     <li><code>content</code> the message content.</li></ul>
 </script>
 <!-- ------------------------------------------------------------------------------------------ -->

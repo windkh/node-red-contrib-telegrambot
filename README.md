@@ -6,9 +6,11 @@ https://core.telegram.org/bots
 
 # Credits
 dvv (Vladimir Dronnikov) for providing the saveDataDir configuration option.
-snippet-java for adding venue messages.
+snippet-java for adding venue messages. And for providing the markdown problem fallback.
 
 greenstone7 for providing the callback query node.
+
+dceejay for cleaning up the project
 
 
 # Dependencies

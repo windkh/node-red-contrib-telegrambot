@@ -467,6 +467,21 @@ module.exports = function (RED) {
                                             msg.payload.sentMessageId = sent.message_id;
                                             node.send(msg);
                                         }).catch(function (err) {
+                                            // markdown error? try plain mode
+                                            if (
+                                                String(err).includes("can't parse entities in message text:") &&
+                                                msg.payload.options && msg.payload.options.parse_mode === 'Markdown'
+                                            ) {
+                                                delete msg.payload.options.parse_mode;
+                                                node.telegramBot.sendMessage(chatId, messageToSend, msg.payload.options).then(function (sent) {
+                                                    msg.payload.sentMessageId = sent.message_id;
+                                                    node.send(msg);
+                                                }).catch(function (err) {
+                                                    msg.error = err;
+                                                    node.send(msg);
+                                                });
+                                                return;
+                                            }
                                             msg.error = err;
                                             node.send(msg);
                                         });

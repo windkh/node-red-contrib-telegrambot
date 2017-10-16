@@ -175,6 +175,8 @@ module.exports = function (RED) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'sticker', content: botMsg.sticker.file_id, blob: true };
         } else if (botMsg.video) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video', content: botMsg.video.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
+        } else if (botMsg.video_note) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video_note', content: botMsg.video_note.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.voice) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'voice', content: botMsg.voice.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.location) {
@@ -184,7 +186,7 @@ module.exports = function (RED) {
         } else if (botMsg.contact) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'contact', content: botMsg.contact };
         } else {
-                            // unknown type --> no output
+            // unknown type --> no output
         }
 
         return messageDetails;
@@ -543,6 +545,15 @@ module.exports = function (RED) {
                                         node.send(msg);
                                     });
                                     break;
+                                case 'video_note':
+                                    node.telegramBot.sendVideoNote(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    }).catch(function (err) {
+                                        msg.error = err;
+                                        node.send(msg);
+                                    });
+                                    break;
                                 case 'voice':
                                     node.telegramBot.sendVoice(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
                                         msg.payload.sentMessageId = sent.message_id;
@@ -572,9 +583,9 @@ module.exports = function (RED) {
                                     break;
                                 default:
                                     // unknown type nothing to send.
-                                    // TODO: new_chat_participant, left_chat_participant, new_chat_title, new_chat_photo, delete_chat_photo, group_chat_created
+                                    // TODO: 'channel_chat_created','contact','delete_chat_photo','game','group_chat_created','invoice','left_chat_member','migrate_from_chat_id','migrate_to_chat_id',
+                                    // 'new_chat_members','new_chat_photo','new_chat_title', 'pinned_message','successful_payment','supergroup_chat_created',
                             }
-
                         } else {
                             node.warn("msg.payload.type is empty");
                         }

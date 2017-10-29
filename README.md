@@ -201,6 +201,11 @@ msg.payload.type = 'contact';
 msg.payload.content : {  phone_number: "+49 110", first_name: "Polizei" };
 ```
 
+![Alt text](images/TelegramBotSendContact.png?raw=true "Send Contact Flow")
+[source flow](examples/sendcontacttochat.json)
+
+![Alt text](images/TelegramBotSendContact2.png?raw=true "Send Contact Function")
+
 
 ## Advanced options when sending messages.
 Text messages can be in markdown format to support fat and italic style. To enable markdown format

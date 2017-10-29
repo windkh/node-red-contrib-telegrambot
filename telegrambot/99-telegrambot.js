@@ -548,6 +548,12 @@ module.exports = function (RED) {
                                     });
                                     break;
                                 case 'contact':
+                                    if (msg.payload.content.last_name) {
+                                        if (!msg.payload.options) {
+                                            msg.payload.options = {};
+                                        }
+                                        msg.payload.options.last_name = msg.payload.content.last_name;
+                                    }
                                     node.telegramBot.sendContact(chatId, msg.payload.content.phone_number, msg.payload.content.first_name, msg.payload.options).then(function (sent) {
                                         msg.payload.sentMessageId = sent.message_id;
                                         node.send(msg);

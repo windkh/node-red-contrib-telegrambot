@@ -192,6 +192,16 @@ The following types require a special content format to be used. See the underly
 ![Alt text](images/TelegramBotSendPhoto2.png?raw=true "Setting the correct content type.")
 
 
+## Sending contact
+Sending a contact is limited to the fields supported by the underlying API to "phone_number" and "first_name".
+But you can also receive "last_name" if the client sends it.
+
+```
+msg.payload.type = 'contact';
+msg.payload.content : {  phone_number: "+49 110", first_name: "Polizei" };
+```
+
+
 ## Advanced options when sending messages.
 Text messages can be in markdown format to support fat and italic style. To enable markdown format
 set the parse_mode options property as follows:

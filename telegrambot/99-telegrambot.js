@@ -547,9 +547,15 @@ module.exports = function (RED) {
                                         node.send(msg);
                                     });
                                     break;
+                                case 'contact':
+                                    node.telegramBot.sendContact(chatId, msg.payload.content.phone_number, msg.payload.content.first_name, msg.payload.options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                    break;
                                 default:
                                     // unknown type nothing to send.
-                                    // TODO: 'channel_chat_created','contact','delete_chat_photo','game','group_chat_created','invoice','left_chat_member','migrate_from_chat_id','migrate_to_chat_id',
+                                    // TODO: 'channel_chat_created','delete_chat_photo','game','group_chat_created','invoice','left_chat_member','migrate_from_chat_id','migrate_to_chat_id',
                                     // 'new_chat_members','new_chat_photo','new_chat_title', 'pinned_message','successful_payment','supergroup_chat_created',
                             }
                         } else {

@@ -133,8 +133,8 @@ the node will not be triggered.
 The last function shows how to evaluate the answer using a function node with two outputs.
 
 
-## Implementing a inline keyboard
-A inline keyboard contains buttons that can send a callback query back to the bot to trigger any kind of function.
+## Implementing an inline keyboard
+An inline keyboard contains buttons that can send a callback query back to the bot to trigger any kind of function.
 When the command is received the first output is triggered and a inline keyboard is shown:
 ![Alt text](images/TelegramBotInlineKeyboard1.png?raw=true "Inline Keyboard Flow")
 [source flow](examples/inlinekeyboard.json)
@@ -145,6 +145,25 @@ The callback query is received by the receiver node. It must be answered like sh
 Here you can add your code to trigger the desired bot command. The answer contains the callback query data in msg.payload.content.
 
 ![Alt text](images/TelegramBotInlineKeyboard3.png?raw=true "Inline Keyboard Function 2")
+
+
+## Edit an inline keyboard
+An inline keyboard can be modified using the 'editMessageReplyMarkup' instruction. To be able to modify an existing message you need
+to know the messageId of the message of the keyboard.
+A sample flow is provided in the examples folder and could look like this:
+![Alt text](images/TelegramBotEditInlineKeyboard1.png?raw=true "Edit Inline Keyboard Flow")
+[source flow](examples/editinlinekeyboard.json)
+
+![Alt text](images/TelegramBotEditInlineKeyboard2.png?raw=true "Showing the initial keyboard")
+
+The message id needs to be saved in the flow or gobal context. This is just a demo assuming that there is only one single chat.
+![Alt text](images/TelegramBotEditInlineKeyboard3.png?raw=true "Storing the messageId of the keyboard")
+
+Replace the initial keyboard with a modified one using the magic 'editMessageReplyMarkup' command as type.
+![Alt text](images/TelegramBotEditInlineKeyboard4.png?raw=true "Replacing the initial keyboard")
+
+The following switch node just handles the response and hides the keyboard using another magic command: 'deleteMessage'
+![Alt text](images/TelegramBotEditInlineKeyboard5.png?raw=true "Handling the keyboard response")
 
 
 ## Receiving a location

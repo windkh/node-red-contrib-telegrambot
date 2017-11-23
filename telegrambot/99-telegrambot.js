@@ -498,6 +498,21 @@ module.exports = function (RED) {
                                         node.send(msg);
                                     });
                                     break;
+
+                                case 'editMessageReplyMarkup':
+                                    node.telegramBot.editMessageReplyMarkup(msg.payload.content, msg.payload.options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                    break;
+
+                                case 'deleteMessage':
+                                    node.telegramBot.deleteMessage(chatId, msg.payload.options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                    break;
+
                                 case 'photo':
                                     node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
                                         msg.payload.sentMessageId = sent.message_id;

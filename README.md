@@ -165,6 +165,9 @@ Replace the initial keyboard with a modified one using the magic 'editMessageRep
 The following switch node just handles the response and hides the keyboard using another magic command: 'deleteMessage'
 ![Alt text](images/TelegramBotEditInlineKeyboard5.png?raw=true "Handling the keyboard response")
 
+As an alternative to 'editMessageReplyMarkup' you can also use 'editMessageText' to replace the keyboard and also the text as follows:
+![Alt text](images/TelegramBotEditInlineKeyboard6.png?raw=true "Replacing the initial keyboard and the text")
+
 
 ## Receiving a location
 Locations can be send to the chat. The bot can receive the longitude and latitude:

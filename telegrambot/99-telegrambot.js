@@ -499,6 +499,20 @@ module.exports = function (RED) {
                                     });
                                     break;
 
+                                case 'editMessageCaption':
+                                    node.telegramBot.editMessageCaption(msg.payload.content, msg.payload.options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                    break;
+
+                                case 'editMessageText':
+                                    node.telegramBot.editMessageText(msg.payload.content, msg.payload.options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                    break;
+
                                 case 'editMessageReplyMarkup':
                                     node.telegramBot.editMessageReplyMarkup(msg.payload.content, msg.payload.options).then(function (sent) {
                                         msg.payload.sentMessageId = sent.message_id;

@@ -30,30 +30,37 @@ module.exports = function (RED) {
                 return parseInt(item, 10);
             });
         }
-
-        if (this.credentials) {
-            this.token = this.credentials.token;
-            if (this.token) {
-                this.token = this.token.trim();
-                if (!this.telegramBot) {
-                    this.telegramBot = new telegramBot(this.token, { polling: true });
-                    this.telegramBot.setMaxListeners(0);
-                    self.status = "connected";
-
-                    this.telegramBot.on('polling_error', function(error) {
-                        if (error.message === "ETELEGRAM: 401 Unauthorized") {
-                            self.warn(error.message);
-                            self.abortBot(function () {
-                                self.warn("Bot stopped. Please check if the bot token is valid: " + self.credentials.token);
+        
+        // Activates the bot or returns the already activated bot. 
+        this.getTelegramBot = function () {
+            if (!this.telegramBot) { 
+                if (this.credentials) {
+                    this.token = this.credentials.token;
+                    if (this.token) {
+                        this.token = this.token.trim();
+                        if (!this.telegramBot) {
+                            this.telegramBot = new telegramBot(this.token, { polling: true });
+                            this.telegramBot.setMaxListeners(0);
+                            self.status = "connected";
+                            
+                            this.telegramBot.on('polling_error', function (error) {
+                                if (error.message === "ETELEGRAM: 401 Unauthorized") {
+                                    self.warn(error.message);
+                                    self.abortBot(function () {
+                                        self.warn("Bot stopped. Please check if the bot token is valid: " + self.credentials.token);
+                                    });
+                                }
+                            });
+                            
+                            this.telegramBot.on('webhook_error', function (error) {
+                                self.warn(error.message);
                             });
                         }
-                    });
-
-                    this.telegramBot.on('webhook_error', function(error) {
-                        self.warn(error.message);
-                    });
+                    }
                 }
             }
+
+            return this.telegramBot;
         }
 
         this.on('close', function (done) {
@@ -217,14 +224,14 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         var node = this;
         this.bot = config.bot;
-
+        
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             this.config.register(node);
 
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-            node.telegramBot = this.config.telegramBot;
+            node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
 
@@ -287,7 +294,7 @@ module.exports = function (RED) {
 
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-            node.telegramBot = this.config.telegramBot;
+            node.telegramBot = this.config.getTelegramBot();
             node.botname = this.config.botname;
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
@@ -356,7 +363,7 @@ module.exports = function (RED) {
 
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-            node.telegramBot = this.config.telegramBot;
+            node.telegramBot = this.config.getTelegramBot();
             node.botname = this.config.botname;
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
@@ -424,7 +431,7 @@ module.exports = function (RED) {
 
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-            node.telegramBot = this.config.telegramBot;
+            node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
             } else {
@@ -633,7 +640,7 @@ module.exports = function (RED) {
 
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-            node.telegramBot = this.config.telegramBot;
+            node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
             } else {

@@ -249,6 +249,12 @@ module.exports = function (RED) {
                                     msg.payload.path = path;
                                     node.send([msg, null]);
                                 });
+                            } else if (config.getFilePath && messageDetails.blob) {
+                                node.telegramBot.getFileLink(messageDetails.content).then(function(path) {
+                                    msg.payload.path = path;
+                                    node.send([msg, null]);
+                                });
+                            }
                             // vanilla message
                             } else {
                                 node.send([msg, null]);

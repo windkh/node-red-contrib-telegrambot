@@ -55,8 +55,7 @@
         defaults: {
             name: { value: "" },
             bot: { value:"", type: "telegram bot", required: true },
-            saveDataDir: { value: "" },
-            getFilePath: { value: false }
+            saveDataDir: { value: "" }
         },
         inputs: 0,
         outputs: 2,
@@ -79,10 +78,6 @@
     <div class="form-row">
         <label for="node-input-saveDataDir"><i class="fa fa-hdd-o"></i> Download Directory</label>
         <input type="text" id="node-input-saveDataDir" placeholder="Download directory">
-    </div>
-    <div class="form-row">
-        <label for="node-input-getFilePath"><i class="fa fa-link-o"></i> Get File Path</label>
-        <input type="checkbox" id="node-input-getFilePath">
     </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>

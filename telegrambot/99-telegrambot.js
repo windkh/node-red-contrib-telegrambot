@@ -243,16 +243,20 @@ module.exports = function (RED) {
                         var msg = { payload: messageDetails, originalMessage: botMsg };
 
                         if (node.config.isAuthorized(chatid, username)) {
-                            // downloadable "blob" message? download and provide with path
-                            if (config.saveDataDir && messageDetails.blob) {
-                                node.telegramBot.downloadFile(messageDetails.content, config.saveDataDir).then(function(path) {
-                                    msg.payload.path = path;
-                                    node.send([msg, null]);
-                                });
-                            } else if (config.getFilePath && messageDetails.blob) {
-                                node.telegramBot.getFileLink(messageDetails.content).then(function(path) {
-                                    msg.payload.path = path;
-                                    node.send([msg, null]);
+                            // downloadable "blob" message?
+                            if (messageDetails.blob) {
+                                node.telegramBot.getFileLink(messageDetails.content).then(function(weblink) {
+                                    msg.payload.weblink = weblink;
+                                    
+                                    // download and provide with path
+                                    if (config.saveDataDir) {
+                                        node.telegramBot.downloadFile(messageDetails.content, config.saveDataDir).then(function(path) {
+                                            msg.payload.path = path;
+                                            node.send([msg, null]);
+                                        });
+                                    } else {
+                                        node.send([msg, null]);
+                                    }
                                 });
                             // vanilla message
                             } else {

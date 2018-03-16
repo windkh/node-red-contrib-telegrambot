@@ -12,6 +12,8 @@ greenstone7 for providing the callback query node.
 
 dceejay for cleaning up the project
 
+psyntium for providing the weblink for additional content linke videos, pictures, audio files.
+ 
 
 # Dependencies
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
@@ -56,6 +58,10 @@ msg.payload contains the most important data like chatId, type and content. The 
 on the message type. E.g. if you receive a message then the content is a string. If you receive a location,
 then the content is an object containing latitude and longitude.
 The second output is triggered when security is applied and the user is not authorized to access the bot. See below.
+
+When the receiver node receives data like videos, documents and so on, the file is downloaded automatically to the local harddisc when
+saveDataDir is set in the configuration node. The directory is also part of the message payload: msg.payload.path
+In addition to that the message contains the direct download link in the payload: msg.payload.weblink
 
 
 ## Sender Node

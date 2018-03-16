@@ -254,7 +254,6 @@ module.exports = function (RED) {
                                     msg.payload.path = path;
                                     node.send([msg, null]);
                                 });
-                            }
                             // vanilla message
                             } else {
                                 node.send([msg, null]);

@@ -2,6 +2,9 @@
 * Created by Karl-Heinz Wind
 **/
 
+// Temporary fix for 0.30.0 api
+process.env["NTBA_FIX_319"] = 1;
+
 module.exports = function (RED) {
     "use strict";
     var telegramBot = require('node-telegram-bot-api');
@@ -47,7 +50,6 @@ module.exports = function (RED) {
                                     polling: true, 
                                     baseApiUrl : this.baseApiUrl
                                 });
-                            this.telegramBot.setMaxListeners(0);
                             self.status = "connected";
                             
                             this.telegramBot.on('polling_error', function (error) {

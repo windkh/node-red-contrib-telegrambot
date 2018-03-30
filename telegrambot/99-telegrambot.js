@@ -16,7 +16,7 @@ module.exports = function (RED) {
         var self = this;
         this.botname = n.botname;
         this.status = "disconnected";
-
+        
         this.nodes = [];
 
         this.usernames = [];
@@ -31,6 +31,8 @@ module.exports = function (RED) {
             });
         }
         
+        this.baseApiUrl = n.baseapiurl;
+
         // Activates the bot or returns the already activated bot. 
         this.getTelegramBot = function () {
             if (!this.telegramBot) { 
@@ -39,17 +41,29 @@ module.exports = function (RED) {
                     if (this.token) {
                         this.token = this.token.trim();
                         if (!this.telegramBot) {
-                            this.telegramBot = new telegramBot(this.token, { polling: true });
+                            this.telegramBot = new telegramBot(
+                                this.token, 
+                                {
+                                    polling: true, 
+                                    baseApiUrl : this.baseApiUrl
+                                });
                             this.telegramBot.setMaxListeners(0);
                             self.status = "connected";
                             
                             this.telegramBot.on('polling_error', function (error) {
+                                self.warn(error.message);
+                                
+                                var hint;
                                 if (error.message === "ETELEGRAM: 401 Unauthorized") {
-                                    self.warn(error.message);
-                                    self.abortBot(function () {
-                                        self.warn("Bot stopped. Please check if the bot token is valid: " + self.credentials.token);
-                                    });
+                                    hint = "Please check if the bot token is valid: " + self.credentials.token;
                                 }
+                                else { 
+                                    hint = "Polling error occured.";    
+                                }
+
+                                self.abortBot(error.message, function () {
+                                    self.warn("Bot stopped: " + hint);
+                                });
                             });
                             
                             this.telegramBot.on('webhook_error', function (error) {
@@ -64,22 +78,22 @@ module.exports = function (RED) {
         }
 
         this.on('close', function (done) {
-            self.abortBot(done);
+            self.abortBot("closing", done);
         });
 
-        this.abortBot = function(done) {
+        this.abortBot = function (hint, done) {
             if (self.telegramBot !== null && self.telegramBot._polling) {
                 self.telegramBot.stopPolling()
                     .then(function () {
                     self.telegramBot = null;
                     self.status = "disconnected";
-                    self.setNodesStatus({ fill: "red", shape: "ring", text: "bot stopped." })
+                    self.setNodesStatus({ fill: "red", shape: "ring", text: "bot stopped. " + hint })
                     done();
                 });
             }
             else {
                 self.status = "disconnected";
-                self.setNodesStatus({ fill: "red", shape: "ring", text: "bot stopped." })
+                self.setNodesStatus({ fill: "red", shape: "ring", text: "bot stopped. " + hint })
                 done();
             }
         }

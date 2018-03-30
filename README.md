@@ -12,7 +12,7 @@ greenstone7 for providing the callback query node.
 
 dceejay for cleaning up the project
 
-psyntium for providing the weblink for additional content linke videos, pictures, audio files.
+psyntium for providing the weblink for additional content link videos, pictures, audio files.
  
 
 # Dependencies

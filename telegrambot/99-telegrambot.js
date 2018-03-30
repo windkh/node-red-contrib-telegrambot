@@ -429,10 +429,7 @@ module.exports = function (RED) {
                             node.send(msg);
                             
                             if (node.autoAnswerCallback) {
-                                var options = {
-                                    callback_query_id: callbackQueryId
-                                };
-                                node.telegramBot.answerCallbackQuery(options).then(function (sent) {
+                                node.telegramBot.answerCallbackQuery(callbackQueryId).then(function (sent) {
                                     // Nothing to do here 
                                     ;
                                 });
@@ -564,12 +561,13 @@ module.exports = function (RED) {
                             case 'callback_query':
                                 if (this.hasContent(msg)) {
                                     // The new signature expects one object instead of three arguments.
+                                    var callbackQueryId = msg.payload.callbackQueryId;
                                     var options = {
-                                        callback_query_id: msg.payload.callbackQueryId,
+                                        callback_query_id: callbackQueryId,
                                         text: msg.payload.content,
                                         show_alert: msg.payload.options
                                     };
-                                    node.telegramBot.answerCallbackQuery(options).then(function (sent) {
+                                    node.telegramBot.answerCallbackQuery(callbackQueryId, options).then(function (sent) {
                                         msg.payload.sentMessageId = sent.message_id;
                                         node.send(msg);
                                     });

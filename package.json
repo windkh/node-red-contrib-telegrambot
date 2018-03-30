@@ -1,6 +1,6 @@
 {
     "name": "node-red-contrib-telegrambot",
-    "version": "3.0.1",
+    "version": "3.0.2",
     "description": "Telegram bot nodes.",
     "dependencies": {
         "node-telegram-bot-api" : "^0.30.0"

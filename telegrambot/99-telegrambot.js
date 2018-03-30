@@ -396,6 +396,7 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         var node = this;
         this.bot = config.bot;
+        this.autoAnswerCallback = config.autoanswercallback;
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
@@ -417,12 +418,23 @@ module.exports = function (RED) {
                         var messageDetails;
 
                         if (botMsg.data) {
-
-                            messageDetails = { chatId: botMsg.message.chat.id, messageId: botMsg.message_id, type: 'callback_query', content: botMsg.data, callbackQueryId : botMsg.id };
+                            
+                            var callbackQueryId = botMsg.id; 
+                            messageDetails = { chatId: botMsg.message.chat.id, messageId: botMsg.message_id, type: 'callback_query', content: botMsg.data, callbackQueryId : callbackQueryId };
 
                             msg = { payload: messageDetails, originalMessage: botMsg };
 
                             node.send(msg);
+                            
+                            if (node.autoAnswerCallback) {
+                                var options = {
+                                    callback_query_id: callbackQueryId
+                                };
+                                node.telegramBot.answerCallbackQuery(options).then(function (sent) {
+                                    // Nothing to do here 
+                                    ;
+                                });
+                            }
                         } else {
                             // property data not set --> no output
                         }

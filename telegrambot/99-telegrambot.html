@@ -45,10 +45,12 @@
 
 <script type="text/x-red" data-help-name="telegram bot">
     <p>A configuration node that holds the token of the telegram bot.</p>
-    <p>It communicates with the telegram server. Do not create several configurations nodes with the same token!
-    The usernames and chat ids properties can be used to limit authorization to the bot. Enter values in comma separated format e.g. a,b,c
-    Usernames and chat ids are optional. Leave field blank if you do not want to use this feature.
-    The API Base URL can be changed for testing or when using a proxy.</p>
+    <p>
+        It communicates with the telegram server. Do not create several configurations nodes with the same token!
+        The usernames and chat ids properties can be used to limit authorization to the bot. Enter values in comma separated format e.g. a,b,c
+        Usernames and chat ids are optional. Leave field blank if you do not want to use this feature.
+    </p>
+    <p>The API Base URL can be changed for testing or when using a proxy.</p>
 </script>
 
 
@@ -161,8 +163,8 @@
         color: '#3BABDD',
         defaults: {
             name: { value: "" },
-            command: { value: ""},
-            bot: { value: "", type: "telegram bot", required: true }
+            bot: { value: "", type: "telegram bot", required: true },
+            autoanswercallback: { value: "", required: false }
         },
         inputs: 0,
         outputs: 1,
@@ -186,6 +188,10 @@
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
+    <div class="form-row">
+        <label for="node-input-autoanswercallback"><i class="fa fa-retweet"></i> Auto-Answer</label>
+        <input type="checkbox" id="node-input-autoanswercallback" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
 </script>
 
 <script type="text/x-red" data-help-name="telegram callback_query">
@@ -194,6 +200,7 @@
         <code>msg.payload.content</code> contains the
         <a href="https://core.telegram.org/bots/api#inlinekeyboardbutton" target="_new">callback_query data</a>.
     </p>
+    <p>Set Auto-Answer to true if you want to respond to the callback automatically when query is received.</p>
 </script>
 
 

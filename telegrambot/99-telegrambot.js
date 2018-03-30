@@ -5,25 +5,25 @@
 module.exports = function (RED) {
     "use strict";
     var telegramBot = require('node-telegram-bot-api');
-
+    
     // --------------------------------------------------------------------------------------------
     // The configuration node
     // holds the token
     // and establishes the connection to the telegram bot
     function TelegramBotNode(n) {
         RED.nodes.createNode(this, n);
-
+        
         var self = this;
         this.botname = n.botname;
         this.status = "disconnected";
         
         this.nodes = [];
-
+        
         this.usernames = [];
         if (n.usernames) {
             this.usernames = n.usernames.split(',');
         }
-
+        
         this.chatids = [];
         if (n.chatids) {
             this.chatids = n.chatids.split(',').map(function (item) {
@@ -32,10 +32,10 @@ module.exports = function (RED) {
         }
         
         this.baseApiUrl = n.baseapiurl;
-
+        
         // Activates the bot or returns the already activated bot. 
         this.getTelegramBot = function () {
-            if (!this.telegramBot) { 
+            if (!this.telegramBot) {
                 if (this.credentials) {
                     this.token = this.credentials.token;
                     if (this.token) {
@@ -57,10 +57,10 @@ module.exports = function (RED) {
                                 if (error.message === "ETELEGRAM: 401 Unauthorized") {
                                     hint = "Please check if the bot token is valid: " + self.credentials.token;
                                 }
-                                else { 
-                                    hint = "Polling error occured.";    
+                                else {
+                                    hint = "Polling error occured.";
                                 }
-
+                                
                                 self.abortBot(error.message, function () {
                                     self.warn("Bot stopped: " + hint);
                                 });
@@ -73,14 +73,14 @@ module.exports = function (RED) {
                     }
                 }
             }
-
+            
             return this.telegramBot;
         }
-
+        
         this.on('close', function (done) {
             self.abortBot("closing", done);
         });
-
+        
         this.abortBot = function (hint, done) {
             if (self.telegramBot !== null && self.telegramBot._polling) {
                 self.telegramBot.stopPolling()
@@ -97,7 +97,7 @@ module.exports = function (RED) {
                 done();
             }
         }
-
+        
         this.isAuthorizedUser = function (user) {
             var isAuthorized = false;
             if (self.usernames.length > 0) {
@@ -105,10 +105,10 @@ module.exports = function (RED) {
                     isAuthorized = true;
                 }
             }
-
+            
             return isAuthorized;
         }
-
+        
         this.isAuthorizedChat = function (chatid) {
             var isAuthorized = false;
             var length = self.chatids.length;
@@ -121,16 +121,16 @@ module.exports = function (RED) {
                     }
                 }
             }
-
+            
             return isAuthorized;
         }
-
+        
         this.isAuthorized = function (chatid, user) {
             var isAuthorizedUser = self.isAuthorizedUser(user);
             var isAuthorizedChatId = self.isAuthorizedChat(chatid);
-
+            
             var isAuthorized = false;
-
+            
             if (isAuthorizedUser || isAuthorizedChatId) {
                 isAuthorized = true;
             } else {
@@ -138,19 +138,19 @@ module.exports = function (RED) {
                     isAuthorized = true;
                 }
             }
-
+            
             return isAuthorized;
         }
-
+        
         this.register = function (node) {
-            if (self.nodes.indexOf(node) === -1){
+            if (self.nodes.indexOf(node) === -1) {
                 self.nodes.push(node);
             }
             else {
                 self.warn("Node " + node.id + " registered twice at the configuration node: ignoring.");
             }
         }
-
+        
         this.setNodesStatus = function (status) {
             self.nodes.forEach(function (node) {
                 node.status(status);
@@ -163,31 +163,48 @@ module.exports = function (RED) {
             token: { type: "text" }
         }
     });
-
+    
     // adds the caption of the message into the options.
     function addCaptionToMessageOptions(msg) {
         var options = msg.payload.options;
         if (options === undefined) {
             options = {};
         }
-
+        
         if (msg.payload.caption !== undefined) {
             options.caption = msg.payload.caption;
         }
-
+        
         msg.payload.options = options;
-
+        
         return msg;
+    }
+    
+    function getPhotoIndexWithHighestResolution(botMsg) {
+        var photoIndex = 0;
+        var highestResolution = 0;
+        
+        botMsg.photo.forEach(function (photo, index, array) {
+            var resolution = photo.width * photo.height;
+            if (resolution > highestResolution) {
+                highestResolution = resolution;
+                photoIndex = index;
+            }
+        });
+        
+        return photoIndex;
     }
 
     // creates the message details object from the original message
     function getMessageDetails(botMsg) {
-
+        
         var messageDetails;
         if (botMsg.text) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
         } else if (botMsg.photo) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'photo', content: botMsg.photo[0].file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
+            // photos are sent using several resolutions. Tehrefore photo is an array. We choose the one with the highest resolution in the array.
+            var index = getPhotoIndexWithHighestResolution(botMsg);
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'photo', content: botMsg.photo[index].file_id, caption: botMsg.caption, date: botMsg.date, blob: true, photos: botMsg.photo};
         } else if (botMsg.audio) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'audio', content: botMsg.audio.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.document) {
@@ -209,10 +226,10 @@ module.exports = function (RED) {
         } else {
             // unknown type --> no output
         }
-
+        
         return messageDetails;
     }
-
+    
     // --------------------------------------------------------------------------------------------
     // The input node receives messages from the chat.
     // the message details are stored in the playload
@@ -242,29 +259,29 @@ module.exports = function (RED) {
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             this.config.register(node);
-
+            
             this.status({ fill: "red", shape: "ring", text: "disconnected" });
-
+            
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
                 this.status({ fill: "green", shape: "ring", text: "connected" });
-
+                
                 node.telegramBot.on('message', function (botMsg) {
                     var username = botMsg.from.username;
                     var chatid = botMsg.chat.id;
                     var messageDetails = getMessageDetails(botMsg);
                     if (messageDetails) {
                         var msg = { payload: messageDetails, originalMessage: botMsg };
-
+                        
                         if (node.config.isAuthorized(chatid, username)) {
                             // downloadable "blob" message?
                             if (messageDetails.blob) {
-                                node.telegramBot.getFileLink(messageDetails.content).then(function(weblink) {
+                                node.telegramBot.getFileLink(messageDetails.content).then(function (weblink) {
                                     msg.payload.weblink = weblink;
                                     
                                     // download and provide with path
                                     if (config.saveDataDir) {
-                                        node.telegramBot.downloadFile(messageDetails.content, config.saveDataDir).then(function(path) {
+                                        node.telegramBot.downloadFile(messageDetails.content, config.saveDataDir).then(function (path) {
                                             msg.payload.path = path;
                                             node.send([msg, null]);
                                         });

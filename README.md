@@ -20,8 +20,7 @@ The nodes are a simple wrapper around the  [node-telegram-bot-api](https://githu
 
 
 # Warning
-The nodes are tested with v4.2.1  (ECMAScript 6).
-The project is still under construction.
+The nodes are tested with nodejs 8.11.1 and node-red 0.18.4.
 
 
 # Usage

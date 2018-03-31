@@ -309,6 +309,11 @@ module.exports = function (RED) {
             node.warn("config node failed to initialize.");
             this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
         }
+
+        this.on("close",function() {
+            node.telegramBot.off('message');
+            node.status({});
+        });
     }
     RED.nodes.registerType("telegram receiver", TelegramInNode);
 
@@ -379,6 +384,11 @@ module.exports = function (RED) {
             node.warn("config node failed to initialize.");
             this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
         }
+
+        this.on("close",function() {
+            node.telegramBot.off('message');
+            node.status({});
+        });
     }
     RED.nodes.registerType("telegram command", TelegramCommandNode);
 
@@ -450,6 +460,11 @@ module.exports = function (RED) {
             node.warn("config node failed to initialize.");
             this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
         }
+
+        this.on("close",function() {
+            node.telegramBot.off('callback_query');
+            node.status({});
+        });
     }
     RED.nodes.registerType("telegram callback_query", TelegramCallbackQueryNode);
 

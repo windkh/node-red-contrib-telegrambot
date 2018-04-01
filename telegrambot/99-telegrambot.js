@@ -33,9 +33,13 @@ module.exports = function (RED) {
                 return parseInt(item, 10);
             });
         }
-        
+       
         this.baseApiUrl = n.baseapiurl;
-        
+        this.pollInterval = parseInt(n.pollinterval);
+        if(isNaN(this.pollInterval)){
+            this.pollInterval = 300;
+        }
+ 
         // Activates the bot or returns the already activated bot. 
         this.getTelegramBot = function () {
             if (!this.telegramBot) {
@@ -44,32 +48,67 @@ module.exports = function (RED) {
                     if (this.token) {
                         this.token = this.token.trim();
                         if (!this.telegramBot) {
-                            this.telegramBot = new telegramBot(
-                                this.token, 
-                                {
-                                    polling: true, 
-                                    baseApiUrl : this.baseApiUrl
-                                });
+                            var polling = 
+                            {
+                                autoStart: true,
+                                interval: this.pollInterval
+                            }
+                            var options =
+                            {
+                                polling: polling, 
+                                baseApiUrl : this.baseApiUrl
+                            };
+                            this.telegramBot = new telegramBot( this.token, options);
                             self.status = "connected";
                             
+                            this.telegramBot.on('error', function (error) {
+                                self.warn(error.message);
+
+                                self.abortBot(error.message, function () {
+                                    self.warn("Bot stopped: Fatal Error.");
+                                });
+                            });
+
                             this.telegramBot.on('polling_error', function (error) {
                                 self.warn(error.message);
                                 
+                                var stopPolling = false;
                                 var hint;
                                 if (error.message === "ETELEGRAM: 401 Unauthorized") {
                                     hint = "Please check if the bot token is valid: " + self.credentials.token;
+                                    stopPolling = true;
+                                }
+                                else if (error.message.startsWith("EFATAL: Error: connect ETIMEDOUT")) {
+                                    hint = "Timeout connecting to server. Trying again.";
+                                }
+                                else if (error.message.startsWith("EFATAL: Error: read ECONNRESET")) {
+                                    hint = "Network connection may be down. Trying again.";
+                                }
+                                else if (error.message.startsWith("EFATAL: Error: getaddrinfo ENOTFOUND")) {
+                                    hint = "Network connection may be down. Trying again.";
                                 }
                                 else {
-                                    hint = "Polling error occured.";
+                                    // unknown error occured... we simply ignore it.
+                                    hint = "Unknown error. Trying again.";
                                 }
                                 
-                                self.abortBot(error.message, function () {
-                                    self.warn("Bot stopped: " + hint);
-                                });
+                                if(stopPolling) {
+                                    self.abortBot(error.message, function () {
+                                        self.warn("Bot stopped: " + hint);
+                                    });
+                                }
+                                else {
+                                    // here we simply ignore the bug and continue polling.
+                                    self.warn(hint);
+                                }
                             });
                             
                             this.telegramBot.on('webhook_error', function (error) {
                                 self.warn(error.message);
+
+                                self.abortBot(error.message, function () {
+                                    self.warn("Bot stopped: Webhook error.");
+                                });
                             });
                         }
                     }
@@ -714,6 +753,7 @@ module.exports = function (RED) {
                                 // unknown type nothing to send.
                                 // TODO: 'channel_chat_created','delete_chat_photo','game','group_chat_created','invoice','left_chat_member','migrate_from_chat_id','migrate_to_chat_id',
                                 // 'new_chat_members','new_chat_photo','new_chat_title', 'pinned_message','successful_payment','supergroup_chat_created',
+                                // sendChatAction
                         }
                     } else {
                         node.warn("msg.payload.type is empty");

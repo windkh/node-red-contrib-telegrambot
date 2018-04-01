@@ -9,7 +9,8 @@
             botname: { value: "", required: true },
             usernames: { value: "", required: false },
             chatids: { value: "", required: false },
-            baseapiurl: { value: "", required: false }
+            baseapiurl: { value: "", required: false },
+            pollinterval: { value: 300, required: false }
         },
         credentials: {
             token: { type: "text" }
@@ -38,8 +39,12 @@
         <input type="text" id="node-config-input-chatids" placeholder="(Optional list of authorized chat-ids e.g.: -1234567,2345678,-3456789)">
     </div>
     <div class="form-row">
-        <label for="node-config-input-baseapiurl"><i class="fa fa-server"></i> API URL</label>
+        <label for="node-config-input-baseapiurl"><i class="fa fa-server"></i> Server URL</label>
         <input type="text" id="node-config-input-baseapiurl" placeholder="(Optional URL for proxying and testing e.g.: https://api.telegram.org)">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-pollinterval"><i class="fa fa-clock-o"></i> Polling Interval</label>
+        <input type="text" id="node-config-input-pollinterval" placeholder="(Optional poll interval in milliseconds. The default is 300.)">
     </div>
 </script>
 
@@ -49,8 +54,8 @@
         It communicates with the telegram server. Do not create several configurations nodes with the same token!
         The usernames and chat ids properties can be used to limit authorization to the bot. Enter values in comma separated format e.g. a,b,c
         Usernames and chat ids are optional. Leave field blank if you do not want to use this feature.
+        The API Base URL can be changed for testing or when using a proxy.
     </p>
-    <p>The API Base URL can be changed for testing or when using a proxy.</p>
 </script>
 
 

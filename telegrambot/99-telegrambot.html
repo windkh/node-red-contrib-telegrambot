@@ -169,6 +169,10 @@
         defaults: {
             name: { value: "" },
             bot: { value: "", type: "telegram bot", required: true },
+            event: {
+              value: "callback_query",
+              required: true
+            },
             autoanswercallback: { value: "", required: false }
         },
         inputs: 0,
@@ -176,7 +180,7 @@
         icon: "telegram.png",
         paletteLabel: "callback",
         label: function () {
-            return this.name || "Telegram callback_query";
+            return this.name || this.event;
         },
         labelStyle: function() {
             return this.name?"node_label_italic":"";
@@ -191,7 +195,21 @@
     </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-        <input type="text" id="node-input-name" placeholder="Name">
+        <input type="text" id="node-input-name" placeholder="Give your chicken a name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-event"><i class="fa fa-mail-reply-all"></i> Event</label>
+        <div style="display: inline-block; position: relative; width: 70%; height: 19.1333px;">
+        <div style="position: absolute; left: 0; right: 0;">
+          <select id="node-input-event" style="width:100%">
+              <option value="callback_query">Callback Query</option>
+              <option value="inline_query">Inline Query</option>
+              <option value="edited_message">Edited Message</option>
+              <option value="channel_post">Channel Post</option>
+              <option value="edited_channel_post">Edited Channel Post</option>
+          </select>
+        </div>
+        </div>
     </div>
     <div class="form-row">
         <label for="node-input-autoanswercallback"><i class="fa fa-retweet"></i> Auto-Answer</label>
@@ -200,12 +218,18 @@
 </script>
 
 <script type="text/x-red" data-help-name="telegram callback_query">
-    <p>A telegram node that triggers the output when a callback_query is received from the chat.</p>
-    <p>Message is sent to the output if it comes from an authorized user.
-        <code>msg.payload.content</code> contains the
-        <a href="https://core.telegram.org/bots/api#inlinekeyboardbutton" target="_new">callback_query data</a>.
-    </p>
-    <p>Set Auto-Answer to true if you want to respond to the callback automatically when query is received.</p>
+      <p>A telegram node that triggers the output when a callback is received from a chat.</p>
+      <p>The callback type can be select.</p> 
+      <p><code>msg.payload</code> typically contains the parsed data as follows:</p>
+      <ul>
+      <li><code>chatId</code>Unique identifier for this chat.</li>
+      <li><code>from</code>Sender</li>
+      <li><code>type</code>callback type</li>
+      <li><code>text</code>the actual UTF-8 text of the message</li>
+      </ul>
+      <p>Other properties may be present depending on the type of message.</p>
+      <code>msg.originalMessage</code> contains the raw data object from the underlying library,
+      and contains many useful properties.</p>
 </script>
 
 

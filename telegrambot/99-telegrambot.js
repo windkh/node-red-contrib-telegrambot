@@ -527,7 +527,7 @@ module.exports = function (RED) {
                               text: botMsg.text,
                               edit_date: botMsg.edit_date,
                               date: botMsg.date,
-                              type: "edited_message"
+                              type: "channel_post"
                             };
                         break;
 
@@ -567,7 +567,7 @@ module.exports = function (RED) {
     }
 
     this.on("close",function() {
-        node.telegramBot.off('callback_query');
+        node.telegramBot.off(this.event);
         node.status({});
     });
 }

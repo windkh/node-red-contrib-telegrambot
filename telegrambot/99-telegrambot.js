@@ -444,68 +444,134 @@ module.exports = function (RED) {
     //
     // callback_query : content string
     function TelegramCallbackQueryNode(config) {
-        RED.nodes.createNode(this, config);
-        var node = this;
-        this.bot = config.bot;
-        this.autoAnswerCallback = config.autoanswercallback;
+    RED.nodes.createNode(this, config);
+    var node = this;
+    this.bot = config.bot;
+    this.event = config.event;
+    this.autoAnswerCallback = config.autoanswercallback;
 
-        this.config = RED.nodes.getNode(this.bot);
-        if (this.config) {
-            this.config.register(node);
+    this.config = RED.nodes.getNode(this.bot);
+    if (this.config) {
+        this.config.register(node);
 
-            this.status({ fill: "red", shape: "ring", text: "disconnected" });
+        this.status({ fill: "red", shape: "ring", text: "disconnected" });
 
-            node.telegramBot = this.config.getTelegramBot();
-            node.botname = this.config.botname;
-            if (node.telegramBot) {
-                this.status({ fill: "green", shape: "ring", text: "connected" });
+        node.telegramBot = this.config.getTelegramBot();
+        node.botname = this.config.botname;
+        if (node.telegramBot) {
+            this.status({ fill: "green", shape: "ring", text: "connected" });
 
-                node.telegramBot.on('callback_query', function (botMsg) {
-                    var username = botMsg.from.username;
-                    var chatid = botMsg.message.chat.id;
-
-                    if (node.config.isAuthorized(chatid, username)) {
-                        var msg;
-                        var messageDetails;
-
-                        if (botMsg.data) {
-                            
-                            var callbackQueryId = botMsg.id; 
-                            messageDetails = { chatId: botMsg.message.chat.id, messageId: botMsg.message_id, type: 'callback_query', content: botMsg.data, callbackQueryId : callbackQueryId };
-
-                            msg = { payload: messageDetails, originalMessage: botMsg };
-
-                            node.send(msg);
-                            
-                            if (node.autoAnswerCallback) {
-                                node.telegramBot.answerCallbackQuery(callbackQueryId).then(function (sent) {
-                                    // Nothing to do here 
-                                    ;
-                                });
-                            }
-                        } else {
-                            // property data not set --> no output
+            node.telegramBot.on(this.event, (botMsg) => {
+              var username;
+              var chatid;
+              if (botMsg.from){       //private, group, supergroup
+                username = botMsg.from.username;
+                chatid = botMsg.from.id;
+              } else if (botMsg.chat){ //channel
+                username = botMsg.chat.username;
+                chatid = botMsg.chat.id;
+              } else {
+                node.error("username or chatid undefined");
+              }
+                if (node.config.isAuthorized(chatid, username)) {
+                    var msg;
+                    var messageDetails;
+                    switch (this.event) {
+                      case 'callback_query':
+                        var callbackQueryId = botMsg.id;
+                        messageDetails = {
+                          chatId: chatid,
+                          messageId: botMsg.message_id,
+                          type: 'callback_query',
+                          content: botMsg.data,
+                          callbackQueryId : callbackQueryId
+                        };
+                        if (node.autoAnswerCallback) {
+                            node.telegramBot.answerCallbackQuery(callbackQueryId).then(function (sent) {
+                                // Nothing to do here
+                                ;
+                            });
                         }
-                    } else {
-                        // ignoring unauthorized calls
-                        // node.warn("Unauthorized incoming call from " + username);
-                    }
-                });
-            } else {
-                node.warn("bot not initialized.");
-                this.status({ fill: "red", shape: "ring", text: "no bot token found in config" });
-            }
-        } else {
-            node.warn("config node failed to initialize.");
-            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
-        }
+                      break;
 
-        this.on("close",function() {
-            node.telegramBot.off('callback_query');
-            node.status({});
-        });
+                      case 'inline_query':
+                        var callbackQueryId = botMsg.id;
+                        messageDetails = {
+                          chatId: chatid,
+                          inlineQueryId: botMsg.inline_query,
+                          from: botMsg.from,
+                          location: botMsg.location,
+                          type: 'inline_query',
+                          content: botMsg.query,
+                          callbackQueryId : callbackQueryId
+                        };
+                      break;
+
+                      case 'edited_message':
+                        messageDetails = {
+                          chatId: chatid,
+                          from: botMsg.from,
+                          message_id: botMsg.message_id,
+                          text: botMsg.text,
+                          edit_date: botMsg.edit_date,
+                          date: botMsg.date,
+                          type: "edited_message"
+                        };
+                      break;
+
+                        case 'channel_post':
+                            messageDetails = {
+                              chatId: chatid,
+                              from: botMsg.from,
+                              message_id: botMsg.message_id,
+                              text: botMsg.text,
+                              edit_date: botMsg.edit_date,
+                              date: botMsg.date,
+                              type: "channel_post"
+                            };
+                        break;
+
+                      case 'edited_channel_post':
+                          messageDetails = {
+                            chatId: chatid,
+                            from: botMsg.chat,
+                            message_id: botMsg.message_id,
+                            text: botMsg.text,
+                            edit_date: botMsg.edit_date,
+                            date: botMsg.date,
+                            type: "edited_channel_post"
+                          };
+                      break;
+
+                      default:
+
+
+                    }
+                      msg = {
+                        payload: messageDetails,
+                        originalMessage: botMsg
+                      };
+                      node.send(msg);
+                } else {
+                    // ignoring unauthorized calls
+                    // node.warn("Unauthorized incoming call from " + username);
+                }
+            });
+        } else {
+            node.warn("bot not initialized.");
+            this.status({ fill: "red", shape: "ring", text: "no bot token found in config" });
+        }
+    } else {
+        node.warn("config node failed to initialize.");
+        this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
     }
-    RED.nodes.registerType("telegram callback_query", TelegramCallbackQueryNode);
+
+    this.on("close",function() {
+        node.telegramBot.off(this.event);
+        node.status({});
+    });
+}
+RED.nodes.registerType("telegram callback_query", TelegramCallbackQueryNode);
 
 
 

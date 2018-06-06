@@ -163,7 +163,7 @@
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
-    RED.nodes.registerType('telegram callback_query', {
+    RED.nodes.registerType('telegram event', {
         category: 'telegram',
         color: '#3BABDD',
         defaults: {
@@ -173,12 +173,12 @@
               value: "callback_query",
               required: true
             },
-            autoanswercallback: { value: "", required: false }
+            autoanswer: { value: "", required: false }
         },
         inputs: 0,
         outputs: 1,
         icon: "telegram.png",
-        paletteLabel: "callback",
+        paletteLabel: "event",
         label: function () {
             return this.name || this.event;
         },
@@ -188,14 +188,14 @@
     });
 </script>
 
-<script type="text/x-red" data-template-name="telegram callback_query">
+<script type="text/x-red" data-template-name="telegram event">
     <div class="form-row">
         <label for="node-input-bot"><i class="fa fa-telegram"></i> Bot</label>
         <input type="text" id="node-input-bot" placeholder="Bot">
     </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-        <input type="text" id="node-input-name" placeholder="Give your chicken a name">
+        <input type="text" id="node-input-name" placeholder="Name">
     </div>
     <div class="form-row">
         <label for="node-input-event"><i class="fa fa-mail-reply-all"></i> Event</label>
@@ -212,24 +212,27 @@
         </div>
     </div>
     <div class="form-row">
-        <label for="node-input-autoanswercallback"><i class="fa fa-retweet"></i> Auto-Answer</label>
-        <input type="checkbox" id="node-input-autoanswercallback" style="display:inline-block; width:auto; vertical-align:top;">
+        <label for="node-input-autoanswer"><i class="fa fa-retweet"></i> Auto-Answer</label>
+        <input type="checkbox" id="node-input-autoanswer" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="telegram callback_query">
-      <p>A telegram node that triggers the output when a callback is received from a chat.</p>
-      <p>The callback type can be select.</p> 
+<script type="text/x-red" data-help-name="telegram event">
+      <p>A telegram node that triggers the output when a event is received from a chat.</p>
+      <p>The event type can be selected.</p> 
       <p><code>msg.payload</code> typically contains the parsed data as follows:</p>
       <ul>
       <li><code>chatId</code>Unique identifier for this chat.</li>
-      <li><code>from</code>Sender</li>
-      <li><code>type</code>callback type</li>
-      <li><code>text</code>the actual UTF-8 text of the message</li>
+      <li><code>messageId</code>Message identifier.</li>
+      <li><code>type</code>event type</li>
+      <li><code>date</code>timestamp</li>
+      <li><code>content</code>the actual UTF-8 text of the message</li>
       </ul>
       <p>Other properties may be present depending on the type of message.</p>
       <code>msg.originalMessage</code> contains the raw data object from the underlying library,
       and contains many useful properties.</p>
+      <p>The autoanswer checkbox can be set for callback_query.</p> 
+      <p>Then you won't have to send an explicit answer to the bot on your own.</p> 
 </script>
 
 

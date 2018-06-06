@@ -14,6 +14,8 @@ dceejay for cleaning up the project
 
 psyntium for providing the weblink for additional content link videos, pictures, audio files.
  
+MatthiasHunziker for extending the callback query node to support generic events
+
 
 # Dependencies
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
@@ -83,9 +85,14 @@ The second one is useful when you want to use a keyboard.
 See example below.
 
 
-## Callback Query Node
-The node receives the callback queries of inline keyboards.
-See example-flow inlinekeyboard in examples folder.
+## Event Node
+The node receives events from the bot like:
+- callback_query of inline keyboards.
+See example-flow [source flow](examples/inlinekeyboard.json) in examples folder.
+- inline_query
+- edited_message which is triggered when someone alters an already sent message.
+- channel_post which is triggered when the bot is member of a public channel (/setprivacy to disabled!).
+- edited_channel_post which is triggeren when someone alters an already sent message in a public channel.
 
 
 ## Reply Node
@@ -146,7 +153,7 @@ When the command is received the first output is triggered and a inline keyboard
 
 ![Alt text](images/TelegramBotInlineKeyboard2.png?raw=true "Inline Keyboard Function 1")
 
-The callback query is received by the receiver node. It must be answered like shown as follows:
+The callback query is received by the event node. It must be answered like shown as follows:
 Here you can add your code to trigger the desired bot command. The answer contains the callback query data in msg.payload.content.
 
 ![Alt text](images/TelegramBotInlineKeyboard3.png?raw=true "Inline Keyboard Function 2")

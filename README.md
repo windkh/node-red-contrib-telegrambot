@@ -93,7 +93,7 @@ See example below.
 ## Event Node
 The node receives events from the bot like:
 - callback_query of inline keyboards.
-See example-flow [source flow](examples/inlinekeyboard.json) in examples folder.
+See example-flow [inline keyboard flow](examples/inlinekeyboard.json) in examples folder.
 - inline_query
 - edited_message which is triggered when someone alters an already sent message.
 - channel_post which is triggered when the bot is member of a public channel (/setprivacy to disabled!).
@@ -108,7 +108,7 @@ See example below.
 ## Implementing a simple echo
 This example is self-explaining. The received message is returned to the sender.
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")
-[source flow](examples/echo.json)
+[echo flow](examples/echo.json)
 
 
 ## Implementing a /help command
@@ -124,7 +124,7 @@ This flow returns the help message of your bot. It receives the command and crea
 Keyboards are very useful for getting additional data from the sender.
 When the command is received the first output is triggered and a dialog is opened:
 ![Alt text](images/TelegramBotConfirmationMessage.png?raw=true "Keyboard Flow")
-[source flow](examples/keyboard.json)
+[keyboard flow](examples/keyboard.json)
 
 ![Alt text](images/TelegramBotConfirmationMessage2.png?raw=true "Keyboard Function 1")
 
@@ -137,7 +137,7 @@ The answer is send to the second output triggering the lower flow. Data is passe
 Next to the keyboard the bot could also ask a question and wait for the answer.
 When the user responds to a specified message the telegram reply node can be used:
 ![Alt text](images/TelegramBotOnReplyMessage.png?raw=true "OnReply Flow")
-[source flow](examples/onreplymessage.json)
+[onreplymessage flow](examples/onreplymessage.json)
 
 ![Alt text](images/TelegramBotOnReplyMessage2.png?raw=true "Create question")
 
@@ -154,7 +154,7 @@ The last function shows how to evaluate the answer using a function node with tw
 An inline keyboard contains buttons that can send a callback query back to the bot to trigger any kind of function.
 When the command is received the first output is triggered and a inline keyboard is shown:
 ![Alt text](images/TelegramBotInlineKeyboard1.png?raw=true "Inline Keyboard Flow")
-[source flow](examples/inlinekeyboard.json)
+[inlinekeyboard flow](examples/inlinekeyboard.json)
 
 ![Alt text](images/TelegramBotInlineKeyboard2.png?raw=true "Inline Keyboard Function 1")
 
@@ -169,7 +169,7 @@ An inline keyboard can be modified using the 'editMessageReplyMarkup' instructio
 to know the messageId of the message of the keyboard.
 A sample flow is provided in the examples folder and could look like this:
 ![Alt text](images/TelegramBotEditInlineKeyboard1.png?raw=true "Edit Inline Keyboard Flow")
-[source flow](examples/editinlinekeyboard.json)
+[editinlinekeyboard flow](examples/editinlinekeyboard.json)
 
 ![Alt text](images/TelegramBotEditInlineKeyboard2.png?raw=true "Showing the initial keyboard")
 
@@ -191,7 +191,7 @@ Bots can be called from any chat via inline_query when the bot is set to inline 
 see https://core.telegram.org/bots/api#inline-mode
 A sample flow is provided in the examples folder and could look like this:
 ![Alt text](images/TelegramBotInlineQuery1.png?raw=true "Answer Inline Query Flow")
-[source flow](examples/inlinequery.json)
+[inlinequery flow](examples/inlinequery.json)
 
 The inline_query must be answered by sending a results array.
 see https://core.telegram.org/bots/api#inlinequeryresult
@@ -209,7 +209,7 @@ Locations can be send to the chat. The bot can receive the longitude and latitud
 ## Sending messages to a specified chat
 If you have the chatId, you can send any message without the need of having received something before.
 ![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending a message")
-[source flow](examples/sendmessagetochat.json)
+[sendmessagetochat flow](examples/sendmessagetochat.json)
 
 
 ## Sending photos, videos, ...
@@ -256,7 +256,7 @@ msg.payload.content : {  phone_number: "+49 110", first_name: "Polizei" };
 ```
 
 ![Alt text](images/TelegramBotSendContact.png?raw=true "Send Contact Flow")
-[source flow](examples/sendcontacttochat.json)
+[sendcontacttochat flow](examples/sendcontacttochat.json)
 
 ![Alt text](images/TelegramBotSendContact2.png?raw=true "Send Contact Function")
 
@@ -297,13 +297,13 @@ You can reply on that message or log it to a file to see who wanted to access yo
 
 The message needs to be formatted before the log to file node can be triggered. A simple function could look like this:
 ![Alt text](images/TelegramBotUnauthorizedAccess2.png?raw=true "Create logging string with full information.")
-[source flow](examples/unauthorizedaccess.json)
+[unauthorizedaccess flow](examples/unauthorizedaccess.json)
 
 
 ## Implementing a simple bot
 Putting all pieces together you will have a simple bot implementing some useful functions.
 ![Alt text](images/TelegramBotExample.png?raw=true "Bot example")
-[source flow](examples/simplebot.json)
+[simplebot flow](examples/simplebot.json)
 
 All example flows can be found in the examples folder of this package.
 

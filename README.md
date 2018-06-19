@@ -40,9 +40,11 @@ The input node receives messages from the bot and sends a message object with th
 
 `msg.originalMessage` contains the original message object from the underlying [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api) lib.
 
-The simple echo flow looks like:
+The output node sends the content to a sepcified chat.
+A simple echo flow looks like:
+
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")
-[source flow](examples/simplebot.json)
+[echo flow](examples/echo.json)
 
 
 ## Configuration Node
@@ -108,6 +110,7 @@ See example below.
 ## Implementing a simple echo
 This example is self-explaining. The received message is returned to the sender.
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")
+
 [echo flow](examples/echo.json)
 
 
@@ -196,7 +199,7 @@ A sample flow is provided in the examples folder and could look like this:
 The inline_query must be answered by sending a results array.
 see https://core.telegram.org/bots/api#inlinequeryresult
 The example just returns two simple articles, but almost every kind of content can be returned. 
-![Alt text](images/TelegramBotInlineQuery1.png?raw=true "Creating the results array")
+![Alt text](images/TelegramBotInlineQuery2.png?raw=true "Creating the results array")
 
 Note that the inline_query can also contain the location of the sender. To enable this call /setinlinegeo in botfather
  

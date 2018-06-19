@@ -502,17 +502,26 @@ module.exports = function (RED) {
                                 }
                                 break;
 
+                            // /setinline must be set before in botfather see https://core.telegram.org/bots/inline
                             case 'inline_query':
+                                var inlineQueryId = botMsg.id;
                                 messageDetails = {
                                     chatId: chatid,
-                                    messageId: botMsg.message_id,
                                     type: 'inline_query',
                                     content: botMsg.query,
-                                    inlineQueryId: botMsg.inline_query,
+                                    inlineQueryId: inlineQueryId,
+                                    offset: botMsg.offset,
                                     from: botMsg.from,
-                                    location: botMsg.location // location?
+                                    location: botMsg.location // location is only available when /setinlinegeo is set in botfather
                                 };
-                                // TODO: if (node.autoAnswer) 
+                                // Right now this is not supported as a result is required!
+                                //if (node.autoAnswer) {
+                                //    // result = https://core.telegram.org/bots/api#inlinequeryresult
+                                //    node.telegramBot.answerInlineQuery(inlineQueryId, results).then(function (sent) {
+                                //        // Nothing to do here
+                                //        ;
+                                //    });
+                                //}
                                 break;
 
                             case 'edited_message':
@@ -700,6 +709,17 @@ module.exports = function (RED) {
                                         show_alert: msg.payload.options
                                     };
                                     node.telegramBot.answerCallbackQuery(callbackQueryId, options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+
+                            case 'inline_query':
+                                if (this.hasContent(msg)) {
+                                    var inlineQueryId = msg.payload.inlineQueryId;
+                                    var results = msg.payload.results; // this type requires results to be set: see https://core.telegram.org/bots/api#inlinequeryresult
+                                    node.telegramBot.answerInlineQuery(inlineQueryId, results).then(function (sent) {
                                         msg.payload.sentMessageId = sent.message_id;
                                         node.send(msg);
                                     });

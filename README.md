@@ -20,6 +20,11 @@ MatthiasHunziker for extending the callback query node to support generic events
 # Dependencies
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
 
+# History
+Version 4.x.x
+Breaking changes: the former callback query node was replaced by the generic event node. 
+You can replace the former callback query node in your existing flows with the event node. Please configure this event node
+to receive the callback query event.
 
 # Warning
 The nodes are tested with nodejs 8.11.1 and node-red 0.18.4.
@@ -168,7 +173,7 @@ A sample flow is provided in the examples folder and could look like this:
 
 ![Alt text](images/TelegramBotEditInlineKeyboard2.png?raw=true "Showing the initial keyboard")
 
-The message id needs to be saved in the flow or gobal context. This is just a demo assuming that there is only one single chat.
+The message id needs to be saved in the flow or global context. This is just a demo assuming that there is only one single chat.
 ![Alt text](images/TelegramBotEditInlineKeyboard3.png?raw=true "Storing the messageId of the keyboard")
 
 Replace the initial keyboard with a modified one using the magic 'editMessageReplyMarkup' command as type.
@@ -180,6 +185,21 @@ The following switch node just handles the response and hides the keyboard using
 As an alternative to 'editMessageReplyMarkup' you can also use 'editMessageText' to replace the keyboard and also the text as follows:
 ![Alt text](images/TelegramBotEditInlineKeyboard6.png?raw=true "Replacing the initial keyboard and the text")
 
+
+## Implementing an inline_query 
+Bots can be called from any chat via inline_query when the bot is set to inline mode in botfather via /setinline
+see https://core.telegram.org/bots/api#inline-mode
+A sample flow is provided in the examples folder and could look like this:
+![Alt text](images/TelegramBotInlineQuery1.png?raw=true "Answer Inline Query Flow")
+[source flow](examples/inlinequery.json)
+
+The inline_query must be answered by sending a results array.
+see https://core.telegram.org/bots/api#inlinequeryresult
+The example just returns two simple articles, but almost every kind of content can be returned. 
+![Alt text](images/TelegramBotInlineQuery1.png?raw=true "Creating the results array")
+
+Note that the inline_query can also contain the location of the sender. To enable this call /setinlinegeo in botfather
+ 
 
 ## Receiving a location
 Locations can be send to the chat. The bot can receive the longitude and latitude:

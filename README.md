@@ -297,6 +297,7 @@ You can reply on that message or log it to a file to see who wanted to access yo
 
 The message needs to be formatted before the log to file node can be triggered. A simple function could look like this:
 ![Alt text](images/TelegramBotUnauthorizedAccess2.png?raw=true "Create logging string with full information.")
+[source flow](examples/unauthorizedaccess.json)
 
 
 ## Implementing a simple bot

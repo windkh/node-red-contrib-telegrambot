@@ -372,6 +372,7 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         var node = this;
         var command = config.command;
+        var strict = config.strict;
         this.bot = config.bot;
 
         this.config = RED.nodes.getNode(this.bot);
@@ -395,8 +396,15 @@ module.exports = function (RED) {
                             var message = botMsg.text;
                             var tokens = message.split(" ");
 
+                            var isChatCommand = tokens[0] === command;
                             var command2 = command + "@" + node.botname;
-                            if (tokens[0] === command || tokens[0] === command2) {
+                            var isDirectCommand = tokens[0] === command2;
+                            var isGroupChat = chatid < 0;
+                            
+                            if (isDirectCommand || 
+                                (isChatCommand && !isGroupChat) ||
+                                (isChatCommand && isGroupChat && !strict)) {
+                                
                                 var remainingText = message.replace(command, "");
 
                                 messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: remainingText };

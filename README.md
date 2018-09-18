@@ -88,8 +88,12 @@ It has two outputs
  1. is triggered when the command is received
  2. is triggered when the command is not received
 
-The second one is useful when you want to use a keyboard.
-See example below.
+The second one is useful when you want to use a keyboard. See example below.
+Commands usually start with a / like for example /foo. According to the telegram api documentation the command
+should be issued following the bot name like /foo@YourBot. This is important when you add several different bots
+to one single group chat. To avoid that the bot handles commands that are not directly sent to it using the long notation
+you can set the "strict" mode in the options of the command node. In this case the bot only accepts the full command
+notation in group chats.  
 
 
 ## Event Node

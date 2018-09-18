@@ -123,7 +123,8 @@
         defaults: {
             name: { value: "" },
             command: { value: ""},
-            bot: { value: "", type: "telegram bot", required: true }
+            bot: { value: "", type: "telegram bot", required: true },
+            strict : { value: false }
         },
         inputs: 0,
         outputs: 2,
@@ -150,6 +151,10 @@
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-strict"><i class="fa fa-tag"></i> Strict in group chats</label>
+        <input type="checkbox" id="node-input-strict" style="display: inline-block; width: auto; vertical-align: top;">
     </div>
 </script>
 

@@ -268,6 +268,65 @@ msg.payload.content : {  phone_number: "+49 110", first_name: "Polizei" };
 ![Alt text](images/TelegramBotSendContact2.png?raw=true "Send Contact Function")
 
 
+## Sending live location
+Locations can be send to the chat as described above and then updated afterwards: live location update.
+To achieve this you have to provide the live_period in seconds in the options when sending the location.
+
+```
+msg.payload.type = 'location';
+msg.payload.content = {
+    latitude : lat,
+    longitude : lng
+};
+
+msg.payload.options = {
+    live_period : time
+};  
+```
+
+To be able to update this location message you need to store the message id of that sent message.
+This can be done by storing it somewhere in the flow context as follows:
+
+```
+var messageId = msg.payload.sentMessageId;
+flow.set("messageId", messageId);
+```
+
+Now you can edit the location as often as you want within the live_period:
+
+```
+var messageId = flow.get("messageId");
+var chatId = msg.payload.chatId;
+
+msg.payload.type = 'editMessageLiveLocation';
+msg.payload.content = {
+    latitude : lat,
+    longitude : lng
+};
+  
+msg.payload.options = {
+    chat_id : chatId,
+    message_id : messageId
+};  
+```
+
+If you want to abort updating the location then you can send the stopMessageLiveLocation command.
+
+```
+var messageId = flow.get("messageId");
+var chatId = msg.payload.chatId;
+
+msg.payload.type = 'stopMessageLiveLocation';
+msg.payload.options = {
+    chat_id : chatId,
+    message_id : messageId
+};  
+```
+
+![Alt text](images/TelegramBotLiveLocation.png?raw=true "Live Location Flow")
+[livelocation flow](examples/livelocation.json)
+
+
 ## Advanced options when sending messages.
 Text messages can be in markdown format to support fat and italic style. To enable markdown format
 set the parse_mode options property as follows:

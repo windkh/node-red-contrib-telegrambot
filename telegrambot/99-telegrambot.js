@@ -833,6 +833,23 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+                            case 'editMessageLiveLocation':
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.editMessageLiveLocation(msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+                            case 'stopMessageLiveLocation':
+                                // This message requires the options to be set!
+                                //if (this.hasContent(msg)) {
+                                    node.telegramBot.stopMessageLiveLocation(msg.payload.options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                //}
+                                break;
                             case 'venue':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendVenue(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.content.title, msg.payload.content.address, msg.payload.options).then(function (sent) {

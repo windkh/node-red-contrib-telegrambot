@@ -326,6 +326,12 @@ msg.payload.options = {
 ![Alt text](images/TelegramBotLiveLocation.png?raw=true "Live Location Flow")
 [livelocation flow](examples/livelocation.json)
 
+## Receiving live location updates
+When a user sends his location then it is received by the standard message receiver node.
+But when a live location is updated, then you will receive the same message event as one would
+edit an already existing message in the chat (edit_message). The example above contains an event handler node that
+receives those message edits, and filters for the ones that contain a location. 
+
 
 ## Advanced options when sending messages.
 Text messages can be in markdown format to support fat and italic style. To enable markdown format

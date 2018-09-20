@@ -478,12 +478,12 @@ module.exports = function (RED) {
                 node.telegramBot.on(this.event, (botMsg) => {
                     var username;
                     var chatid;
-                    if (botMsg.from) {       //private, group, supergroup
-                        username = botMsg.from.username;
-                        chatid = botMsg.from.id;
-                    } else if (botMsg.chat) { //channel
+                    if (botMsg.chat) { //channel
                         username = botMsg.chat.username;
                         chatid = botMsg.chat.id;
+                    } else if (botMsg.from) {       //private, group, supergroup
+                        username = botMsg.from.username;
+                        chatid = botMsg.from.id;
                     } else {
                         node.error("username or chatid undefined");
                     }
@@ -540,7 +540,9 @@ module.exports = function (RED) {
                                     content: botMsg.text,
                                     editDate: botMsg.edit_date,
                                     date: botMsg.date,
-                                    from: botMsg.from
+                                    from: botMsg.from,
+                                    chat: botMsg.chat,
+                                    location: botMsg.location // for live location updates
                                 };
                                 break;
 

@@ -372,6 +372,7 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         var node = this;
         var command = config.command;
+        var strict = config.strict;
         this.bot = config.bot;
 
         this.config = RED.nodes.getNode(this.bot);
@@ -395,8 +396,15 @@ module.exports = function (RED) {
                             var message = botMsg.text;
                             var tokens = message.split(" ");
 
+                            var isChatCommand = tokens[0] === command;
                             var command2 = command + "@" + node.botname;
-                            if (tokens[0] === command || tokens[0] === command2) {
+                            var isDirectCommand = tokens[0] === command2;
+                            var isGroupChat = chatid < 0;
+                            
+                            if (isDirectCommand || 
+                                (isChatCommand && !isGroupChat) ||
+                                (isChatCommand && isGroupChat && !strict)) {
+                                
                                 var remainingText = message.replace(command, "");
 
                                 messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: remainingText };
@@ -470,12 +478,12 @@ module.exports = function (RED) {
                 node.telegramBot.on(this.event, (botMsg) => {
                     var username;
                     var chatid;
-                    if (botMsg.from) {       //private, group, supergroup
-                        username = botMsg.from.username;
-                        chatid = botMsg.from.id;
-                    } else if (botMsg.chat) { //channel
+                    if (botMsg.chat) { //channel
                         username = botMsg.chat.username;
                         chatid = botMsg.chat.id;
+                    } else if (botMsg.from) {       //private, group, supergroup
+                        username = botMsg.from.username;
+                        chatid = botMsg.from.id;
                     } else {
                         node.error("username or chatid undefined");
                     }
@@ -532,7 +540,9 @@ module.exports = function (RED) {
                                     content: botMsg.text,
                                     editDate: botMsg.edit_date,
                                     date: botMsg.date,
-                                    from: botMsg.from
+                                    from: botMsg.from,
+                                    chat: botMsg.chat,
+                                    location: botMsg.location // for live location updates
                                 };
                                 break;
 
@@ -825,6 +835,23 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+                            case 'editMessageLiveLocation':
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.editMessageLiveLocation(msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+                            case 'stopMessageLiveLocation':
+                                // This message requires the options to be set!
+                                //if (this.hasContent(msg)) {
+                                    node.telegramBot.stopMessageLiveLocation(msg.payload.options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                //}
+                                break;
                             case 'venue':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendVenue(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.content.title, msg.payload.content.address, msg.payload.options).then(function (sent) {
@@ -928,19 +955,11 @@ module.exports = function (RED) {
     }
     RED.nodes.registerType("telegram reply", TelegramReplyNode);
 	
-
-	/**
-		
-		==========================================================================
-		==========================================================================
-		==========================================================================
-		==========================================================================
-		
-		
-		**/
-		
-		
-		
+	
+	// --------------------------------------------------------------------------------------------
+    // The action node is telegram node used to send some status for performing actions.
+    // chatId    : string destination chat
+    // action	 : action to be set
 	function TelegramActionNode(config) {
         RED.nodes.createNode(this, config);
         var node = this;
@@ -986,5 +1005,4 @@ module.exports = function (RED) {
         });
     }
     RED.nodes.registerType("telegram action", TelegramActionNode);
-
 }

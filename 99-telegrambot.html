@@ -1,0 +1,390 @@
+<!-- Created by Karl-Heinz Wind -->
+
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram bot', {
+        category: 'config',
+        defaults: {
+            botname: { value: "", required: true },
+            usernames: { value: "", required: false },
+            chatids: { value: "", required: false },
+            baseapiurl: { value: "", required: false },
+            pollinterval: { value: 300, required: false }
+        },
+        credentials: {
+            token: { type: "text" }
+        },
+        label: function () {
+            return this.botname;
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram bot">
+    <div class="form-row">
+        <label for="node-config-input-botname"><i class="fa fa-telegram"></i> Bot-Name</label>
+        <input type="text" id="node-config-input-botname" placeholder="(Name of bot to connect to)">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-token"><i class="fa fa-key"></i> Token</label>
+        <input type="text" id="node-config-input-token" placeholder="(Enter the bot token from botfather here)">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-usernames"><i class="fa fa-user"></i> Users</label>
+        <input type="text" id="node-config-input-usernames" placeholder="(Optional list of authorized user names e.g.: hugo,sepp,egon)">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-chatids"><i class="fa fa-comment"></i> ChatIds</label>
+        <input type="text" id="node-config-input-chatids" placeholder="(Optional list of authorized chat-ids e.g.: -1234567,2345678,-3456789)">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-baseapiurl"><i class="fa fa-server"></i> Server URL</label>
+        <input type="text" id="node-config-input-baseapiurl" placeholder="(Optional URL for proxying and testing e.g.: https://api.telegram.org)">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-pollinterval"><i class="fa fa-clock-o"></i> Polling Interval</label>
+        <input type="text" id="node-config-input-pollinterval" placeholder="(Optional poll interval in milliseconds. The default is 300.)">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="telegram bot">
+    <p>A configuration node that holds the token of the telegram bot.</p>
+    <p>
+        It communicates with the telegram server. Do not create several configurations nodes with the same token!
+        The usernames and chat ids properties can be used to limit authorization to the bot. Enter values in comma separated format e.g. a,b,c
+        Usernames and chat ids are optional. Leave field blank if you do not want to use this feature.
+        The API Base URL can be changed for testing or when using a proxy.
+    </p>
+</script>
+
+
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram receiver', {
+        category: 'telegram',
+        color: '#3BABDD',
+        defaults: {
+            name: { value: "" },
+            bot: { value:"", type: "telegram bot", required: true },
+            saveDataDir: { value: "" }
+        },
+        inputs: 0,
+        outputs: 2,
+        icon: "telegram.png",
+        paletteLabel: "receiver",
+        label: function () {
+            return this.name || "Telegram receiver";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram receiver">
+    <div class="form-row">
+        <label for="node-input-bot"><i class="fa fa-telegram"></i> Bot</label>
+        <input type="text" id="node-input-bot" placeholder="Bot">
+    </div>
+    <div class="form-row">
+        <label for="node-input-saveDataDir"><i class="fa fa-hdd-o"></i> Download Directory</label>
+        <input type="text" id="node-input-saveDataDir" placeholder="Download directory">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="telegram receiver">
+    <p>A telegram node that triggers the output when some message is received from the chat.
+    Message is sent to output 1 if it comes from an authorized user.
+    Message is sent to output 2 if it comes from an non-authorized user.</p>
+    <p><code>msg.payload</code> typically contains the parsed data as follows:</p>
+    <ul>
+    <li><code>content</code> the message contents</li>
+    <li><code>type</code> the type of message contents</li>
+    <li><code>messageId</code> the messageId number</li>
+    <li><code>chatId</code> the chatId number</li>
+    </ul>
+    <p>Other properties may be present depending on the type of message.</p>
+    <code>msg.originalMessage</code> contains the raw data object from the underlying library,
+    and contains many useful properties.</p>
+</script>
+
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram command', {
+        category: 'telegram',
+        color: '#3BABDD',
+        defaults: {
+            name: { value: "" },
+            command: { value: ""},
+            bot: { value: "", type: "telegram bot", required: true },
+            strict : { value: false }
+        },
+        inputs: 0,
+        outputs: 2,
+        icon: "telegramc.png",
+        paletteLabel: "command",
+        label: function () {
+            return this.name || this.command || "Telegram command";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram command">
+    <div class="form-row">
+        <label for="node-input-command"><i class="fa fa-envelope"></i> Command</label>
+        <input type="text" id="node-input-command" placeholder="Command">
+    </div>
+    <div class="form-row">
+        <label for="node-input-bot"><i class="fa fa-telegram"></i> Bot</label>
+        <input type="text" id="node-input-bot" placeholder="Bot">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-strict"><i class="fa fa-tag"></i> Strict in group chats</label>
+        <input type="checkbox" id="node-input-strict" style="display: inline-block; width: auto; vertical-align: top;">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="telegram command">
+    <p>A telegram node that triggers the output when a specified command is received from the chat.</p>
+    <p>Message is sent to output 1 if it comes from an authorized user and it contains the command at the beginning of the message.</p>
+    <p>Message is sent to output 2 if it comes from an authorized user but does not contain the specified command.</p>
+</script>
+
+
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram event', {
+        category: 'telegram',
+        color: '#3BABDD',
+        defaults: {
+            name: { value: "" },
+            bot: { value: "", type: "telegram bot", required: true },
+            event: {
+              value: "callback_query",
+              required: true
+            },
+            autoanswer: { value: "", required: false }
+        },
+        inputs: 0,
+        outputs: 1,
+        icon: "telegram.png",
+        paletteLabel: "event",
+        label: function () {
+            return this.name || this.event;
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram event">
+    <div class="form-row">
+        <label for="node-input-bot"><i class="fa fa-telegram"></i> Bot</label>
+        <input type="text" id="node-input-bot" placeholder="Bot">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-event"><i class="fa fa-mail-reply-all"></i> Event</label>
+        <div style="display: inline-block; position: relative; width: 70%; height: 19.1333px;">
+        <div style="position: absolute; left: 0; right: 0;">
+          <select id="node-input-event" style="width:100%">
+              <option value="callback_query">Callback Query</option>
+              <option value="inline_query">Inline Query</option>
+              <option value="edited_message">Edited Message</option>
+              <option value="channel_post">Channel Post</option>
+              <option value="edited_channel_post">Edited Channel Post</option>
+          </select>
+        </div>
+        </div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-autoanswer"><i class="fa fa-retweet"></i> Auto-Answer</label>
+        <input type="checkbox" id="node-input-autoanswer" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="telegram event">
+      <p>A telegram node that triggers the output when a event is received from a chat.</p>
+      <p>The event type can be selected.</p> 
+      <p><code>msg.payload</code> typically contains the parsed data as follows:</p>
+      <ul>
+      <li><code>chatId</code>Unique identifier for this chat.</li>
+      <li><code>messageId</code>Message identifier.</li>
+      <li><code>type</code>event type</li>
+      <li><code>date</code>timestamp</li>
+      <li><code>content</code>the actual UTF-8 text of the message</li>
+      </ul>
+      <p>Other properties may be present depending on the type of message.</p>
+      <code>msg.originalMessage</code> contains the raw data object from the underlying library,
+      and contains many useful properties.</p>
+      <p>The autoanswer checkbox can be set for callback_query.</p> 
+      <p>Then you won't have to send an explicit answer to the bot on your own.</p> 
+</script>
+
+
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram sender', {
+        category: 'telegram',
+        color: '#3BABDD',
+        defaults: {
+            name: { value: "" },
+            bot: { value: "", type: "telegram bot", required: true }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "telegram.png",
+        align: "right",
+        paletteLabel: "sender",
+        label: function () {
+            return this.name || "Telegram sender";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram sender">
+    <div class="form-row">
+        <label for="node-input-bot"><i class="fa fa-telegram"></i> Bot</label>
+        <input type="text" id="node-input-bot" placeholder="Bot">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="telegram sender">
+    <p>A telegram node that sends the <code>msg.payload</code> to the chat.</p>
+    <p>The <code>msg.payload</code> must be an object that contains a complete set of telegram message properties,
+     at a minimum these should contain:
+     <ul>
+     <li><code>content</code> the message contents</li>
+     <li><code>type</code> the type of message contents</li>
+     <li><code>chatId</code> the chatId number</li>
+     </ul>
+    <p>The output message contains an error property if an exception occured.</p>
+</script>
+<!-- ------------------------------------------------------------------------------------------ -->
+
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram reply', {
+        category: 'telegram',
+        color: '#3BABDD',
+        defaults: {
+            name: { value: "" },
+            bot: { value: "", type: "telegram bot", required: true }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "telegram.png",
+        align: "right",
+        paletteLabel: "reply",
+        label: function () {
+            return this.name || "Telegram reply";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram reply">
+    <div class="form-row">
+        <label for="node-input-bot"><i class="fa fa-telegram"></i> Bot</label>
+        <input type="text" id="node-input-bot" placeholder="Bot">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="telegram reply">
+    <p>A telegram node that is triggered when someone answered to a specified message.</p>
+    <p>This can be useful, when the bot for example sent a message and you want to take some action</p>
+    <p>when someone responded to this specified message.</p>
+    <p>Responding to messages is done by clicking on the message in your client and choose "answer" from the popup.</p>
+    <p>The <code>msg.payload</code> should be an object that contains:</p>
+    <ul><li><code>chatId</code> destination chatId.</li>
+    <li><code>sentMessageId</code> the id of the previously sent message in the chat.</li>
+    <li><code>content</code> the message content.</li></ul>
+</script>
+<!-- ------------------------------------------------------------------------------------------ -->
+
+
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram action', {
+        category: 'telegram',
+        color: '#3BABDD',
+        defaults: {
+            name: { value: "" },
+            bot: { value: "", type: "telegram bot", required: true }
+        },
+        inputs: 1,
+        outputs: 0,
+        icon: "telegram.png",
+        align: "right",
+        paletteLabel: "action",
+        label: function () {
+            return this.name || "Telegram action";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram action">
+    <div class="form-row">
+        <label for="node-input-bot"><i class="fa fa-telegram"></i> Bot</label>
+        <input type="text" id="node-input-bot" placeholder="Bot">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="telegram action">
+    <p>A telegram node used to send some status for performing actions.</p>
+	<p>Example: bot "...is typing"</p>
+    <p>The <code>msg.payload</code> should be an object that contains:</p>
+    <ul><li><code>chatId</code> destination chatId.</li>
+    <li><code>action</code> action to be set.</li></ul>
+	<p>Examples of possible actions are:</p>
+	<ul><li>"typing", for text messages</li>
+	<li>"upload_photo", for photos</li>
+	<li>"record_video" or "upload_video", for videos</li>
+	<li>"record_audio" or "upload_audio", for audio files</li>
+	<li>"upload_document", for general files</li>
+	<li>"find_location", for location data</li>
+	<li>"record_video_note" or "upload_video_note", for video notes</li></ul>
+</script>
+<!-- ------------------------------------------------------------------------------------------ -->

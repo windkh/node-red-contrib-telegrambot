@@ -954,4 +954,55 @@ module.exports = function (RED) {
         });
     }
     RED.nodes.registerType("telegram reply", TelegramReplyNode);
+	
+	
+	// --------------------------------------------------------------------------------------------
+    // The action node is telegram node used to send some status for performing actions.
+    // chatId    : string destination chat
+    // action	 : action to be set
+	function TelegramActionNode(config) {
+        RED.nodes.createNode(this, config);
+        var node = this;
+        this.bot = config.bot;
+
+        this.config = RED.nodes.getNode(this.bot);
+        if (this.config) {
+            this.config.register(node);
+
+            this.status({ fill: "red", shape: "ring", text: "disconnected" });
+
+            node.telegramBot = this.config.getTelegramBot();
+            if (node.telegramBot) {
+                this.status({ fill: "green", shape: "ring", text: "connected" });
+            } else {
+                node.warn("bot not initialized.");
+                this.status({ fill: "red", shape: "ring", text: "bot not initialized" });
+            }
+        } else {
+            node.warn("config node failed to initialize.");
+            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
+        }
+
+        this.on('input', function (msg) {
+
+            if (msg.payload) {
+                if (msg.payload.chatId) {
+					if (msg.payload.action) {
+		
+						var chatId = msg.payload.chatId;
+						var action = msg.payload.action;
+						node.telegramBot.sendChatAction(chatId, action);
+
+						} else {
+							node.warn("msg.payload.action is empty");
+						}
+                } else {
+                    node.warn("msg.payload.chatId is empty");
+                }
+            } else {
+                node.warn("msg.payload is empty");
+            }
+        });
+    }
+    RED.nodes.registerType("telegram action", TelegramActionNode);
 }

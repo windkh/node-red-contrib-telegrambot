@@ -405,7 +405,15 @@ module.exports = function (RED) {
                                 (isChatCommand && !isGroupChat) ||
                                 (isChatCommand && isGroupChat && !strict)) {
                                 
-                                var remainingText = message.replace(command, "");
+                                var remainingText;
+                                if(isDirectCommand)
+                                {
+                                    remainingText = message.replace(command2, "");
+                                }
+                                else
+                                {
+                                    remainingText = message.replace(command, "");
+                                }
 
                                 messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: remainingText };
                                 msg = { payload: messageDetails, originalMessage: botMsg };

@@ -630,6 +630,9 @@ module.exports = function (RED) {
     // voice    content is String|stream.Stream|Buffer
     // location content is an object that contains latitude and logitude
     // contact  content is full contact object
+    // action   content is one of the following: 
+    //                      typing, upload_photo, record_video, upload_video, record_audio, upload_audio,  
+    //                      upload_document, find_location, record_video_note, upload_video_note
     function TelegramOutNode(config) {
         RED.nodes.createNode(this, config);
         var node = this;
@@ -882,11 +885,18 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+                            case 'action':
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.sendChatAction(chatId, msg.payload.content).then(function (sent) {
+                                        msg.payload.sent = sent;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
                             default:
                             // unknown type nothing to send.
                             // TODO: 'channel_chat_created','delete_chat_photo','game','group_chat_created','invoice','left_chat_member','migrate_from_chat_id','migrate_to_chat_id',
                             // 'new_chat_members','new_chat_photo','new_chat_title', 'pinned_message','successful_payment','supergroup_chat_created',
-                            // sendChatAction
                         }
                     } else {
                         node.warn("msg.payload.type is empty");

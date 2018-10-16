@@ -16,6 +16,7 @@ psyntium for providing the weblink for additional content link videos, pictures,
  
 MatthiasHunziker for extending the callback query node to support generic events
 
+Skiepp for providing the send chat action idea.
 
 # Dependencies
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
@@ -248,6 +249,7 @@ The following types require a special content format to be used. See the underly
 - contact
 - venue
 - callback_query
+- action
 
 ![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")
 ![Alt text](images/TelegramBotSendPhoto2.png?raw=true "Setting the correct content type.")
@@ -266,6 +268,29 @@ msg.payload.content : {  phone_number: "+49 110", first_name: "Polizei" };
 [sendcontacttochat flow](examples/sendcontacttochat.json)
 
 ![Alt text](images/TelegramBotSendContact2.png?raw=true "Send Contact Function")
+
+
+## Sending chat actions
+When the bot needs some time for further processing but you want to give a hint to the user what is going on,
+then you can send a chat action which will appear at the top of the channel of the receiver. 
+
+```
+msg.payload.type = 'action';
+msg.payload.content = "typing";
+```
+
+The content can be one of the following 
+- "typing" for text messages
+- "upload_photo" for photos
+- "record_video" or "upload_video" for videos
+- "record_audio" or "upload_audio" for audio files
+- "upload_document" for general files
+- "find_location" for location data
+- "record_video_note" or "upload_video_note" for video notes
+
+The following example illustrate how to send for example "typing...".
+Of course a real bot would send the real data after finishing the processing, but this is not part of the example.
+[sendchataction flow](examples/sendchataction.json)
 
 
 ## Sending live location
@@ -356,6 +381,7 @@ msg.payload.options = true;
 ## Configuring security
 The configuration node contains two properties for applying security to your bot. You can choose between configuring
 the single usernames or configure one or more chat-ids that are allowed to access the bot. The values must be separated using a comma like shown in the screenshot.
+
 ![Alt text](images/TelegramBotSecurity.png?raw=true "Applying security")
 
 **Note**: that the chat-ids are positive in chats where you talk to the bot in an 1:1 manner. A negative chat-id indicates a group-chat.

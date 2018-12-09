@@ -4,6 +4,11 @@ This package contains a receiver and a sender node which act as a telegram bot.
 The only thing required is the token that can be retrieved by the @botfather telegram bot.
 https://core.telegram.org/bots
 
+# Thanks for your donation
+If you want to support this free project. Any help is welcome.
+<a target="blank" href="https://blockchain.com/btc/payment_request?address=1PBi7BoZ1mBLQx4ePbwh1MVoK2RaoiDsp5"><img src="https://img.shields.io/badge/Donate-Bitcoin-green.svg"/></a>
+<a target="blank" href="https://www.paypal.me/windkh"><img src="https://img.shields.io/badge/Donate-PayPal-blue.svg"/></a>
+
 # Credits
 dvv (Vladimir Dronnikov) for providing the saveDataDir configuration option.
 snippet-java for adding venue messages. And for providing the markdown problem fallback.

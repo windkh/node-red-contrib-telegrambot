@@ -62,6 +62,7 @@ The values in the property fields must be separated by a , e.g.:
 Hugo,Sepp,Egon
 Leave the fields blank if you do not want to use this feature.
 saveDataDir is an optional configuration value that can be set to automatically download all contents like music, video, documents, etc.
+The "Verbose Logging" flag should only be activated when debugging network problems as this will create cyclic warnings when the network is down.
 
 
 ## Receiver Node

@@ -40,6 +40,7 @@ module.exports = function (RED) {
             this.pollInterval = 300;
         }
 
+
         // Activates the bot or returns the already activated bot. 
         this.getTelegramBot = function () {
             if (!this.telegramBot) {
@@ -70,36 +71,42 @@ module.exports = function (RED) {
                             });
 
                             this.telegramBot.on('polling_error', function (error) {
-                                self.warn(error.message);
+                                if(self.verbose) {
+                                    self.warn(error.message);
 
-                                var stopPolling = false;
-                                var hint;
-                                if (error.message === "ETELEGRAM: 401 Unauthorized") {
-                                    hint = "Please check if the bot token is valid: " + self.credentials.token;
-                                    stopPolling = true;
-                                }
-                                else if (error.message.startsWith("EFATAL: Error: connect ETIMEDOUT")) {
-                                    hint = "Timeout connecting to server. Trying again.";
-                                }
-                                else if (error.message.startsWith("EFATAL: Error: read ECONNRESET")) {
-                                    hint = "Network connection may be down. Trying again.";
-                                }
-                                else if (error.message.startsWith("EFATAL: Error: getaddrinfo ENOTFOUND")) {
-                                    hint = "Network connection may be down. Trying again.";
-                                }
-                                else {
-                                    // unknown error occured... we simply ignore it.
-                                    hint = "Unknown error. Trying again.";
-                                }
+                                    var stopPolling = false;
+                                    var hint;
+                                    if (error.message === "ETELEGRAM: 401 Unauthorized") {
+                                        hint = "Please check if the bot token is valid: " + self.credentials.token;
+                                        stopPolling = true;
+                                    }
+                                    else if (error.message.startsWith("EFATAL: Error: connect ETIMEDOUT")) {
+                                        hint = "Timeout connecting to server. Trying again.";
+                                    }
+                                    else if (error.message.startsWith("EFATAL: Error: read ECONNRESET")) {
+                                        hint = "Network connection may be down. Trying again.";
+                                    }
+                                    else if (error.message.startsWith("EFATAL: Error: getaddrinfo EAI_AGAIN")) {
+                                        hint = "Network connection may be down. Trying again.";
+                                    }
+                                    else if (error.message.startsWith("EFATAL: Error: getaddrinfo ENOTFOUND")) {
+                                        hint = "Network connection may be down. Trying again.";
+                                    }
+                                    else {
+                                        // unknown error occured... we simply ignore it.
+                                        hint = "Unknown error. Trying again.";
+                                    }
 
-                                if (stopPolling) {
-                                    self.abortBot(error.message, function () {
-                                        self.warn("Bot stopped: " + hint);
-                                    });
-                                }
-                                else {
-                                    // here we simply ignore the bug and continue polling.
-                                    self.warn(hint);
+                                    if (stopPolling) {
+                                        self.abortBot(error.message, function () {
+                                            self.warn("Bot stopped: " + hint);
+                                        });
+                                    }
+                                    else {
+                                        // here we simply ignore the bug and continue polling.
+                                        // The following line is removed as this would create endless log files
+                                        self.warn(hint);
+                                    }
                                 }
                             });
 
@@ -301,13 +308,15 @@ module.exports = function (RED) {
         if (this.config) {
             this.config.register(node);
 
-            this.status({ fill: "red", shape: "ring", text: "disconnected" });
+            node.status({ fill: "red", shape: "ring", text: "not connected" });
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
-                this.status({ fill: "green", shape: "ring", text: "connected" });
+                node.status({ fill: "green", shape: "ring", text: "connected" });
 
                 node.telegramBot.on('message', function (botMsg) {
+                    node.status({ fill: "green", shape: "ring", text: "connected" });
+
                     var username = botMsg.from.username;
                     var chatid = botMsg.chat.id;
                     var messageDetails = getMessageDetails(botMsg);
@@ -340,13 +349,17 @@ module.exports = function (RED) {
                         }
                     }
                 });
+
+                node.telegramBot.on('polling_error', function (error) {
+                    node.status({ fill: "red", shape: "ring", text: "disconnected" });
+                });
             } else {
                 node.warn("bot not initialized");
-                this.status({ fill: "red", shape: "ring", text: "bot not initialized" });
+                node.status({ fill: "red", shape: "ring", text: "bot not initialized" });
             }
         } else {
             node.warn("config node failed to initialize.");
-            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
+            node.status({ fill: "red", shape: "ring", text: "config node failed to initialize" });
         }
 
         this.on("close", function () {
@@ -379,14 +392,16 @@ module.exports = function (RED) {
         if (this.config) {
             this.config.register(node);
 
-            this.status({ fill: "red", shape: "ring", text: "disconnected" });
+            node.status({ fill: "red", shape: "ring", text: "not connected" });
 
             node.telegramBot = this.config.getTelegramBot();
             node.botname = this.config.botname;
             if (node.telegramBot) {
-                this.status({ fill: "green", shape: "ring", text: "connected" });
+                node.status({ fill: "green", shape: "ring", text: "connected" });
 
                 node.telegramBot.on('message', function (botMsg) {
+                    node.status({ fill: "green", shape: "ring", text: "connected" });
+
                     var username = botMsg.from.username;
                     var chatid = botMsg.chat.id;
                     if (node.config.isAuthorized(chatid, username)) {
@@ -431,13 +446,17 @@ module.exports = function (RED) {
                         // node.warn("Unauthorized incoming call from " + username);
                     }
                 });
+
+                node.telegramBot.on('polling_error', function (error) {
+                    node.status({ fill: "red", shape: "ring", text: "disconnected" });
+                });
             } else {
                 node.warn("bot not initialized.");
-                this.status({ fill: "red", shape: "ring", text: "no bot token found in config" });
+                node.status({ fill: "red", shape: "ring", text: "no bot token found in config" });
             }
         } else {
             node.warn("config node failed to initialize.");
-            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
+            node.status({ fill: "red", shape: "ring", text: "config node failed to initialize" });
         }
 
         this.on("close", function () {
@@ -476,14 +495,16 @@ module.exports = function (RED) {
         if (this.config) {
             this.config.register(node);
 
-            this.status({ fill: "red", shape: "ring", text: "disconnected" });
+            node.status({ fill: "red", shape: "ring", text: "not connected" });
 
             node.telegramBot = this.config.getTelegramBot();
             node.botname = this.config.botname;
             if (node.telegramBot) {
-                this.status({ fill: "green", shape: "ring", text: "connected" });
+                node.status({ fill: "green", shape: "ring", text: "connected" });
 
                 node.telegramBot.on(this.event, (botMsg) => {
+                    node.status({ fill: "green", shape: "ring", text: "connected" });
+
                     var username;
                     var chatid;
                     if (botMsg.chat) { //channel
@@ -596,13 +617,17 @@ module.exports = function (RED) {
                         // node.warn("Unauthorized incoming call from " + username);
                     }
                 });
+
+                node.telegramBot.on('polling_error', function (error) {
+                    node.status({ fill: "red", shape: "ring", text: "disconnected" });
+                });
             } else {
                 node.warn("bot not initialized.");
-                this.status({ fill: "red", shape: "ring", text: "no bot token found in config" });
+                node.status({ fill: "red", shape: "ring", text: "no bot token found in config" });
             }
         } else {
             node.warn("config node failed to initialize.");
-            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
+            node.status({ fill: "red", shape: "ring", text: "config node failed to initialize" });
         }
 
         this.on("close", function () {
@@ -642,18 +667,18 @@ module.exports = function (RED) {
         if (this.config) {
             this.config.register(node);
 
-            this.status({ fill: "red", shape: "ring", text: "disconnected" });
+            node.status({ fill: "red", shape: "ring", text: "not connected" });
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
-                this.status({ fill: "green", shape: "ring", text: "connected" });
+                node.status({ fill: "green", shape: "ring", text: "connected" });
             } else {
                 node.warn("bot not initialized.");
-                this.status({ fill: "red", shape: "ring", text: "bot not initialized" });
+                node.status({ fill: "red", shape: "ring", text: "bot not initialized" });
             }
         } else {
             node.warn("config node failed to initialize.");
-            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
+            node.status({ fill: "red", shape: "ring", text: "config node failed to initialize" });
         }
 
         this.hasContent = function (msg) {
@@ -671,6 +696,8 @@ module.exports = function (RED) {
 
         this.on('input', function (msg) {
 
+            node.status({ fill: "green", shape: "ring", text: "connected" });
+            
             if (msg.payload) {
                 if (msg.payload.chatId) {
                     if (msg.payload.type) {
@@ -908,6 +935,10 @@ module.exports = function (RED) {
                 node.warn("msg.payload is empty");
             }
         });
+
+        node.telegramBot.on('polling_error', function (error) {
+            node.status({ fill: "red", shape: "ring", text: "disconnected" });
+        });
     }
     RED.nodes.registerType("telegram sender", TelegramOutNode);
 
@@ -928,22 +959,24 @@ module.exports = function (RED) {
         if (this.config) {
             this.config.register(node);
 
-            this.status({ fill: "red", shape: "ring", text: "disconnected" });
+            node.status({ fill: "red", shape: "ring", text: "not connected" });
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
-                this.status({ fill: "green", shape: "ring", text: "connected" });
+                node.status({ fill: "green", shape: "ring", text: "connected" });
             } else {
                 node.warn("bot not initialized.");
-                this.status({ fill: "red", shape: "ring", text: "bot not initialized" });
+                node.status({ fill: "red", shape: "ring", text: "bot not initialized" });
             }
         } else {
             node.warn("config node failed to initialize.");
-            this.status({ fill: "red", shape: "ring", text: "config node failed to initialize." });
+            node.status({ fill: "red", shape: "ring", text: "config node failed to initialize" });
         }
 
         this.on('input', function (msg) {
 
+            node.status({ fill: "green", shape: "ring", text: "connected" });
+            
             if (msg.payload) {
                 if (msg.payload.chatId) {
                     if (msg.payload.messageId) {
@@ -969,6 +1002,10 @@ module.exports = function (RED) {
             } else {
                 node.warn("msg.payload is empty");
             }
+        });
+
+        node.telegramBot.on('polling_error', function (error) {
+            node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
     }
     RED.nodes.registerType("telegram reply", TelegramReplyNode);

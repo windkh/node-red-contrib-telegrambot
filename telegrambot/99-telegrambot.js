@@ -231,11 +231,11 @@ module.exports = function (RED) {
         return msg;
     }
 
-    function getPhotoIndexWithHighestResolution(botMsg) {
+    function getPhotoIndexWithHighestResolution(photoArray) {
         var photoIndex = 0;
         var highestResolution = 0;
 
-        botMsg.photo.forEach(function (photo, index, array) {
+        photoArray.forEach(function (photo, index, array) {
             var resolution = photo.width * photo.height;
             if (resolution > highestResolution) {
                 highestResolution = resolution;
@@ -254,14 +254,14 @@ module.exports = function (RED) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
         } else if (botMsg.photo) {
             // photos are sent using several resolutions. Therefore photo is an array. We choose the one with the highest resolution in the array.
-            var index = getPhotoIndexWithHighestResolution(botMsg);
+            var index = getPhotoIndexWithHighestResolution(botMsg.photo);
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'photo', content: botMsg.photo[index].file_id, caption: botMsg.caption, date: botMsg.date, blob: true, photos: botMsg.photo };
         } else if (botMsg.audio) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'audio', content: botMsg.audio.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.document) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'document', content: botMsg.document.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.sticker) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'sticker', content: botMsg.sticker.file_id, blob: true };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'sticker', content: botMsg.sticker.file_id, date: botMsg.date, blob: true };
         } else if (botMsg.video) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video', content: botMsg.video.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.video_note) {
@@ -269,27 +269,39 @@ module.exports = function (RED) {
         } else if (botMsg.voice) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'voice', content: botMsg.voice.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.location) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'location', content: botMsg.location };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'location', content: botMsg.location, date: botMsg.date };
         } else if (botMsg.venue) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'venue', content: botMsg.venue };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'venue', content: botMsg.venue, date: botMsg.date };
         } else if (botMsg.contact) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'contact', content: botMsg.contact };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'contact', content: botMsg.contact, date: botMsg.date };
+        } else if (botMsg.new_chat_title) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'new_chat_title', content: botMsg.new_chat_title, date: botMsg.date };
+        } else if (botMsg.new_chat_photo) {
+            // photos are sent using several resolutions. Therefore photo is an array. We choose the one with the highest resolution in the array.
+            var index = getPhotoIndexWithHighestResolution(botMsg.new_chat_photo);
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'new_chat_photo', content: botMsg.new_chat_photo[index].file_id, date: botMsg.date, blob: true, photos: botMsg.new_chat_photo }; 
+        } else if (botMsg.new_chat_members) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'new_chat_members', content: botMsg.new_chat_members, date: botMsg.date, };
+        } else if (botMsg.left_chat_member) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'left_chat_member', content: botMsg.left_chat_member, date: botMsg.date, };
+        } else if (botMsg.delete_chat_photo) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'delete_chat_photo', content: botMsg.delete_chat_photo, date: botMsg.date };
+        } else if (botMsg.pinned_message) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'pinned_message', content: botMsg.pinned_message, date: botMsg.date };
+        } else if (botMsg.channel_chat_created) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'channel_chat_created', content: botMsg.channel_chat_created, date: botMsg.date };
+        } else if (botMsg.group_chat_created) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'group_chat_created', content: botMsg.group_chat_created, chat: botMsg.chat, date: botMsg.date };
+        } else if (botMsg.supergroup_chat_created) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'supergroup_chat_created', content: botMsg.supergroup_chat_created, chat: botMsg.chat, date: botMsg.date };
+        } else if (botMsg.migrate_from_chat_id) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'migrate_from_chat_id', content: botMsg.migrate_from_chat_id, chat: botMsg.chat, date: botMsg.date };
+        } else if (botMsg.migrate_to_chat_id) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'migrate_to_chat_id', content: botMsg.migrate_to_chat_id, chat: botMsg.chat, date: botMsg.date };
         } else {
             // unknown type --> no output
 
-            // TODO: 
-            // 'new_chat_members',
-            // 'left_chat_member',
-            // 'new_chat_photo',
-            // 'delete_chat_photo',
-            // 'new_chat_title',
-            // 'channel_chat_created',
-            // 'group_chat_created',
-            // 'supergroup_chat_created',
-            // 'migrate_from_chat_id',
-            // 'migrate_to_chat_id',
-            // 'pinned_message',
-            // 'sticker',
+            // TODO:
             // 'successful_payment',
             // 'invoice',
             // 'game',
@@ -1011,11 +1023,8 @@ module.exports = function (RED) {
                             // sendGame, setGameScore, getGameHighScores
                             // sendInvoice, answerShippingQuery, answerPreCheckoutQuery
                             // getStickerSet, uploadStickerFile, createNewStickerSet, addStickerToSet, setStickerPositionInSet, deleteStickerFromSet
-                            // sendMediaGroup
-                            
-                            // 'channel_chat_created','delete_chat_photo','game','group_chat_created','invoice','left_chat_member','migrate_from_chat_id','migrate_to_chat_id',
-                            // 'new_chat_members','new_chat_photo','new_chat_title', 'pinned_message','successful_payment','supergroup_chat_created',
-                        }
+                            // sendMediaGroup          
+                         }
                     } else {
                         node.warn("msg.payload.type is empty");
                     }

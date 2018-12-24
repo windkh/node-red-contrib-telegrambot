@@ -78,6 +78,32 @@ When the receiver node receives data like videos, documents and so on, the file 
 saveDataDir is set in the configuration node. The directory is also part of the message payload: msg.payload.path
 In addition to that the message contains the direct download link in the payload: msg.payload.weblink
 
+The following types can be received (see type in output object):
+- message - content is text
+- photo - content is the file_id of the photo with the highest resolution (all photos are stored in the photos property of the output object)
+- audio - content is the file_id of the audio file
+- document - content is the file_id of the document
+- sticker - content is the file_id of the sticker
+- video - content is the file_id of the video file
+- video_note - content is the file_id of the video note file
+- voice - content is the file_id of the voice file
+- location - content is an object with latitude and longitude
+- venue - content is the venue object
+- contact - content is the contact information object
+
+The following types indicate changes in the group or channel itself. 
+- new_chat_title - content is the new chat title
+- new_chat_photo - content is the file_id (see photo)
+- new_chat_members - content is an array of new chat members
+- left_chat_member - content is an object decribing the chat member that left
+- delete_chat_photo - content is true
+- pinned_message - content is the pinned message object
+- channel_chat_created - 
+- group_chat_created - 
+- supergroup_chat_created - 
+- migrate_from_chat_id - content is the chat id. The chat property describes the chat.
+- migrate_to_chat_id - content is the chat id. The chat property describes the chat.
+
 
 ## Sender Node
 This node sends the payload to the chat. The payload must contain the following fields:
@@ -109,8 +135,12 @@ The node receives events from the bot like:
 See example-flow [inline keyboard flow](examples/inlinekeyboard.json) in examples folder.
 - inline_query
 - edited_message which is triggered when someone alters an already sent message.
+- edited_message_text which is triggered when someone alters an already sent message text.
+- edited_message_caption which is triggered when someone alters an already sent caption e.g. of a photo.
 - channel_post which is triggered when the bot is member of a public channel (/setprivacy to disabled!).
 - edited_channel_post which is triggeren when someone alters an already sent message in a public channel.
+- edited_channel_post_text which is triggeren when someone alters an already sent message text in a public channel.
+- edited_channel_post_caption which is triggeren when someone alters an already sent caption of e.g. a photo in a public channel.
 
 
 ## Reply Node
@@ -254,8 +284,7 @@ The following types require a special content format to be used. See the underly
 - location
 - contact
 - venue
-- callback_query
-- action
+
 
 ![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")
 ![Alt text](images/TelegramBotSendPhoto2.png?raw=true "Setting the correct content type.")

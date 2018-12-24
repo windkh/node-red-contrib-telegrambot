@@ -500,6 +500,7 @@ module.exports = function (RED) {
     // - edited_message
     // - channel_post
     // - edited_channel_post
+    // - edited_message_text
     // The message details are stored in the payload
     // chatId
     // messageId
@@ -599,6 +600,32 @@ module.exports = function (RED) {
                                 };
                                 break;
 
+                            // the text of an already sent message.
+                            case 'edited_message_text':
+                                messageDetails = {
+                                    chatId: chatid,
+                                    type: "edited_message_text",
+                                    messageId: botMsg.message_id,
+                                    content: botMsg.text,
+                                    editDate: botMsg.edit_date,
+                                    date: botMsg.date,
+                                    chat: botMsg.chat 
+                                };
+                                break;
+
+                            // the caption of a document or an image ...
+                            case 'edited_message_caption':
+                                messageDetails = {
+                                    chatId: chatid,
+                                    type: "edited_message_caption",
+                                    messageId: botMsg.message_id,
+                                    content: botMsg.caption,
+                                    editDate: botMsg.edit_date,
+                                    date: botMsg.date,
+                                    chat: botMsg.chat 
+                                };
+                                break;
+
                             case 'channel_post':
                                 messageDetails = {
                                     chatId: chatid,
@@ -622,11 +649,34 @@ module.exports = function (RED) {
                                 };
                                 break;
 
+                            case 'edited_channel_post_text':
+                                messageDetails = {
+                                    chatId: chatid,
+                                    type: "edited_channel_post_text",
+                                    messageId: botMsg.message_id,
+                                    content: botMsg.text,
+                                    editDate: botMsg.edit_date,
+                                    date: botMsg.date,
+                                    chat: botMsg.chat 
+                                };
+                                break;
+
+                            case 'edited_channel_post_caption':
+                                messageDetails = {
+                                    chatId: chatid,
+                                    type: "edited_channel_post_caption",
+                                    messageId: botMsg.message_id,
+                                    content: botMsg.caption,
+                                    editDate: botMsg.edit_date,
+                                    date: botMsg.date,
+                                    chat: botMsg.chat 
+                                };
+                                break;
+
+
                             // TODO: implement those
-                            // edited_message_text, edited_message_caption, edited_channel_post_text, edited_channel_post_caption
                             // chosen_inline_result, 
                             // shippingQuery, preCheckoutQuery, 
-                            // message, 
                             default:
                         }
 

@@ -18,6 +18,7 @@ module.exports = function (RED) {
 
         var self = this;
         this.botname = n.botname;
+        this.verbose = n.verboselogging;
         this.status = "disconnected";
 
         this.nodes = [];
@@ -105,7 +106,9 @@ module.exports = function (RED) {
                                     else {
                                         // here we simply ignore the bug and continue polling.
                                         // The following line is removed as this would create endless log files
-                                        self.warn(hint);
+                                        if(self.verbose){
+                                            self.warn(hint);
+                                        }
                                     }
                                 }
                             });
@@ -250,7 +253,7 @@ module.exports = function (RED) {
         if (botMsg.text) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
         } else if (botMsg.photo) {
-            // photos are sent using several resolutions. Tehrefore photo is an array. We choose the one with the highest resolution in the array.
+            // photos are sent using several resolutions. Therefore photo is an array. We choose the one with the highest resolution in the array.
             var index = getPhotoIndexWithHighestResolution(botMsg);
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'photo', content: botMsg.photo[index].file_id, caption: botMsg.caption, date: botMsg.date, blob: true, photos: botMsg.photo };
         } else if (botMsg.audio) {
@@ -273,6 +276,23 @@ module.exports = function (RED) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'contact', content: botMsg.contact };
         } else {
             // unknown type --> no output
+
+            // TODO: 
+            // 'new_chat_members',
+            // 'left_chat_member',
+            // 'new_chat_photo',
+            // 'delete_chat_photo',
+            // 'new_chat_title',
+            // 'channel_chat_created',
+            // 'group_chat_created',
+            // 'supergroup_chat_created',
+            // 'migrate_from_chat_id',
+            // 'migrate_to_chat_id',
+            // 'pinned_message',
+            // 'sticker',
+            // 'successful_payment',
+            // 'invoice',
+            // 'game',
         }
 
         return messageDetails;
@@ -293,7 +313,7 @@ module.exports = function (RED) {
     // message : content string
     // photo   : content file_id of first image in array
     // audio   : content file_id
-    // docuemnt: content file_id of document
+    // document: content file_id of document
     // sticker : content file_id
     // video   : content file_id
     // voice   : content file_id
@@ -344,7 +364,9 @@ module.exports = function (RED) {
                                 node.send([msg, null]);
                             }
                         } else {
-                            // node.warn("Unauthorized incoming call from " + username);
+                            if(node.config.verbose){
+                                node.warn("Unauthorized incoming call from " + username);
+                            }
                             node.send([null, msg]);
                         }
                     }
@@ -443,7 +465,9 @@ module.exports = function (RED) {
                         }
                     } else {
                         // ignoring unauthorized calls
-                        // node.warn("Unauthorized incoming call from " + username);
+                        if(node.config.verbose){
+                            node.warn("Unauthorized incoming call from " + username);
+                        }
                     }
                 });
 
@@ -599,9 +623,10 @@ module.exports = function (RED) {
                                 break;
 
                             // TODO: implement those
-                            // chosen_inline_result, shippingQuery, preCheckoutQuery, 
-                            // message, 
                             // edited_message_text, edited_message_caption, edited_channel_post_text, edited_channel_post_caption
+                            // chosen_inline_result, 
+                            // shippingQuery, preCheckoutQuery, 
+                            // message, 
                             default:
                         }
 
@@ -614,7 +639,9 @@ module.exports = function (RED) {
                         }
                     } else {
                         // ignoring unauthorized calls
-                        // node.warn("Unauthorized incoming call from " + username);
+                        if(node.config.verbose){
+                            node.warn("Unauthorized incoming call from " + username);
+                        }
                     }
                 });
 
@@ -922,7 +949,21 @@ module.exports = function (RED) {
                                 break;
                             default:
                             // unknown type nothing to send.
-                            // TODO: 'channel_chat_created','delete_chat_photo','game','group_chat_created','invoice','left_chat_member','migrate_from_chat_id','migrate_to_chat_id',
+
+                            // TODO:
+                            // kickChatMember, unbanChatMember, restrictChatMember, promoteChatMember
+                            // exportChatInviteLink
+                            // setChatPhoto, deleteChatPhoto, setChatTitle, setChatDescription, pinChatMessage, unpinChatMessage
+                            
+                            // getUserProfilePhotos, getFile, 
+                            // getChat, getChatAdministrators, getChatMembersCount, getChatMember, leaveChat
+                            // setChatStickerSet, deleteChatStickerSet
+                            // sendGame, setGameScore, getGameHighScores
+                            // sendInvoice, answerShippingQuery, answerPreCheckoutQuery
+                            // getStickerSet, uploadStickerFile, createNewStickerSet, addStickerToSet, setStickerPositionInSet, deleteStickerFromSet
+                            // sendMediaGroup
+                            
+                            // 'channel_chat_created','delete_chat_photo','game','group_chat_created','invoice','left_chat_member','migrate_from_chat_id','migrate_to_chat_id',
                             // 'new_chat_members','new_chat_photo','new_chat_title', 'pinned_message','successful_payment','supergroup_chat_created',
                         }
                     } else {

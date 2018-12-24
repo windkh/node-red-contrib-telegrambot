@@ -11,7 +11,7 @@
             chatids: { value: "", required: false },
             baseapiurl: { value: "", required: false },
             pollinterval: { value: 300, required: false, validate:RED.validators.number() },
-            verbose: { value: false, required: false }
+            verboselogging: { value: false, required: false }
         },
         credentials: {
             token: { type: "text" }
@@ -48,8 +48,8 @@
         <input type="text" id="node-config-input-pollinterval" placeholder="(Optional poll interval in milliseconds. The default is 300.)">
     </div>
     <div class="form-row">
-        <label for="node-config-input-verbose"><i class="fa fa-search"></i> Verbose Logging</label>
-        <input type="checkbox" id="node-input-verbose" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-config-input-verboselogging"><i class="fa fa-search"></i> Verbose Logging</label>
+        <input type="checkbox" id="node-config-input-verboselogging" style="display: inline-block; width: auto; vertical-align: top;">
     </div>
 </script>
 
@@ -60,7 +60,7 @@
         The usernames and chat ids properties can be used to limit authorization to the bot. Enter values in comma separated format e.g. a,b,c
         Usernames and chat ids are optional. Leave field blank if you do not want to use this feature.
         The API Base URL can be changed for testing or when using a proxy.
-        You can enable verbose logging to get more details when debugging network problems.
+        You can enable verbose logging to get more details when debugging, but keep in mind that whis could fill your log file very rapidly.
     </p>
 </script>
 
@@ -180,11 +180,8 @@
         defaults: {
             name: { value: "" },
             bot: { value: "", type: "telegram bot", required: true },
-            event: {
-              value: "callback_query",
-              required: true
-            },
-            autoanswer: { value: "", required: false }
+            event: { value: "callback_query", required: true },
+            autoanswer: { value: false, required: false }
         },
         inputs: 0,
         outputs: 1,

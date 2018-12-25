@@ -1037,7 +1037,7 @@ module.exports = function (RED) {
                                 break;
 
                             // --------------------------------------------------------------------
-                            // The following functions require the bot to be adminitrator of the chat/channel
+                            // The following functions require the bot to be administrator of the chat/channel
 
                             case 'kickChatMember':
                                 // The userId must be passed in msg.payload.content: note that this is is a number not the username.
@@ -1053,13 +1053,17 @@ module.exports = function (RED) {
                             // TODO:
                             // unbanChatMember, restrictChatMember, promoteChatMember, 
 
-                            // --------------------------------------------------------------------
-                            
+                            case 'exportChatInviteLink':
+                                    node.telegramBot.exportChatInviteLink(chatId).then(function (sent) {
+                                        msg.payload.content = sent;
+                                        node.send(msg);
+                                    });
+                                break;
+
                             default:
                             // unknown type nothing to send.
 
                             // TODO:
-                            // exportChatInviteLink
                             // setChatPhoto, deleteChatPhoto, setChatTitle, setChatDescription, pinChatMessage, unpinChatMessage
                             
                             // getUserProfilePhotos, getFile, 

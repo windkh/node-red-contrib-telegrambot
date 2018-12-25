@@ -796,8 +796,9 @@ module.exports = function (RED) {
                         addCaptionToMessageOptions(msg);
 
                         switch (type) {
-                            case 'message':
 
+                            // --------------------------------------------------------------------
+                            case 'message':
                                 if (this.hasContent(msg)) {
                                     // the maximum message size is 4096 so we must split the message into smaller chunks.
                                     var chunkSize = 4000;
@@ -836,33 +837,7 @@ module.exports = function (RED) {
                                     } while (!done)
                                 }
                                 break;
-                            case 'callback_query':
-                                if (this.hasContent(msg)) {
-                                    // The new signature expects one object instead of three arguments.
-                                    var callbackQueryId = msg.payload.callbackQueryId;
-                                    var options = {
-                                        callback_query_id: callbackQueryId,
-                                        text: msg.payload.content,
-                                        show_alert: msg.payload.options
-                                    };
-                                    node.telegramBot.answerCallbackQuery(callbackQueryId, options).then(function (sent) {
-                                        msg.payload.sentMessageId = sent.message_id;
-                                        node.send(msg);
-                                    });
-                                }
-                                break;
-
-                            case 'inline_query':
-                                if (this.hasContent(msg)) {
-                                    var inlineQueryId = msg.payload.inlineQueryId;
-                                    var results = msg.payload.results; // this type requires results to be set: see https://core.telegram.org/bots/api#inlinequeryresult
-                                    node.telegramBot.answerInlineQuery(inlineQueryId, results).then(function (sent) {
-                                        msg.payload.sentMessageId = sent.message_id;
-                                        node.send(msg);
-                                    });
-                                }
-                                break;
-
+                            
                             case 'editMessageCaption':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.editMessageCaption(msg.payload.content, msg.payload.options).then(function (sent) {
@@ -897,7 +872,8 @@ module.exports = function (RED) {
                                     node.send(msg);
                                 });
                                 break;
-
+                            // --------------------------------------------------------------------
+                            
                             case 'photo':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
@@ -906,6 +882,7 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+
                             case 'audio':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendAudio(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
@@ -914,6 +891,7 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+
                             case 'document':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendDocument(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
@@ -922,6 +900,7 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+
                             case 'sticker':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendSticker(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
@@ -930,6 +909,7 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+
                             case 'video':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendVideo(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
@@ -938,6 +918,7 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+
                             case 'video_note':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendVideoNote(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
@@ -946,6 +927,7 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+
                             case 'voice':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendVoice(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
@@ -954,6 +936,8 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+                            // --------------------------------------------------------------------
+
                             case 'location':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendLocation(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options).then(function (sent) {
@@ -962,6 +946,7 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+
                             case 'editMessageLiveLocation':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.editMessageLiveLocation(msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options).then(function (sent) {
@@ -970,6 +955,7 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+
                             case 'stopMessageLiveLocation':
                                 // This message requires the options to be set!
                                 //if (this.hasContent(msg)) {
@@ -979,6 +965,8 @@ module.exports = function (RED) {
                                     });
                                 //}
                                 break;
+                            // --------------------------------------------------------------------
+                            
                             case 'venue':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendVenue(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.content.title, msg.payload.content.address, msg.payload.options).then(function (sent) {
@@ -987,6 +975,7 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+
                             case 'contact':
                                 if (this.hasContent(msg)) {
                                     if (msg.payload.content.last_name) {
@@ -1001,6 +990,35 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+                            // --------------------------------------------------------------------
+                            
+                            case 'callback_query':
+                                if (this.hasContent(msg)) {
+                                    // The new signature expects one object instead of three arguments.
+                                    var callbackQueryId = msg.payload.callbackQueryId;
+                                    var options = {
+                                        callback_query_id: callbackQueryId,
+                                        text: msg.payload.content,
+                                        show_alert: msg.payload.options
+                                    };
+                                    node.telegramBot.answerCallbackQuery(callbackQueryId, options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+
+                            case 'inline_query':
+                                if (this.hasContent(msg)) {
+                                    var inlineQueryId = msg.payload.inlineQueryId;
+                                    var results = msg.payload.results; // this type requires results to be set: see https://core.telegram.org/bots/api#inlinequeryresult
+                                    node.telegramBot.answerInlineQuery(inlineQueryId, results).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+
                             case 'action':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendChatAction(chatId, msg.payload.content).then(function (sent) {
@@ -1009,16 +1027,43 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
+
+                            // --------------------------------------------------------------------
+                            case 'leaveChat':
+                                    node.telegramBot.leaveChat(chatId).then(function (sent) {
+                                        msg.payload.sent = sent;
+                                        node.send(msg);
+                                    });
+                                break;
+
+                            // --------------------------------------------------------------------
+                            // The following functions require the bot to be adminitrator of the chat/channel
+
+                            case 'kickChatMember':
+                                // The userId must be passed in msg.payload.content: note that this is is a number not the username.
+                                // Right now there is no way for resolving the user_id by username in the official API.
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.kickChatMember(chatId, msg.payload.content).then(function (sent) {
+                                        msg.payload.sent = sent;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+
+                            // TODO:
+                            // unbanChatMember, restrictChatMember, promoteChatMember, 
+
+                            // --------------------------------------------------------------------
+                            
                             default:
                             // unknown type nothing to send.
 
                             // TODO:
-                            // kickChatMember, unbanChatMember, restrictChatMember, promoteChatMember
                             // exportChatInviteLink
                             // setChatPhoto, deleteChatPhoto, setChatTitle, setChatDescription, pinChatMessage, unpinChatMessage
                             
                             // getUserProfilePhotos, getFile, 
-                            // getChat, getChatAdministrators, getChatMembersCount, getChatMember, leaveChat
+                            // getChat, getChatAdministrators, getChatMembersCount, getChatMember,
                             // setChatStickerSet, deleteChatStickerSet
                             // sendGame, setGameScore, getGameHighScores
                             // sendInvoice, answerShippingQuery, answerPreCheckoutQuery

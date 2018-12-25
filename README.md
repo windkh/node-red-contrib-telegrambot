@@ -112,6 +112,21 @@ msg.payload.type    - e.g. "message"
 msg.payload.content - your message text
 msg.error           - is set when an exception occurred
 
+Next to sending content the sender node can be used to issue direct commands to the API. The msg.payload.type
+needs to be set to one of the following, the msg.payload.content contains the required arguments while additional
+arguments are passed in msg.payload.options (see examples for further details):
+- editMessageCaption
+- editMessageText
+- editMessageReplyMarkup
+- deleteMessage
+- editMessageLiveLocation
+- stopMessageLiveLocation
+- callback_query
+- inline_query
+- action
+- leaveChat
+- kickChatMember
+
 
 ## Command Node
 The command node can be used for triggering a message when a specified command is received: e.g. help.

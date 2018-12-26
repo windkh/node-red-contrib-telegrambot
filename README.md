@@ -126,6 +126,16 @@ arguments are passed in msg.payload.options (see examples for further details):
 - action
 - leaveChat
 - kickChatMember
+- unbanChatMember
+- restrictChatMember
+- promoteChatMember
+- exportChatInviteLink
+- setChatPhoto
+- deleteChatPhoto
+- setChatTitle
+- setChatDescription
+- pinChatMessage
+- unpinChatMessage
 
 
 ## Command Node

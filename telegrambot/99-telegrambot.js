@@ -1050,8 +1050,38 @@ module.exports = function (RED) {
                                 }
                                 break;
 
-                            // TODO:
-                            // unbanChatMember, restrictChatMember, promoteChatMember, 
+                            case 'unbanChatMember':
+                                // The userId must be passed in msg.payload.content: note that this is is a number not the username.
+                                // Right now there is no way for resolving the user_id by username in the official API.
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.unbanChatMember(chatId, msg.payload.content).then(function (sent) {
+                                        msg.payload.sent = sent;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+
+                            case 'restrictChatMember':
+                                // The userId must be passed in msg.payload.content: note that this is is a number not the username.
+                                // Right now there is no way for resolving the user_id by username in the official API.
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.restrictChatMember(chatId, msg.payload.content).then(function (sent) {
+                                        msg.payload.sent = sent;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+
+                            case 'promoteChatMember':
+                                // The userId must be passed in msg.payload.content: note that this is is a number not the username.
+                                // Right now there is no way for resolving the user_id by username in the official API.
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.promoteChatMember(chatId, msg.payload.content).then(function (sent) {
+                                        msg.payload.sent = sent;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
 
                             case 'exportChatInviteLink':
                                     node.telegramBot.exportChatInviteLink(chatId).then(function (sent) {
@@ -1060,12 +1090,62 @@ module.exports = function (RED) {
                                     });
                                 break;
 
+
+                            // --------------------------------------------------------------------
+                           case 'setChatPhoto':
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.setChatPhoto(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+
+                            case 'deleteChatPhoto':
+                                node.telegramBot.deleteChatPhoto(chatId).then(function (sent) {
+                                    msg.payload.sentMessageId = sent.message_id;
+                                    node.send(msg);
+                                });
+                                break;
+                            
+                            case 'setChatTitle':
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.setChatTitle(chatId, msg.payload.content).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+
+                            case 'setChatDescription':
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.setChatDescription(chatId, msg.payload.content).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+
+                            case 'pinChatMessage':
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.pinChatMessage(chatId, msg.payload.content).then(function (sent) {
+                                        msg.payload.sentMessageId = sent.message_id;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+
+                            case 'unpinChatMessage':
+                                node.telegramBot.unpinChatMessage(chatId).then(function (sent) {
+                                    msg.payload.sentMessageId = sent.message_id;
+                                    node.send(msg);
+                                });
+                                break;
+
                             default:
                             // unknown type nothing to send.
 
-                            // TODO:
-                            // setChatPhoto, deleteChatPhoto, setChatTitle, setChatDescription, pinChatMessage, unpinChatMessage
-                            
+                            // TODO:                            
                             // getUserProfilePhotos, getFile, 
                             // getChat, getChatAdministrators, getChatMembersCount, getChatMember,
                             // setChatStickerSet, deleteChatStickerSet

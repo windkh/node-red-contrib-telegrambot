@@ -837,43 +837,7 @@ module.exports = function (RED) {
                                     } while (!done)
                                 }
                                 break;
-                            
-                            case 'editMessageCaption':
-                                if (this.hasContent(msg)) {
-                                    node.telegramBot.editMessageCaption(msg.payload.content, msg.payload.options).then(function (sent) {
-                                        msg.payload.sentMessageId = sent.message_id;
-                                        node.send(msg);
-                                    });
-                                }
-                                break;
-
-                            case 'editMessageText':
-                                if (this.hasContent(msg)) {
-                                    node.telegramBot.editMessageText(msg.payload.content, msg.payload.options).then(function (sent) {
-                                        msg.payload.sentMessageId = sent.message_id;
-                                        node.send(msg);
-                                    });
-                                }
-                                break;
-
-                            case 'editMessageReplyMarkup':
-                                if (this.hasContent(msg)) {
-                                    node.telegramBot.editMessageReplyMarkup(msg.payload.content, msg.payload.options).then(function (sent) {
-                                        msg.payload.sentMessageId = sent.message_id;
-                                        node.send(msg);
-                                    });
-                                }
-                                break;
-
-                            case 'deleteMessage':
-                                // note: this message does not require a content in the message payload.
-                                node.telegramBot.deleteMessage(chatId, msg.payload.options).then(function (sent) {
-                                    msg.payload.sentMessageId = sent.message_id;
-                                    node.send(msg);
-                                });
-                                break;
-                            // --------------------------------------------------------------------
-                            
+                        
                             case 'photo':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
@@ -936,8 +900,7 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
-                            // --------------------------------------------------------------------
-
+                            
                             case 'location':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendLocation(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options).then(function (sent) {
@@ -947,26 +910,6 @@ module.exports = function (RED) {
                                 }
                                 break;
 
-                            case 'editMessageLiveLocation':
-                                if (this.hasContent(msg)) {
-                                    node.telegramBot.editMessageLiveLocation(msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options).then(function (sent) {
-                                        msg.payload.sentMessageId = sent.message_id;
-                                        node.send(msg);
-                                    });
-                                }
-                                break;
-
-                            case 'stopMessageLiveLocation':
-                                // This message requires the options to be set!
-                                //if (this.hasContent(msg)) {
-                                    node.telegramBot.stopMessageLiveLocation(msg.payload.options).then(function (sent) {
-                                        msg.payload.sentMessageId = sent.message_id;
-                                        node.send(msg);
-                                    });
-                                //}
-                                break;
-                            // --------------------------------------------------------------------
-                            
                             case 'venue':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendVenue(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.content.title, msg.payload.content.address, msg.payload.options).then(function (sent) {
@@ -992,6 +935,36 @@ module.exports = function (RED) {
                                 break;
                             // --------------------------------------------------------------------
                             
+                            case 'editMessageLiveLocation':
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.editMessageLiveLocation(msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options).then(function (result) {
+                                        msg.payload.content = result;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+
+                            case 'stopMessageLiveLocation':
+                                // This message requires the options to be set!
+                                //if (this.hasContent(msg)) {
+                                    node.telegramBot.stopMessageLiveLocation(msg.payload.options).then(function (result) {
+                                        msg.payload.content = result;
+                                        node.send(msg);
+                                    });
+                                //}
+                                break;
+
+                            case 'editMessageCaption':
+                            case 'editMessageText':
+                            case 'editMessageReplyMarkup':
+                                if (this.hasContent(msg)) {
+                                    node.telegramBot.editMessageCaption(msg.payload.content, msg.payload.options).then(function (result) {
+                                        msg.payload.content = result;
+                                        node.send(msg);
+                                    });
+                                }
+                                break;
+
                             case 'callback_query':
                                 if (this.hasContent(msg)) {
                                     // The new signature expects one object instead of three arguments.
@@ -1021,138 +994,76 @@ module.exports = function (RED) {
 
                             case 'action':
                                 if (this.hasContent(msg)) {
-                                    node.telegramBot.sendChatAction(chatId, msg.payload.content).then(function (sent) {
-                                        msg.payload.sent = sent;
+                                    node.telegramBot.sendChatAction(chatId, msg.payload.content).then(function (result) {
+                                        msg.payload.content = result;
                                         node.send(msg);
                                     });
                                 }
                                 break;
 
                             // --------------------------------------------------------------------
+                            // Some of the following functions require the bot to be administrator of the chat/channel
+
+                            case 'getChatAdministrators':
+                            case 'getChatMembersCount':
+                            case 'getChat':
                             case 'leaveChat':
-                                    node.telegramBot.leaveChat(chatId).then(function (sent) {
-                                        msg.payload.sent = sent;
+                            case 'exportChatInviteLink':
+                            case 'unpinChatMessage':
+                            case 'deleteChatPhoto':
+                                    node.telegramBot[type](chatId).then(function (result) {
+                                        msg.payload.content = result;
                                         node.send(msg);
                                     });
                                 break;
-
-                            // --------------------------------------------------------------------
-                            // The following functions require the bot to be administrator of the chat/channel
 
                             case 'kickChatMember':
-                                // The userId must be passed in msg.payload.content: note that this is is a number not the username.
-                                // Right now there is no way for resolving the user_id by username in the official API.
-                                if (this.hasContent(msg)) {
-                                    node.telegramBot.kickChatMember(chatId, msg.payload.content).then(function (sent) {
-                                        msg.payload.sent = sent;
-                                        node.send(msg);
-                                    });
-                                }
-                                break;
-
                             case 'unbanChatMember':
-                                // The userId must be passed in msg.payload.content: note that this is is a number not the username.
-                                // Right now there is no way for resolving the user_id by username in the official API.
-                                if (this.hasContent(msg)) {
-                                    node.telegramBot.unbanChatMember(chatId, msg.payload.content).then(function (sent) {
-                                        msg.payload.sent = sent;
-                                        node.send(msg);
-                                    });
-                                }
-                                break;
-
                             case 'restrictChatMember':
-                                // The userId must be passed in msg.payload.content: note that this is is a number not the username.
-                                // Right now there is no way for resolving the user_id by username in the official API.
-                                if (this.hasContent(msg)) {
-                                    node.telegramBot.restrictChatMember(chatId, msg.payload.content).then(function (sent) {
-                                        msg.payload.sent = sent;
-                                        node.send(msg);
-                                    });
-                                }
-                                break;
-
                             case 'promoteChatMember':
+                            case 'getChatMember':
                                 // The userId must be passed in msg.payload.content: note that this is is a number not the username.
                                 // Right now there is no way for resolving the user_id by username in the official API.
                                 if (this.hasContent(msg)) {
-                                    node.telegramBot.promoteChatMember(chatId, msg.payload.content).then(function (sent) {
-                                        msg.payload.sent = sent;
+                                    node.telegramBot[type](chatId, msg.payload.content).then(function (result) {
+                                        msg.payload.content = result;
                                         node.send(msg);
                                     });
                                 }
                                 break;
-
-                            case 'exportChatInviteLink':
-                                    node.telegramBot.exportChatInviteLink(chatId).then(function (sent) {
-                                        msg.payload.content = sent;
-                                        node.send(msg);
-                                    });
-                                break;
-
 
                             // --------------------------------------------------------------------
-                           case 'setChatPhoto':
+                            case 'setChatTitle':
+                            case 'setChatDescription':
+                            case 'pinChatMessage':
+                            case 'deleteMessage':            
                                 if (this.hasContent(msg)) {
-                                    node.telegramBot.setChatPhoto(chatId, msg.payload.content, msg.payload.options).then(function (sent) {
-                                        msg.payload.sentMessageId = sent.message_id;
+                                    node.telegramBot[type](chatId, msg.payload.content).then(function (result) {
+                                        msg.payload.content = result;
                                         node.send(msg);
                                     });
                                 }
-                                break;
-
-                            case 'deleteChatPhoto':
-                                node.telegramBot.deleteChatPhoto(chatId).then(function (sent) {
-                                    msg.payload.sentMessageId = sent.message_id;
-                                    node.send(msg);
-                                });
                                 break;
                             
-                            case 'setChatTitle':
+                            case 'setChatPhoto':
                                 if (this.hasContent(msg)) {
-                                    node.telegramBot.setChatTitle(chatId, msg.payload.content).then(function (sent) {
-                                        msg.payload.sentMessageId = sent.message_id;
+                                    node.telegramBot[type](chatId, msg.payload.content, msg.payload.options).then(function (result) {
+                                        msg.payload.content = result;
                                         node.send(msg);
                                     });
                                 }
                                 break;
-
-                            case 'setChatDescription':
-                                if (this.hasContent(msg)) {
-                                    node.telegramBot.setChatDescription(chatId, msg.payload.content).then(function (sent) {
-                                        msg.payload.sentMessageId = sent.message_id;
-                                        node.send(msg);
-                                    });
-                                }
-                                break;
-
-                            case 'pinChatMessage':
-                                if (this.hasContent(msg)) {
-                                    node.telegramBot.pinChatMessage(chatId, msg.payload.content).then(function (sent) {
-                                        msg.payload.sentMessageId = sent.message_id;
-                                        node.send(msg);
-                                    });
-                                }
-                                break;
-
-                            case 'unpinChatMessage':
-                                node.telegramBot.unpinChatMessage(chatId).then(function (sent) {
-                                    msg.payload.sentMessageId = sent.message_id;
-                                    node.send(msg);
-                                });
-                                break;
-
-                            default:
-                            // unknown type nothing to send.
-
+                           
                             // TODO:                            
                             // getUserProfilePhotos, getFile, 
-                            // getChat, getChatAdministrators, getChatMembersCount, getChatMember,
                             // setChatStickerSet, deleteChatStickerSet
                             // sendGame, setGameScore, getGameHighScores
                             // sendInvoice, answerShippingQuery, answerPreCheckoutQuery
                             // getStickerSet, uploadStickerFile, createNewStickerSet, addStickerToSet, setStickerPositionInSet, deleteStickerFromSet
-                            // sendMediaGroup          
+                            // sendMediaGroup  
+
+                            default:
+                            // unknown type nothing to send.
                          }
                     } else {
                         node.warn("msg.payload.type is empty");

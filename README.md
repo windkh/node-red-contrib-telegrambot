@@ -27,10 +27,20 @@ Skiepp for providing the send chat action idea.
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
 
 # History
-Version 4.x.x
+Version 4.x.x 
+
 Breaking changes: the former callback query node was replaced by the generic event node. 
 You can replace the former callback query node in your existing flows with the event node. Please configure this event node
 to receive the callback query event.
+
+
+Version 4.8.0 
+
+In this version the result returned by the sender node was changed for direct commands like for example 
+editMessageLiveLocation, stopMessageLiveLocation, editMessageCaption, ...
+in a way that the msg.payload.content contains now the full object returned by the request instead of the
+msg.payload.sentMessageId property. All flows that did not make any use of those special functions should snot be affected.
+
 
 # Warning
 The nodes are tested with nodejs 8.11.1 and node-red 0.18.4.
@@ -136,6 +146,10 @@ arguments are passed in msg.payload.options (see examples for further details):
 - setChatDescription
 - pinChatMessage
 - unpinChatMessage
+- getChatAdministrators
+- getChatMembersCount
+- getChat
+- getChatMember
 
 
 ## Command Node

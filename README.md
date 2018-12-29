@@ -85,7 +85,14 @@ https://core.telegram.org/bots/webhooks
 https://stackoverflow.com/questions/42713926/what-is-easy-way-to-create-and-use-a-self-signed-certification-for-a-telegram-we
 One of many pitfalls when creating certificates (that don't work) is, that the value CN you provided to openssl must match the bots domain name: see "bot host" above.
 
-    
+Create our pair of private and public keys using the following command:
+Important: 
+replace SERVER_NAME_OR_IP with the name you enter in the configuration node under "Webhook Bot Host". Both names must be equal, otherwise the telegram server won't send updates to your bot.
+You should also replace YOUR_NAME_OR_COMPANY_NAME with some value. Note that the certificate will expire after 365 days.
+```
+openssl req -newkey rsa:2048 -sha256 -nodes -keyout PRIVATE.key -x509 -days 365 -out PUBLIC.pem -subj "/C=NG/ST=Lagos/L=Lagos/O=YOUR_NAME_OR_COMPANY_NAME/CN=SERVER_NAME_OR_IP"
+```
+   
 
 ## Receiver Node
 This node receives all messages from a chat. Simply invite the bot to a chat.
@@ -117,7 +124,7 @@ The following types indicate changes in the group or channel itself.
 - new_chat_title - content is the new chat title
 - new_chat_photo - content is the file_id (see photo)
 - new_chat_members - content is an array of new chat members
-- left_chat_member - content is an object decribing the chat member that left
+- left_chat_member - content is an object describing the chat member that left
 - delete_chat_photo - content is true
 - pinned_message - content is the pinned message object
 - channel_chat_created - 
@@ -379,7 +386,7 @@ Of course a real bot would send the real data after finishing the processing, bu
 [sendchataction flow](examples/sendchataction.json)
 
 
-## Sending live location
+## Sending live locations
 Locations can be send to the chat as described above and then updated afterwards: live location update.
 To achieve this you have to provide the live_period in seconds in the options when sending the location.
 

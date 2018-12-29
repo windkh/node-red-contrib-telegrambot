@@ -39,6 +39,11 @@ module.exports = function (RED) {
 
         this.baseApiUrl = n.baseapiurl;
 
+        this.updateMode = n.updatemode;
+        if(!this.updateMode){
+            this.updateMode = "polling";
+        }
+
         // 1. optional when polling mode is used
         this.pollInterval = parseInt(n.pollinterval);
         if (isNaN(this.pollInterval)) {
@@ -60,7 +65,15 @@ module.exports = function (RED) {
 
         this.privateKey = n.privatekey;
         this.certificate = n.certificate;
-        this.useWebhook = this.botHost && this.privateKey && this.certificate;
+
+        this.useWebhook = false;
+        if (this.updateMode == "webhook") {
+            if (this.botHost && this.privateKey && this.certificate) {
+                this.useWebhook = true;
+            } else{
+                self.error("Configuration data for webhook is missing. Defaulting to polling mode.");
+            }
+        }
 
         // Activates the bot or returns the already activated bot. 
         this.getTelegramBot = function () {
@@ -87,8 +100,13 @@ module.exports = function (RED) {
                                 this.telegramBot = new telegramBot(this.token, options);
 
                                 this.telegramBot.on('webhook_error', function (error) {
-                                    self.warn(error.message);
-    
+                                   
+                                    self.setNodesStatus({ fill: "red", shape: "ring", text: "webhook error" })
+                                    
+                                    if(self.verbose) {
+                                        self.warn(error.message);
+                                    }
+                                    
                                     // TODO: check if we should abort in future when this happens
                                     // self.abortBot(error.message, function () {
                                     //     self.warn("Bot stopped: Webhook error.");
@@ -101,12 +119,14 @@ module.exports = function (RED) {
                                     
                                     if(self.verbose) {
                                         self.telegramBot.getWebHookInfo().then(function (result) {
-                                            self.warn("Webhook enabled: ", result);
+                                            self.log("Webhook enabled: " + JSON.stringify(result));
                                         });
                                     }
 
-                                    if(!success)
-                                    {
+                                    if(success) {
+                                        self.status = "connected";
+                                    }
+                                    else {
                                         self.abortBot("Failed to set webhook " + botUrl, function () {
                                             self.warn("Bot stopped: Webhook not set.");
                                         });
@@ -125,8 +145,12 @@ module.exports = function (RED) {
                                     baseApiUrl: this.baseApiUrl
                                 };
                                 this.telegramBot = new telegramBot(this.token, options);
+                                self.status = "connected";
 
                                 this.telegramBot.on('polling_error', function (error) {
+
+                                    self.setNodesStatus({ fill: "red", shape: "ring", text: "polling error" })
+
                                     if(self.verbose) {
                                         self.warn(error.message);
     
@@ -168,8 +192,6 @@ module.exports = function (RED) {
                                     }
                                 });
                             }
-
-                            self.status = "connected";
 
                             this.telegramBot.on('error', function (error) {
                                 self.warn(error.message);
@@ -455,10 +477,6 @@ module.exports = function (RED) {
                         }
                     }
                 });
-
-                node.telegramBot.on('polling_error', function (error) {
-                    node.status({ fill: "red", shape: "ring", text: "disconnected" });
-                });
             } else {
                 node.warn("bot not initialized");
                 node.status({ fill: "red", shape: "ring", text: "bot not initialized" });
@@ -553,10 +571,6 @@ module.exports = function (RED) {
                             node.warn("Unauthorized incoming call from " + username);
                         }
                     }
-                });
-
-                node.telegramBot.on('polling_error', function (error) {
-                    node.status({ fill: "red", shape: "ring", text: "disconnected" });
                 });
             } else {
                 node.warn("bot not initialized.");
@@ -778,10 +792,6 @@ module.exports = function (RED) {
                             node.warn("Unauthorized incoming call from " + username);
                         }
                     }
-                });
-
-                node.telegramBot.on('polling_error', function (error) {
-                    node.status({ fill: "red", shape: "ring", text: "disconnected" });
                 });
             } else {
                 node.warn("bot not initialized.");
@@ -1148,10 +1158,6 @@ module.exports = function (RED) {
                 node.warn("msg.payload is empty");
             }
         });
-
-        node.telegramBot.on('polling_error', function (error) {
-            node.status({ fill: "red", shape: "ring", text: "disconnected" });
-        });
     }
     RED.nodes.registerType("telegram sender", TelegramOutNode);
 
@@ -1215,10 +1221,6 @@ module.exports = function (RED) {
             } else {
                 node.warn("msg.payload is empty");
             }
-        });
-
-        node.telegramBot.on('polling_error', function (error) {
-            node.status({ fill: "red", shape: "ring", text: "disconnected" });
         });
     }
     RED.nodes.registerType("telegram reply", TelegramReplyNode);

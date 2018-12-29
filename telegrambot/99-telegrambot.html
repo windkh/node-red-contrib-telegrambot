@@ -11,6 +11,8 @@
             chatids: { value: "", required: false },
             baseapiurl: { value: "", required: false },
             
+            updatemode: { value: "polling", required: true },
+
             // only for polling mode
             pollinterval: { value: 300, required: false, validate:RED.validators.number() },
             
@@ -77,7 +79,7 @@
     </div>
 
     <div class="form-row">
-        <label><i class="fa fa-link"></i> Update Mode</label>
+        <label for="node-config-input-updatemode"><i class="fa fa-link"></i> Update Mode</label>
         <select id="node-config-input-updatemode">
             <option value="polling">Bot polls for new messages.</option>
             <option value="webhook">Bot is notified via webhook.</option>
@@ -183,9 +185,14 @@
 </script>
 
 <script type="text/x-red" data-help-name="telegram receiver">
-    <p>A telegram node that triggers the output when some message is received from the chat.
-    Message is sent to output 1 if it comes from an authorized user.
-    Message is sent to output 2 if it comes from an non-authorized user.</p>
+    <p>A telegram node that triggers the output when some message is received from the chat.</p>
+    <p>The node receives all messages polled from/sent by the telegram server.</p>
+    
+    <h3>Outputs</h3> 
+    <p>1. Standard Ouput: Message is sent to output 1 if it is from an authorized user.</p>
+    <p>2. Unauthorized Output: Message is sent to output 2 if it is from a non-authorized user.</p>
+    
+    <h3>Details</h3>
     <p><code>msg.payload</code> typically contains the parsed data as follows:</p>
     <ul>
     <li><code>content</code> the message contents</li>
@@ -244,8 +251,10 @@
 
 <script type="text/x-red" data-help-name="telegram command">
     <p>A telegram node that triggers the output when a specified command is received from the chat.</p>
-    <p>Message is sent to output 1 if it comes from an authorized user and it contains the command at the beginning of the message.</p>
-    <p>Message is sent to output 2 if it comes from an authorized user but does not contain the specified command.</p>
+
+    <h3>Outputs</h3>
+    <p>1. Standard Ouput: Message is sent to output 1 if it is from an authorized user and it contains the command at the beginning of the message.</p>
+    <p>2. Error Ouput: Message is sent to output 2 if it is from an authorized user but does not contain the specified command.</p>
 </script>
 
 
@@ -309,6 +318,11 @@
 
 <script type="text/x-red" data-help-name="telegram event">
       <p>A telegram node that triggers the output when a event is received from a chat.</p>
+      
+      <h3>Outputs</h3> 
+      <p>1. Standard Output: The output is triggered when the configured event was received.</p>
+
+      <h3>Details</h3> 
       <p>The event type can be selected.</p> 
       <p><code>msg.payload</code> typically contains the parsed data as follows:</p>
       <ul>
@@ -363,6 +377,11 @@
 
 <script type="text/x-red" data-help-name="telegram sender">
     <p>A telegram node that sends the <code>msg.payload</code> to the chat.</p>
+
+    <h3>Inputs</h3>
+    <p>1. Standard Input: receives a message object containing the chatId. It can be directly connected to the receiver node's output 1.</p>
+
+    <h3>Details</h3>
     <p>The <code>msg.payload</code> must be an object that contains a complete set of telegram message properties,
      at a minimum these should contain:
      <ul>
@@ -411,6 +430,14 @@
 
 <script type="text/x-red" data-help-name="telegram reply">
     <p>A telegram node that is triggered when someone answered to a specified message.</p>
+
+    <h3>Inputs</h3>
+    <p>1. Standard Input: calls the onReplyToMessage of the bot.</p>
+    
+    <h3>Outputs</h3>
+    <p>1. Standard Output: contains the result from the onReplyToMessage call.</p>
+    
+    <h3>Details</h3>
     <p>This can be useful, when the bot for example sent a message and you want to take some action</p>
     <p>when someone responded to this specified message.</p>
     <p>Responding to messages is done by clicking on the message in your client and choose "answer" from the popup.</p>

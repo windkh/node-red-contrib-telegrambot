@@ -42,6 +42,11 @@ in a way that the msg.payload.content contains now the full object returned by t
 msg.payload.sentMessageId property. All flows that did not make any use of those special functions should snot be affected.
 
 
+Version 5.0.0
+
+Finally webhooks are supported now. The configuration node was changed so that the required properties for webhook can be configured. 
+ 
+
 # Warning
 The nodes are tested with nodejs 8.11.1 and node-red 0.18.4.
 
@@ -74,6 +79,13 @@ Leave the fields blank if you do not want to use this feature.
 saveDataDir is an optional configuration value that can be set to automatically download all contents like music, video, documents, etc.
 The "Verbose Logging" flag should only be activated when debugging network problems as this will create cyclic warnings when the network is down.
 
+By default the bot is polling every 300ms for new messages. But you can also make use of the webhook method to avoid polling.
+Before that you have to create your own certificate as described here: 
+https://core.telegram.org/bots/webhooks
+https://stackoverflow.com/questions/42713926/what-is-easy-way-to-create-and-use-a-self-signed-certification-for-a-telegram-we
+One of many pitfalls when creating certificates (that don't work) is, that the value CN you provided to openssl must match the bots domain name: see "bot host" above.
+
+    
 
 ## Receiver Node
 This node receives all messages from a chat. Simply invite the bot to a chat.

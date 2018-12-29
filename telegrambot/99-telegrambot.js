@@ -13,16 +13,18 @@ module.exports = function (RED) {
     // The configuration node
     // holds the token
     // and establishes the connection to the telegram bot
+    // you can either select between polling mode and webhook mode.
     function TelegramBotNode(n) {
         RED.nodes.createNode(this, n);
 
         var self = this;
-        this.botname = n.botname;
-        this.verbose = n.verboselogging;
         this.status = "disconnected";
-
         this.nodes = [];
 
+        // Reading configuration properties...
+        this.botname = n.botname;
+        this.verbose = n.verboselogging;
+                        
         this.usernames = [];
         if (n.usernames) {
             this.usernames = n.usernames.split(',');
@@ -36,11 +38,29 @@ module.exports = function (RED) {
         }
 
         this.baseApiUrl = n.baseapiurl;
+
+        // 1. optional when polling mode is used
         this.pollInterval = parseInt(n.pollinterval);
         if (isNaN(this.pollInterval)) {
             this.pollInterval = 300;
         }
 
+        // 2. optional when webhook is used.
+        this.botHost = n.bothost;
+
+        this.publicBotPort = parseInt(n.publicbotport);
+        if (isNaN(this.publicBotPort)) {
+            this.publicBotPort = 8443;
+        }
+
+        this.localBotPort = parseInt(n.localbotport);
+        if (isNaN(this.localBotPort)) {
+            this.localBotPort = this.publicBotPort;
+        }
+
+        this.privateKey = n.privatekey;
+        this.certificate = n.certificate;
+        this.useWebhook = this.botHost && this.privateKey && this.certificate;
 
         // Activates the bot or returns the already activated bot. 
         this.getTelegramBot = function () {
@@ -50,17 +70,105 @@ module.exports = function (RED) {
                     if (this.token) {
                         this.token = this.token.trim();
                         if (!this.telegramBot) {
-                            var polling =
+
+                            if (this.useWebhook){
+                                var webHook =
+                                {
+                                    autoOpen: true,
+                                    port : this.localBotPort,
+                                    key: this.privateKey,
+                                    cert: this.certificate,
+                                }
+                                var options =
+                                {
+                                    webHook: webHook,
+                                    baseApiUrl: this.baseApiUrl
+                                };
+                                this.telegramBot = new telegramBot(this.token, options);
+
+                                this.telegramBot.on('webhook_error', function (error) {
+                                    self.warn(error.message);
+    
+                                    // TODO: check if we should abort in future when this happens
+                                    // self.abortBot(error.message, function () {
+                                    //     self.warn("Bot stopped: Webhook error.");
+                                    // });
+                                });
+
+                                var botUrl = "https://" + this.botHost + ":" + this.publicBotPort + "/" + this.token; 
+                                var setWebHookOptions = {certificate: options.webHook.cert};
+                                this.telegramBot.setWebHook(botUrl, setWebHookOptions).then(function (success) {
+                                    
+                                    if(self.verbose) {
+                                        self.telegramBot.getWebHookInfo().then(function (result) {
+                                            self.warn("Webhook enabled: ", result);
+                                        });
+                                    }
+
+                                    if(!success)
+                                    {
+                                        self.abortBot("Failed to set webhook " + botUrl, function () {
+                                            self.warn("Bot stopped: Webhook not set.");
+                                        });
+                                    }   
+                                });     
+                            }
+                            else {
+                                var polling =
                                 {
                                     autoStart: true,
                                     interval: this.pollInterval
                                 }
-                            var options =
+                                var options =
                                 {
                                     polling: polling,
                                     baseApiUrl: this.baseApiUrl
                                 };
-                            this.telegramBot = new telegramBot(this.token, options);
+                                this.telegramBot = new telegramBot(this.token, options);
+
+                                this.telegramBot.on('polling_error', function (error) {
+                                    if(self.verbose) {
+                                        self.warn(error.message);
+    
+                                        var stopPolling = false;
+                                        var hint;
+                                        if (error.message === "ETELEGRAM: 401 Unauthorized") {
+                                            hint = "Please check if the bot token is valid: " + self.credentials.token;
+                                            stopPolling = true;
+                                        }
+                                        else if (error.message.startsWith("EFATAL: Error: connect ETIMEDOUT")) {
+                                            hint = "Timeout connecting to server. Trying again.";
+                                        }
+                                        else if (error.message.startsWith("EFATAL: Error: read ECONNRESET")) {
+                                            hint = "Network connection may be down. Trying again.";
+                                        }
+                                        else if (error.message.startsWith("EFATAL: Error: getaddrinfo EAI_AGAIN")) {
+                                            hint = "Network connection may be down. Trying again.";
+                                        }
+                                        else if (error.message.startsWith("EFATAL: Error: getaddrinfo ENOTFOUND")) {
+                                            hint = "Network connection may be down. Trying again.";
+                                        }
+                                        else {
+                                            // unknown error occured... we simply ignore it.
+                                            hint = "Unknown error. Trying again.";
+                                        }
+    
+                                        if (stopPolling) {
+                                            self.abortBot(error.message, function () {
+                                                self.warn("Bot stopped: " + hint);
+                                            });
+                                        }
+                                        else {
+                                            // here we simply ignore the bug and continue polling.
+                                            // The following line is removed as this would create endless log files
+                                            if(self.verbose){
+                                                self.warn(hint);
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+
                             self.status = "connected";
 
                             this.telegramBot.on('error', function (error) {
@@ -68,56 +176,6 @@ module.exports = function (RED) {
 
                                 self.abortBot(error.message, function () {
                                     self.warn("Bot stopped: Fatal Error.");
-                                });
-                            });
-
-                            this.telegramBot.on('polling_error', function (error) {
-                                if(self.verbose) {
-                                    self.warn(error.message);
-
-                                    var stopPolling = false;
-                                    var hint;
-                                    if (error.message === "ETELEGRAM: 401 Unauthorized") {
-                                        hint = "Please check if the bot token is valid: " + self.credentials.token;
-                                        stopPolling = true;
-                                    }
-                                    else if (error.message.startsWith("EFATAL: Error: connect ETIMEDOUT")) {
-                                        hint = "Timeout connecting to server. Trying again.";
-                                    }
-                                    else if (error.message.startsWith("EFATAL: Error: read ECONNRESET")) {
-                                        hint = "Network connection may be down. Trying again.";
-                                    }
-                                    else if (error.message.startsWith("EFATAL: Error: getaddrinfo EAI_AGAIN")) {
-                                        hint = "Network connection may be down. Trying again.";
-                                    }
-                                    else if (error.message.startsWith("EFATAL: Error: getaddrinfo ENOTFOUND")) {
-                                        hint = "Network connection may be down. Trying again.";
-                                    }
-                                    else {
-                                        // unknown error occured... we simply ignore it.
-                                        hint = "Unknown error. Trying again.";
-                                    }
-
-                                    if (stopPolling) {
-                                        self.abortBot(error.message, function () {
-                                            self.warn("Bot stopped: " + hint);
-                                        });
-                                    }
-                                    else {
-                                        // here we simply ignore the bug and continue polling.
-                                        // The following line is removed as this would create endless log files
-                                        if(self.verbose){
-                                            self.warn(hint);
-                                        }
-                                    }
-                                }
-                            });
-
-                            this.telegramBot.on('webhook_error', function (error) {
-                                self.warn(error.message);
-
-                                self.abortBot(error.message, function () {
-                                    self.warn("Bot stopped: Webhook error.");
                                 });
                             });
                         }
@@ -133,14 +191,28 @@ module.exports = function (RED) {
         });
 
         this.abortBot = function (hint, done) {
-            if (self.telegramBot !== null && self.telegramBot._polling) {
-                self.telegramBot.stopPolling()
-                    .then(function () {
-                        self.telegramBot = null;
-                        self.status = "disconnected";
-                        self.setNodesStatus({ fill: "red", shape: "ring", text: "bot stopped. " + hint })
-                        done();
-                    });
+
+            if (self.telegramBot !== null) {
+                if (self.telegramBot._polling){
+                    self.telegramBot.stopPolling()
+                        .then(function () {
+                            self.telegramBot = null;
+                            self.status = "disconnected";
+                            self.setNodesStatus({ fill: "red", shape: "ring", text: "bot stopped. " + hint })
+                            done();
+                        });
+                }
+
+                if (self.telegramBot._webHook){
+                    self.telegramBot.deleteWebHook();
+                    self.telegramBot.closeWebHook()
+                        .then(function () {
+                            self.telegramBot = null;
+                            self.status = "disconnected";
+                            self.setNodesStatus({ fill: "red", shape: "ring", text: "bot stopped. " + hint })
+                            done();
+                        });
+                }   
             }
             else {
                 self.status = "disconnected";
@@ -688,7 +760,8 @@ module.exports = function (RED) {
 
                             // TODO: implement those
                             // chosen_inline_result, 
-                            // shippingQuery, preCheckoutQuery, 
+                            // shippingQuery, preCheckoutQuery
+
                             default:
                         }
 

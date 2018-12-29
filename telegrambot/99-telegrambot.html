@@ -10,7 +10,17 @@
             usernames: { value: "", required: false },
             chatids: { value: "", required: false },
             baseapiurl: { value: "", required: false },
+            
+            // only for polling mode
             pollinterval: { value: 300, required: false, validate:RED.validators.number() },
+            
+            // only for webhook mode
+            bothost: { value: "", required: false },
+            localbotport: { value: 8443, required: false, validate:RED.validators.number() },
+            publicbotport: { value: 8443, required: false, validate:RED.validators.number() },
+            privatekey: { value: "", required: false },
+            certificate: { value: "", required: false },
+            
             verboselogging: { value: false, required: false }
         },
         credentials: {
@@ -18,6 +28,28 @@
         },
         label: function () {
             return this.botname;
+        },
+        oneditprepare: function() {
+            var updateOptions = function() {
+                var mode = $("#node-config-input-updatemode").val();
+                if (mode == "webhook") {
+                    $("#webhook1").show();
+                    $("#webhook2").show();
+                    $("#webhook3").show();
+                    $("#webhook4").show();
+                    $("#webhook5").show();
+                    $("#polling1").hide();
+                } else {
+                    $("#webhook1").hide();
+                    $("#webhook2").hide();
+                    $("#webhook3").hide();
+                    $("#webhook4").hide();
+                    $("#webhook5").hide();
+                    $("#polling1").show();
+                }
+            };
+            updateOptions();
+            $("#node-config-input-updatemode").change(updateOptions);
         }
     });
 </script>
@@ -43,10 +75,41 @@
         <label for="node-config-input-baseapiurl"><i class="fa fa-server"></i> Server URL</label>
         <input type="text" id="node-config-input-baseapiurl" placeholder="(Optional URL for proxying and testing e.g.: https://api.telegram.org)">
     </div>
+
     <div class="form-row">
-        <label for="node-config-input-pollinterval"><i class="fa fa-clock-o"></i> Polling Interval</label>
-        <input type="text" id="node-config-input-pollinterval" placeholder="(Optional poll interval in milliseconds. The default is 300.)">
+        <label><i class="fa fa-link"></i> Update Mode</label>
+        <select id="node-config-input-updatemode">
+            <option value="polling">Bot polls for new messages.</option>
+            <option value="webhook">Bot is notified via webhook.</option>
+        </select>
     </div>
+
+    <div class="form-row hidden" id="polling1">
+            <label for="node-config-input-pollinterval"><i class="fa fa-clock-o"></i> Polling Interval</label>
+            <input type="text" id="node-config-input-pollinterval" placeholder="(Optional poll interval in milliseconds. The default is 300.)">
+    </div>
+
+    <div class="form-row hidden" id="webhook1">
+        <label for="node-config-input-bothost"><i class="fa fa-desktop"></i> Webhook Bot Host</label>
+        <input type="text" id="node-config-input-bothost" placeholder="(Optional public IP or hostname of your bot when using webhook. e.g.: mybot.domain.com)">
+    </div>
+    <div class="form-row hidden" id="webhook2">
+        <label for="node-config-input-publicbotport"><i class="fa fa-envelope-open-o"></i> Webook Public Bot Port</label>
+        <input type="text" id="node-config-input-publicbotport" placeholder="(Optional public port for your bot when using webhook. The default is 8443.)">
+    </div>
+    <div class="form-row hidden" id="webhook3">
+        <label for="node-config-input-localbotport"><i class="fa fa-envelope-o"></i> Webook Local Bot Port</label>
+        <input type="text" id="node-config-input-localbotport" placeholder="(Optional local port for your bot when using webhook. The default is 8443.)">
+    </div>
+    <div class="form-row hidden" id="webhook4">
+        <label for="node-config-input-privatekey"><i class="fa fa-id-card"></i> Webhook Private Key</label>
+        <input type="text" id="node-config-input-privatekey" placeholder="(Optional local path to your private key file. e.g.: C:\temp\\key.pem)">
+    </div>
+    <div class="form-row hidden" id="webhook5">
+        <label for="node-config-input-certificate"><i class="fa fa-id-card-o"></i> Webhook Certificate</label>
+        <input type="text" id="node-config-input-certificate" placeholder="(Optional local path to your certificate file. e.g.: C:\temp\\crt.pem)">
+    </div>
+    
     <div class="form-row">
         <label for="node-config-input-verboselogging"><i class="fa fa-search"></i> Verbose Logging</label>
         <input type="checkbox" id="node-config-input-verboselogging" style="display: inline-block; width: auto; vertical-align: top;">
@@ -55,13 +118,28 @@
 
 <script type="text/x-red" data-help-name="telegram bot">
     <p>A configuration node that holds the token of the telegram bot.</p>
-    <p>
-        It communicates with the telegram server. Do not create several configurations nodes with the same token!
-        The usernames and chat ids properties can be used to limit authorization to the bot. Enter values in comma separated format e.g. a,b,c
-        Usernames and chat ids are optional. Leave field blank if you do not want to use this feature.
-        The API Base URL can be changed for testing or when using a proxy.
-        You can enable verbose logging to get more details when debugging, but keep in mind that whis could fill your log file very rapidly.
-    </p>
+
+    <h3>Details</h3>
+    <p>It communicates with the telegram server. Do not create several configurations nodes with the same token!</p>
+    <p>The usernames and chat ids properties can be used to limit authorization to the bot. Enter values in comma separated format e.g. a,b,c</p>
+    <p>Usernames and chat ids are optional. Leave field blank if you do not want to use this feature.</p>
+    <p>The API Base URL can be changed for testing or when using a proxy.</p>
+    <p>You can enable verbose logging to get more details when debugging, but keep in mind that whis could fill your log file very rapidly.</p>
+    <p></p>
+    <h3>Operation Modes: Polling vs Webhook</h3>
+    <p>By default the bot polls the telegram api server every 300ms. But you can also create a webhook so that the telegram server sends updates via HTTPS POST directly to your host machine.</p>
+    <p>You can enable the webhook by providing the required data:</p>
+    <p>- private key</p>
+    <p>- public key</p>
+    <p>- the publicly reachable IP or hostname of your bot</p>
+    <p>- the public port (e.g.: 8443, 443, ...)</p>
+    <p>- the local port (e.g.: 8443. This value is only different to the public port when you are behind a router that maps ports from public to private ones) </p>
+    <p></p>
+    <h3>References</h3>
+    <p>See also </p>
+    <p>https://core.telegram.org/bots/webhooks</p>
+    <p>https://stackoverflow.com/questions/42713926/what-is-easy-way-to-create-and-use-a-self-signed-certification-for-a-telegram-we</p>
+    <p>One common pitfall when creating certificates that don't work is that the value CN you provided to openssl must match the bots domain name: see "bot host" above. </p>
 </script>
 
 

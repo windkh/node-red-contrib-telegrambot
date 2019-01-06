@@ -3,7 +3,7 @@
 ![license](https://img.shields.io/github/license/windkh/node-red-contrib-telegrambot.svg)
 ![Release](https://img.shields.io/npm/v/node-red-contrib-telegrambot.svg)
 ![npm](https://img.shields.io/npm/dm/node-red-contrib-telegrambot.svg)
-[![Telegram](https://img.shields.io/badge/Join-Telegram%20channel-blue.svg)](https://t.me/nodered_telegrambot)
+[![Telegram](https://img.shields.io/badge/Join-Telegram%20Chat-blue.svg)](https://t.me/nodered_telegrambot)
 
 This package contains a receiver and a sender node which act as a telegram bot.
 The only thing required is the token that can be retrieved by the @botfather telegram bot.

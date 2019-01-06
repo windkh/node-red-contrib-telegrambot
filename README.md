@@ -1,6 +1,7 @@
 # Telegram bot nodes for node-red
 
 ![license](https://img.shields.io/github/license/windkh/node-red-contrib-telegrambot.svg)
+![Release](https://img.shields.io/npm/v/node-red-contrib-telegrambot.svg)
 ![npm](https://img.shields.io/npm/dm/node-red-contrib-telegrambot.svg)
 [![Telegram](https://img.shields.io/badge/Join-Telegram%20channel-blue.svg)](https://t.me/nodered_telegrambot)
 

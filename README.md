@@ -1,9 +1,9 @@
 # Telegram bot nodes for node-red
 
-![license](https://img.shields.io/github/license/windkh/node-red-contrib-telegrambot.svg)
+![License](https://img.shields.io/github/license/windkh/node-red-contrib-telegrambot.svg)
 ![Release](https://img.shields.io/npm/v/node-red-contrib-telegrambot.svg)
-![npm](https://img.shields.io/npm/dm/node-red-contrib-telegrambot.svg)
-[![telegram](https://img.shields.io/badge/join-Telegram%20Chat-blue.svg)](https://t.me/nodered_telegrambot)
+![NPM](https://img.shields.io/npm/dm/node-red-contrib-telegrambot.svg)
+[![Telegram](https://img.shields.io/badge/Join-Telegram%20Chat-blue.svg)](https://t.me/nodered_telegrambot)
 
 This package contains a receiver and a sender node which act as a telegram bot.
 The only thing required is the token that can be retrieved by the @botfather telegram bot.
@@ -11,9 +11,11 @@ https://core.telegram.org/bots
 
 
 # Thanks for your donation
-If you want to support this free project. Any help is welcome.
+If you want to support this free project. Any help is welcome. You can donate by clicking one of the following links:
+
 <a target="blank" href="https://blockchain.com/btc/payment_request?address=1PBi7BoZ1mBLQx4ePbwh1MVoK2RaoiDsp5"><img src="https://img.shields.io/badge/Donate-Bitcoin-green.svg"/></a>
 <a target="blank" href="https://www.paypal.me/windkh"><img src="https://img.shields.io/badge/Donate-PayPal-blue.svg"/></a>
+
 
 # Credits
 dvv (Vladimir Dronnikov) for providing the saveDataDir configuration option.

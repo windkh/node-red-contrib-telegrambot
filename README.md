@@ -56,7 +56,7 @@ Finally webhooks are supported now. The configuration node was changed so that t
  
 
 # Warning
-The nodes are tested with nodejs 8.11.1 and node-red 0.18.4.
+The nodes are tested with nodejs 8.11.1 and node-red 0.18.7. This version can not be used with node-red 0.19.x and above.
 
 
 # Usage
@@ -69,7 +69,7 @@ The input node receives messages from the bot and sends a message object with th
 
 `msg.originalMessage` contains the original message object from the underlying [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api) lib.
 
-The output node sends the content to a sepcified chat.
+The output node sends the content to a specified chat.
 A simple echo flow looks like:
 
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")

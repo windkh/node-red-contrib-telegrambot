@@ -306,9 +306,6 @@ module.exports = function (RED) {
                 if(userNode) {
                     userNode.status(status);
                 }
-                else{
-                    self.users.remove(nodeId);
-                }
             });
         }
 

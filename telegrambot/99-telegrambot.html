@@ -14,12 +14,12 @@
             updatemode: { value: "polling", required: true },
 
             // only for polling mode
-            pollinterval: { value: 300, required: false, validate:RED.validators.number() },
+            pollinterval: { value: 300, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
             
             // only for webhook mode
             bothost: { value: "", required: false },
-            localbotport: { value: 8443, required: false, validate:RED.validators.number() },
-            publicbotport: { value: 8443, required: false, validate:RED.validators.number() },
+            localbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
+            publicbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
             privatekey: { value: "", required: false },
             certificate: { value: "", required: false },
             

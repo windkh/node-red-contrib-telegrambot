@@ -18,6 +18,10 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, n);
 
         var self = this;
+
+        // contains all the nodes that make use of the bot connection maintained by this configuration node.
+        this.users = [];
+
         this.status = "disconnected";
 
         // Reading configuration properties...
@@ -286,10 +290,25 @@ module.exports = function (RED) {
             return isAuthorized;
         }
 
+        this.register = function (node) {	
+            var id = node.id;       
+            if (self.users.indexOf(id) === -1) {	           
+                self.users.push(id);	               
+            }	               
+            else {	
+                self.warn("Node " + id + " registered twice at the configuration node: ignoring.");	
+            }	
+        }
+
         this.setUsersStatus = function (status) {
-            n._users.forEach(function (nodeId) {
+            self.users.forEach(function (nodeId) {
                 var userNode = RED.nodes.getNode(nodeId);
-                userNode.status(status);
+                if(userNode) {
+                    userNode.status(status);
+                }
+                else{
+                    self.users.remove(nodeId);
+                }
             });
         }
 
@@ -423,6 +442,8 @@ module.exports = function (RED) {
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
+            this.config.register(node);
+
             node.status({ fill: "red", shape: "ring", text: "not connected" });
 
             node.telegramBot = this.config.getTelegramBot();
@@ -503,6 +524,8 @@ module.exports = function (RED) {
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
+            this.config.register(node);
+
             node.status({ fill: "red", shape: "ring", text: "not connected" });
 
             node.telegramBot = this.config.getTelegramBot();
@@ -603,6 +626,8 @@ module.exports = function (RED) {
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
+            this.config.register(node);
+
             node.status({ fill: "red", shape: "ring", text: "not connected" });
 
             node.telegramBot = this.config.getTelegramBot();
@@ -822,6 +847,8 @@ module.exports = function (RED) {
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
+            this.config.register(node);
+
             node.status({ fill: "red", shape: "ring", text: "not connected" });
 
             node.telegramBot = this.config.getTelegramBot();
@@ -1174,6 +1201,8 @@ module.exports = function (RED) {
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
+            this.config.register(node);
+
             node.status({ fill: "red", shape: "ring", text: "not connected" });
 
             node.telegramBot = this.config.getTelegramBot();

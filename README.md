@@ -56,7 +56,7 @@ Finally webhooks are supported now. The configuration node was changed so that t
  
 
 # Warning
-The nodes are tested with nodejs 8.11.1 and node-red 0.18.7. This version can not be used with node-red 0.19.x and above.
+The nodes are tested with nodejs 8.11.1 and node-red 0.18.7. This version is not tested with node-red 0.19.x and above.
 
 
 # Usage

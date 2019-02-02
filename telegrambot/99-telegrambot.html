@@ -16,6 +16,12 @@
             // only for polling mode
             pollinterval: { value: 300, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
             
+            // only for socks5 proxy support
+            sockshost: { value: "", required: false },
+            socksport: { value: 6667, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
+            socksusername: { value: "anonymous", required: false },
+            sockspassword: { value: "", required: false },
+
             // only for webhook mode
             bothost: { value: "", required: false },
             localbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
@@ -41,13 +47,32 @@
                     $("#webhook4").show();
                     $("#webhook5").show();
                     $("#polling1").hide();
-                } else {
+                    $("#socks1").hide();
+                    $("#socks2").hide();
+                    $("#socks3").hide();
+                    $("#socks4").hide();
+                } else if (mode == "polling"){
                     $("#webhook1").hide();
                     $("#webhook2").hide();
                     $("#webhook3").hide();
                     $("#webhook4").hide();
                     $("#webhook5").hide();
                     $("#polling1").show();
+                    $("#socks1").hide();
+                    $("#socks2").hide();
+                    $("#socks3").hide();
+                    $("#socks4").hide();
+                } else if (mode == "socks5"){
+                    $("#webhook1").hide();
+                    $("#webhook2").hide();
+                    $("#webhook3").hide();
+                    $("#webhook4").hide();
+                    $("#webhook5").hide();
+                    $("#polling1").show();
+                    $("#socks1").show();
+                    $("#socks2").show();
+                    $("#socks3").show();
+                    $("#socks4").show();
                 }
             };
             updateOptions();
@@ -82,6 +107,7 @@
         <label for="node-config-input-updatemode"><i class="fa fa-link"></i> Update Mode</label>
         <select id="node-config-input-updatemode">
             <option value="polling">Bot polls for new messages.</option>
+            <option value="socks5">Bot polls via SOCKS5 proxy for new messages.</option>
             <option value="webhook">Bot is notified via webhook.</option>
         </select>
     </div>
@@ -89,6 +115,23 @@
     <div class="form-row hidden" id="polling1">
             <label for="node-config-input-pollinterval"><i class="fa fa-clock-o"></i> Polling Interval</label>
             <input type="text" id="node-config-input-pollinterval" placeholder="(Optional poll interval in milliseconds. The default is 300.)">
+    </div>
+
+    <div class="form-row hidden" id="socks1">
+        <label for="node-config-input-sockshost"><i class="fa fa-desktop"></i> SOCKS5 Host</label>
+        <input type="text" id="node-config-input-sockshost" placeholder="(Optional IP or hostname of the socks proxy when using polling mode.)">
+    </div>
+    <div class="form-row hidden" id="socks2">
+        <label for="node-config-input-socksport"><i class="fa fa-plug"></i> SOCKS5 Port</label>
+        <input type="text" id="node-config-input-socksport" placeholder="(Optional port of the socks proxy when using polling mode.)">
+    </div>
+    <div class="form-row hidden" id="socks3">
+        <label for="node-config-input-socksusername"><i class="fa fa-user"></i> SOCKS5 Username</label>
+        <input type="text" id="node-config-input-socksusername" placeholder="(Optional username of the socks proxy when using polling mode.)">
+    </div>
+    <div class="form-row hidden" id="socks4">
+        <label for="node-config-input-sockspassword"><i class="fa fa-key"></i> SOCKS5 Password</label>
+        <input type="text" id="node-config-input-sockspassword" placeholder="(Optional password of the socks proxy when using polling mode.)">
     </div>
 
     <div class="form-row hidden" id="webhook1">

@@ -33,6 +33,7 @@ Skiepp for providing the send chat action idea.
 
 # Dependencies
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
+It also depends on [socks5-https-client](https://github.com/mattcg/socks5-https-client)
 
 # History
 Version 4.x.x 
@@ -53,6 +54,11 @@ msg.payload.sentMessageId property. All flows that did not make any use of those
 Version 5.0.0
 
 Finally webhooks are supported now. The configuration node was changed so that the required properties for webhook can be configured. 
+
+Version 5.2.1
+
+This version contains SOCKS5 support in alpha state: not fully tested: see https://github.com/windkh/node-red-contrib-telegrambot/issues/43
+ 
  
 
 # Warning
@@ -100,7 +106,9 @@ You should also replace YOUR_NAME_OR_COMPANY_NAME with some value. Note that the
 ```
 openssl req -newkey rsa:2048 -sha256 -nodes -keyout PRIVATE.key -x509 -days 365 -out PUBLIC.pem -subj "/C=NG/ST=Lagos/L=Lagos/O=YOUR_NAME_OR_COMPANY_NAME/CN=SERVER_NAME_OR_IP"
 ```
-   
+
+SOCKS5 proxy support is optional when running behind a socks5 proxy that requires authentication.
+
 
 ## Receiver Node
 This node receives all messages from a chat. Simply invite the bot to a chat.

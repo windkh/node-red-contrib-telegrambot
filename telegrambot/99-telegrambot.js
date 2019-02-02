@@ -8,6 +8,7 @@ process.env["NTBA_FIX_319"] = 1;
 module.exports = function (RED) {
     "use strict";
     var telegramBot = require('node-telegram-bot-api');
+    const Agent = require('socks5-https-client/lib/Agent')
 
     // --------------------------------------------------------------------------------------------
     // The configuration node
@@ -52,6 +53,12 @@ module.exports = function (RED) {
         if (isNaN(this.pollInterval)) {
             this.pollInterval = 300;
         }
+
+        // optional SOCKS5 
+        this.socksHost = n.sockshost;
+        this.socksPort = n.socksport;
+        this.socksUsername = n.socksusername;
+        this.socksPassword = n.sockspassword;
 
         // 2. optional when webhook is used.
         this.botHost = n.bothost;
@@ -137,15 +144,28 @@ module.exports = function (RED) {
                                 });     
                             }
                             else {
-                                var polling =
-                                {
+                                var polling = {
                                     autoStart: true,
                                     interval: this.pollInterval
                                 }
-                                var options =
-                                {
+
+                                var socksRequest;
+                                if (this.updateMode == "socks5"){
+                                    socksRequest = {
+                                        agentClass: Agent,
+                                        agentOptions: {
+                                            socksHost: this.socksHost,
+                                            socksPort: this.socksPort,
+                                            socksUsername: this.socksUsername,
+                                            socksPassword: this.socksPassword,
+                                        },
+                                    };
+                                }
+
+                                var options = {
                                     polling: polling,
-                                    baseApiUrl: this.baseApiUrl
+                                    baseApiUrl: this.baseApiUrl,
+                                    request: socksRequest,
                                 };
                                 this.telegramBot = new telegramBot(this.token, options);
                                 self.status = "connected";
@@ -174,6 +194,13 @@ module.exports = function (RED) {
                                         }
                                         else if (error.message.startsWith("EFATAL: Error: getaddrinfo ENOTFOUND")) {
                                             hint = "Network connection may be down. Trying again.";
+                                        }
+                                        else if (error.message.startsWith("EFATAL: Error: SOCKS connection failed. Connection refused.")) {
+                                            hint = "Username or password may be be wrong. Aborting.";
+                                            stopPolling = true;
+                                        }
+                                        else if (error.message.startsWith("EFATAL: Error: connect ETIMEDOUT")) {
+                                            hint = "Server did not respond. Maybe proxy blocked polling. Trying again.";
                                         }
                                         else {
                                             // unknown error occured... we simply ignore it.

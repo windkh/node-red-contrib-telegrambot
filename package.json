@@ -4,7 +4,7 @@
     "description": "Telegram bot nodes.",
     "dependencies": {
         "node-telegram-bot-api" : "^0.30.0",
-		"socks5-https-client" : "^1.2.1",
+		"socks5-https-client" : "1.2.1"
     },
     "node-red" : {
         "nodes": {

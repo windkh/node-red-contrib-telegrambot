@@ -28,7 +28,7 @@ module.exports = function (RED) {
         // Reading configuration properties...
         this.botname = n.botname;
         this.verbose = n.verboselogging;
-                        
+
         this.usernames = [];
         if (n.usernames) {
             this.usernames = n.usernames.split(',');
@@ -54,12 +54,6 @@ module.exports = function (RED) {
             this.pollInterval = 300;
         }
 
-        // optional SOCKS5 
-        this.socksHost = n.sockshost;
-        this.socksPort = n.socksport;
-        this.socksUsername = n.socksusername;
-        this.socksPassword = n.sockspassword;
-
         // 2. optional when webhook is used.
         this.botHost = n.bothost;
 
@@ -73,15 +67,31 @@ module.exports = function (RED) {
             this.localBotPort = this.publicBotPort;
         }
 
+        // 3. optional when webhook and self signed certificate is used
         this.privateKey = n.privatekey;
         this.certificate = n.certificate;
-
+        this.useSelfSignedCertificate = n.useselfsignedcertificate;
+    
+        // 4. optional when request via SOCKS5 is used. 
+        this.useSocks = n.usesocks;
+        if(this.useSocks){
+            this.socksRequest = {
+                agentClass: Agent,
+                agentOptions: {
+                    socksHost: n.sockshost,
+                    socksPort: n.socksport,
+                    socksUsername: n.socksusername,
+                    socksPassword: n.sockspassword,
+                },
+            };
+        }
+        
         this.useWebhook = false;
         if (this.updateMode == "webhook") {
             if (this.botHost && this.privateKey && this.certificate) {
                 this.useWebhook = true;
             } else{
-                self.error("Configuration data for webhook is missing. Defaulting to polling mode.");
+                self.error("Configuration data for webhook is not complete. Defaulting to polling mode.");
             }
         }
 
@@ -105,7 +115,8 @@ module.exports = function (RED) {
                                 var options =
                                 {
                                     webHook: webHook,
-                                    baseApiUrl: this.baseApiUrl
+                                    baseApiUrl: this.baseApiUrl,
+                                    request: this.socksRequest,
                                 };
                                 this.telegramBot = new telegramBot(this.token, options);
 
@@ -124,7 +135,12 @@ module.exports = function (RED) {
                                 });
 
                                 var botUrl = "https://" + this.botHost + ":" + this.publicBotPort + "/" + this.token; 
-                                var setWebHookOptions = {certificate: options.webHook.cert};
+                                var setWebHookOptions;
+                                if (this.useSelfSignedCertificate){
+                                    setWebHookOptions = {
+                                        certificate: options.webHook.cert,
+                                    };
+                                }
                                 this.telegramBot.setWebHook(botUrl, setWebHookOptions).then(function (success) {
                                     
                                     if(self.verbose) {
@@ -149,23 +165,10 @@ module.exports = function (RED) {
                                     interval: this.pollInterval
                                 }
 
-                                var socksRequest;
-                                if (this.updateMode == "socks5"){
-                                    socksRequest = {
-                                        agentClass: Agent,
-                                        agentOptions: {
-                                            socksHost: this.socksHost,
-                                            socksPort: this.socksPort,
-                                            socksUsername: this.socksUsername,
-                                            socksPassword: this.socksPassword,
-                                        },
-                                    };
-                                }
-
                                 var options = {
                                     polling: polling,
                                     baseApiUrl: this.baseApiUrl,
-                                    request: socksRequest,
+                                    request: this.socksRequest,
                                 };
                                 this.telegramBot = new telegramBot(this.token, options);
                                 self.status = "connected";

@@ -17,6 +17,7 @@
             pollinterval: { value: 300, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
             
             // only for socks5 proxy support
+            usesocks: { value: false, required: false },
             sockshost: { value: "", required: false },
             socksport: { value: 6667, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
             socksusername: { value: "anonymous", required: false },
@@ -26,8 +27,11 @@
             bothost: { value: "", required: false },
             localbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
             publicbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
+            
+            // only for webhook and certificate
             privatekey: { value: "", required: false },
             certificate: { value: "", required: false },
+            useselfsignedcertificate: { value: false, required: false },
             
             verboselogging: { value: false, required: false }
         },
@@ -38,126 +42,162 @@
             return this.botname;
         },
         oneditprepare: function() {
+
+            // polling or webhook
             var updateOptions = function() {
                 var mode = $("#node-config-input-updatemode").val();
                 if (mode == "webhook") {
-                    $("#webhook1").show();
-                    $("#webhook2").show();
-                    $("#webhook3").show();
-                    $("#webhook4").show();
-                    $("#webhook5").show();
-                    $("#polling1").hide();
-                    $("#socks1").hide();
-                    $("#socks2").hide();
-                    $("#socks3").hide();
-                    $("#socks4").hide();
+                    $("#webhook").show();
+                    $("#polling").hide();
                 } else if (mode == "polling"){
-                    $("#webhook1").hide();
-                    $("#webhook2").hide();
-                    $("#webhook3").hide();
-                    $("#webhook4").hide();
-                    $("#webhook5").hide();
-                    $("#polling1").show();
-                    $("#socks1").hide();
-                    $("#socks2").hide();
-                    $("#socks3").hide();
-                    $("#socks4").hide();
-                } else if (mode == "socks5"){
-                    $("#webhook1").hide();
-                    $("#webhook2").hide();
-                    $("#webhook3").hide();
-                    $("#webhook4").hide();
-                    $("#webhook5").hide();
-                    $("#polling1").show();
-                    $("#socks1").show();
-                    $("#socks2").show();
-                    $("#socks3").show();
-                    $("#socks4").show();
+                    $("#webhook").hide();
+                    $("#polling").show();
+                } else {
+                    // option not supported
                 }
             };
             updateOptions();
             $("#node-config-input-updatemode").change(updateOptions);
+
+            // socks5 on / off
+            var useSocks5 = function() {
+                var mode = $("#node-config-input-usesocks").prop('checked');
+                if (mode === false) {
+                    $("#socks").hide();
+                } else {
+                    $("#socks").show();
+                }
+            };
+            useSocks5();
+            $("#node-config-input-usesocks").change(useSocks5);
+ 
         }
     });
 </script>
 
 <script type="text/x-red" data-template-name="telegram bot">
-    <div class="form-row">
-        <label for="node-config-input-botname"><i class="fa fa-telegram"></i> Bot-Name</label>
-        <input type="text" id="node-config-input-botname" placeholder="(Name of bot to connect to)">
-    </div>
-    <div class="form-row">
-        <label for="node-config-input-token"><i class="fa fa-key"></i> Token</label>
-        <input type="text" id="node-config-input-token" placeholder="(Enter the bot token from botfather here)">
-    </div>
-    <div class="form-row">
-        <label for="node-config-input-usernames"><i class="fa fa-user"></i> Users</label>
-        <input type="text" id="node-config-input-usernames" placeholder="(Optional list of authorized user names e.g.: hugo,sepp,egon)">
-    </div>
-    <div class="form-row">
-        <label for="node-config-input-chatids"><i class="fa fa-comment"></i> ChatIds</label>
-        <input type="text" id="node-config-input-chatids" placeholder="(Optional list of authorized chat-ids e.g.: -1234567,2345678,-3456789)">
-    </div>
-    <div class="form-row">
-        <label for="node-config-input-baseapiurl"><i class="fa fa-server"></i> Server URL</label>
-        <input type="text" id="node-config-input-baseapiurl" placeholder="(Optional URL for proxying and testing e.g.: https://api.telegram.org)">
-    </div>
+    <div class="form-row" style="min-width: 700px">
+        <div class="form-row">
+            <label for="node-config-input-botname"><i class="fa fa-telegram"></i> Bot-Name</label>
+            <input type="text" id="node-config-input-botname" placeholder="(Name of bot to connect to)">
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-token"><i class="fa fa-key"></i> Token</label>
+            <input type="text" id="node-config-input-token" placeholder="(Enter the bot token from botfather here)">
+        </div>
 
-    <div class="form-row">
-        <label for="node-config-input-updatemode"><i class="fa fa-link"></i> Update Mode</label>
-        <select id="node-config-input-updatemode">
-            <option value="polling">Bot polls for new messages.</option>
-            <option value="socks5">Bot polls via SOCKS5 proxy for new messages.</option>
-            <option value="webhook">Bot is notified via webhook.</option>
-        </select>
-    </div>
+        <hr align="middle"/>
 
-    <div class="form-row hidden" id="polling1">
-            <label for="node-config-input-pollinterval"><i class="fa fa-clock-o"></i> Polling Interval</label>
-            <input type="text" id="node-config-input-pollinterval" placeholder="(Optional poll interval in milliseconds. The default is 300.)">
-    </div>
+        <div class="form-row">
+            <label for="node-config-input-usernames"><i class="fa fa-user"></i> Users</label>
+            <input type="text" id="node-config-input-usernames" placeholder="(Optional list of authorized user names e.g.: hugo,sepp,egon)">
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-chatids"><i class="fa fa-comment"></i> ChatIds</label>
+            <input type="text" id="node-config-input-chatids" placeholder="(Optional list of authorized chat-ids e.g.: -1234567,2345678,-3456789)">
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-baseapiurl"><i class="fa fa-server"></i> Server URL</label>
+            <input type="text" id="node-config-input-baseapiurl" placeholder="(Optional URL for proxying and testing e.g.: https://api.telegram.org)">
+        </div>
 
-    <div class="form-row hidden" id="socks1">
-        <label for="node-config-input-sockshost"><i class="fa fa-desktop"></i> SOCKS5 Host</label>
-        <input type="text" id="node-config-input-sockshost" placeholder="(Optional IP or hostname of the socks proxy when using polling mode.)">
-    </div>
-    <div class="form-row hidden" id="socks2">
-        <label for="node-config-input-socksport"><i class="fa fa-plug"></i> SOCKS5 Port</label>
-        <input type="text" id="node-config-input-socksport" placeholder="(Optional port of the socks proxy when using polling mode.)">
-    </div>
-    <div class="form-row hidden" id="socks3">
-        <label for="node-config-input-socksusername"><i class="fa fa-user"></i> SOCKS5 Username</label>
-        <input type="text" id="node-config-input-socksusername" placeholder="(Optional username of the socks proxy when using polling mode.)">
-    </div>
-    <div class="form-row hidden" id="socks4">
-        <label for="node-config-input-sockspassword"><i class="fa fa-key"></i> SOCKS5 Password</label>
-        <input type="text" id="node-config-input-sockspassword" placeholder="(Optional password of the socks proxy when using polling mode.)">
-    </div>
+        <div class="form-row">
+            <label for="node-config-input-updatemode"><i class="fa fa-link"></i> Update Mode</label>
+            <select id="node-config-input-updatemode">
+                <option value="polling">Polling</option>
+                <option value="webhook">Webhook</option>
+            </select>
+        </div>
 
-    <div class="form-row hidden" id="webhook1">
-        <label for="node-config-input-bothost"><i class="fa fa-desktop"></i> Webhook Bot Host</label>
-        <input type="text" id="node-config-input-bothost" placeholder="(Optional public IP or hostname of your bot when using webhook. e.g.: mybot.domain.com)">
-    </div>
-    <div class="form-row hidden" id="webhook2">
-        <label for="node-config-input-publicbotport"><i class="fa fa-envelope-open-o"></i> Webook Public Bot Port</label>
-        <input type="text" id="node-config-input-publicbotport" placeholder="(Optional public port for your bot when using webhook. The default is 8443.)">
-    </div>
-    <div class="form-row hidden" id="webhook3">
-        <label for="node-config-input-localbotport"><i class="fa fa-envelope-o"></i> Webook Local Bot Port</label>
-        <input type="text" id="node-config-input-localbotport" placeholder="(Optional local port for your bot when using webhook. The default is 8443.)">
-    </div>
-    <div class="form-row hidden" id="webhook4">
-        <label for="node-config-input-privatekey"><i class="fa fa-id-card"></i> Webhook Private Key</label>
-        <input type="text" id="node-config-input-privatekey" placeholder="(Optional local path to your private key file. e.g.: C:\temp\\key.pem)">
-    </div>
-    <div class="form-row hidden" id="webhook5">
-        <label for="node-config-input-certificate"><i class="fa fa-id-card-o"></i> Webhook Certificate</label>
-        <input type="text" id="node-config-input-certificate" placeholder="(Optional local path to your certificate file. e.g.: C:\temp\\crt.pem)">
-    </div>
-    
-    <div class="form-row">
-        <label for="node-config-input-verboselogging"><i class="fa fa-search"></i> Verbose Logging</label>
-        <input type="checkbox" id="node-config-input-verboselogging" style="display: inline-block; width: auto; vertical-align: top;">
+        <hr align="middle"/>
+
+        <div class="form-row hidden" id="polling" style="background: #fbfbfb">
+            <label style="width: auto"><i class="fa fa-cogs"></i> Polling Options:</label> 
+            
+            <div class="form-row" style="margin-left: 20px">
+                <div class="form-row">
+                        <label for="node-config-input-pollinterval"><i class="fa fa-clock-o"></i> Poll Interval</label>
+                        <input type="text" id="node-config-input-pollinterval" placeholder="(Optional poll interval in milliseconds. The default is 300.)">
+                </div>
+            </div>
+            <div class="form-tips" style="width: auto"><b>Tip:</b> Polling mode is very robust and easy to set up. Nevertheless it creates more traffic on the network over time.</div>
+        </div>
+
+        <div class="form-row hidden" id="webhook" style="background: #fbfbfb">
+            <label style="width: auto"><i class="fa fa-cogs"></i> Webhook Options:</label>
+       
+            <div class="form-row" style="margin-left: 20px">
+                <div class="form-row">
+                    <label for="node-config-input-bothost"><i class="fa fa-desktop"></i> Bot Host</label>
+                    <input type="text" id="node-config-input-bothost" placeholder="(Optional public IP or hostname of your bot when using webhook. e.g.: mybot.domain.com)">
+                </div>
+                <div class="form-row">
+                    <label for="node-config-input-publicbotport"><i class="fa fa-random"></i> Public Bot Port</label>
+                    <input type="text" id="node-config-input-publicbotport" placeholder="(Optional public port for your bot when using webhook. The default is 8443.)">
+                </div>
+                <div class="form-row">
+                    <label for="node-config-input-localbotport"><i class="fa fa-random"></i> Local Bot Port</label>
+                    <input type="text" id="node-config-input-localbotport" placeholder="(Optional local port for your bot when using webhook. The default is 8443.)">
+                </div>
+
+                <div class="form-row">
+                    <label for="node-config-input-privatekey"><i class="fa fa-id-card"></i> Private Key</label>
+                    <input type="text" id="node-config-input-privatekey" placeholder="(Optional local path to your private key file. e.g.: C:\temp\\key.pem)">
+                </div>
+                <div class="form-row">
+                    <label for="node-config-input-certificate"><i class="fa fa-id-card-o"></i> Certificate</label>
+                    <input type="text" id="node-config-input-certificate" placeholder="(Optional local path to your certificate file. e.g.: C:\temp\\crt.pem)">
+                </div>
+                <div class="form-row">
+                    <label for="node-config-input-useselfsignedcertificate"><i class="fa fa-pencil"></i> Certificate is self-signed</label>
+                    <input type="checkbox" id="node-config-input-useselfsignedcertificate" style="display: inline-block; width: auto; vertical-align: top;">
+                </div>
+
+                <div class="form-tips" style="width: auto"><b>Tip:</b> Webhook mode requires a HTTPS certificate. The certificate can also be a self-signed (=custom) one. If any of the host, key, certificate properties is left blank the bot will fefault to polling mode.</div>
+            </div>
+        </div>
+
+        <hr align="middle"/>
+
+        <div class="form-row">
+            <label for="node-config-input-usesocks"><i class="fa fa-lock"></i> Use SOCKS5</label>
+            <input type="checkbox" id="node-config-input-usesocks" style="display: inline-block; width: auto; vertical-align: top;">
+        </div>
+        <div class="form-row hidden" id="socks" style="background: #fbfbfb">
+            <label style="width: auto"><i class="fa fa-cogs"></i> SOCKS5 Options:</label>
+          
+            <div class="form-row" style="background: #fff; margin-left: 20px">        
+                <div class="form-row">
+                    <label for="node-config-input-sockshost"><i class="fa fa-desktop"></i> Host</label>
+                    <input type="text" id="node-config-input-sockshost" placeholder="(Optional IP or hostname of the socks proxy when using polling mode.)">
+                </div>
+                <div class="form-row">
+                    <label for="node-config-input-socksport"><i class="fa fa-random"></i> Port</label>
+                    <input type="text" id="node-config-input-socksport" placeholder="(Optional port of the socks proxy when using polling mode.)">
+                </div>
+                <div class="form-row">
+                    <label for="node-config-input-socksusername"><i class="fa fa-user"></i> Username</label>
+                    <input type="text" id="node-config-input-socksusername" placeholder="(Optional username of the socks proxy when using polling mode.)">
+                </div>
+                <div class="form-row">
+                    <label for="node-config-input-sockspassword"><i class="fa fa-key"></i> Password</label>
+                    <input type="text" id="node-config-input-sockspassword" placeholder="(Optional password of the socks proxy when using polling mode.)">
+                </div>
+            </div>
+
+            <div class="form-tips" style="width: auto"><b>Tip:</b> SOCKS5 support is optional can can only be used with a valid proxy server, port, username and password.</div>
+        </div>
+
+        <hr align="middle"/>
+
+        <div class="form-row">
+            <label for="node-config-input-verboselogging"><i class="fa fa-search"></i> Verbose Logging</label>
+            <input type="checkbox" id="node-config-input-verboselogging" style="display: inline-block; width: auto; vertical-align: top;">
+        </div>
+        
+        <div class="form-tips" style="width: auto"><b>Tip:</b> When verbose logging is turned on additional log messages will be printed to the node-red console.</div>
+
+        <hr align="middle"/>
     </div>
 </script>
 

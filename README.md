@@ -55,10 +55,15 @@ Version 5.0.0
 
 Finally webhooks are supported now. The configuration node was changed so that the required properties for webhook can be configured. 
 
+
 Version 5.2.1
 
-This version contains SOCKS5 support in alpha state: not fully tested: see https://github.com/windkh/node-red-contrib-telegrambot/issues/43
+This version contains SOCKS5 support: see https://github.com/windkh/node-red-contrib-telegrambot/issues/43
+
  
+Version 5.3.0
+
+Improved configuration node: grouped properties. Added support for custom and non custom certificates in webhook mode: see https://github.com/windkh/node-red-contrib-telegrambot/issues/66
  
 
 # Warning
@@ -107,7 +112,7 @@ You should also replace YOUR_NAME_OR_COMPANY_NAME with some value. Note that the
 openssl req -newkey rsa:2048 -sha256 -nodes -keyout PRIVATE.key -x509 -days 365 -out PUBLIC.pem -subj "/C=NG/ST=Lagos/L=Lagos/O=YOUR_NAME_OR_COMPANY_NAME/CN=SERVER_NAME_OR_IP"
 ```
 
-SOCKS5 proxy support is optional when running behind a socks5 proxy that requires authentication.
+SOCKS5 proxy support is optional when running behind a SOCKS5 proxy that requires authentication.
 
 
 ## Receiver Node

@@ -969,7 +969,37 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
-
+                            case 'mediaGroup':
+								if(this.hasContent(msg)) {                                    
+									if(Array.isArray(msg.payload.content)) {																				
+										for (var i = 0; i < msg.payload.content.length; i++) {
+											if(typeof msg.payload.content[i].type !== "string") {
+												node.warn("msg.payload.content[" + i + "].type is not a string it is " + typeof msg.payload.content[i].type);
+												break;
+											}
+											if(msg.payload.content[i].media === undefined) {
+												node.warn("msg.payload.content[" + i + "].media is not defined");
+												break;
+											}
+											if(msg.payload.content[i].caption === undefined || typeof msg.payload.content[i].caption !== "string") {
+												node.warn("msg.payload.content[" + i + "].caption is not a string");
+												break;
+											}
+											if(msg.payload.content[i].parse_mode === undefined || typeof msg.payload.content[i].parse_mode !== "string") {
+												node.warn("msg.payload.content[" + i + "].parse_mode is not a string");
+												break;
+											}	
+										}											
+										node.telegramBot.sendMediaGroup(chatId, msg.payload.content, msg.payload.options).then(function (result) {
+											msg.payload.content = result;
+											msg.payload.sentMessageId = result.message_id;
+											node.send(msg);
+										});										
+									} else {
+										node.warn("msg.payload.content is not an array");
+									}									
+                                }
+                                break;
                             case 'audio':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendAudio(chatId, msg.payload.content, msg.payload.options).then(function (result) {
@@ -1195,7 +1225,6 @@ module.exports = function (RED) {
                             // sendGame, setGameScore, getGameHighScores
                             // sendInvoice, answerShippingQuery, answerPreCheckoutQuery
                             // getStickerSet, uploadStickerFile, createNewStickerSet, addStickerToSet, setStickerPositionInSet, deleteStickerFromSet
-                            // sendMediaGroup  
 
                             default:
                             // unknown type nothing to send.

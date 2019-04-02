@@ -31,6 +31,9 @@ MatthiasHunziker for extending the callback query node to support generic events
 
 Skiepp for providing the send chat action idea.
 
+MK-2001 for providing the sendMediaGroup function.
+
+
 # Dependencies
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
 It also depends on [socks5-https-client](https://github.com/mattcg/socks5-https-client)
@@ -64,7 +67,12 @@ This version contains SOCKS5 support: see https://github.com/windkh/node-red-con
 Version 5.3.0
 
 Improved configuration node: grouped properties. Added support for custom and non custom certificates in webhook mode: see https://github.com/windkh/node-red-contrib-telegrambot/issues/66
- 
+
+
+Version 5.4.0
+
+Added sendMediaGroup function: see https://github.com/windkh/node-red-contrib-telegrambot/pull/68
+  
 
 # Warning
 The nodes are tested with nodejs 8.11.1 and node-red 0.18.7. This version is not tested with node-red 0.19.x and above.
@@ -140,6 +148,7 @@ The following types can be received (see type in output object):
 - location - content is an object with latitude and longitude
 - venue - content is the venue object
 - contact - content is the contact information object
+Note that media groups are received not as group, but as separate messages of type photo and video. 
 
 The following types indicate changes in the group or channel itself. 
 - new_chat_title - content is the new chat title
@@ -370,7 +379,8 @@ The following types require a special content format to be used. See the underly
 
 ### Sending a mediaGroup as album 
 
-To send several photos as an album you can use the mediaGroup. For the typ of media Group you have to set the content to an array of object type [InputMediaPhoto](https://core.telegram.org/bots/api#inputmediaphoto). Please review the Json below.
+To send several photos as an album you can use the mediaGroup. For the type of media group you have to set the content to an array of object type [InputMediaPhoto](https://core.telegram.org/bots/api#inputmediaphoto). 
+Please review the Json below.
 
 ```javascript
 msg.payload = {
@@ -397,6 +407,7 @@ msg.payload = {
     ]
 }
 ```
+[sendmediagroup flow](examples/sendmediagroup.json)
 
 
 ## Sending contact

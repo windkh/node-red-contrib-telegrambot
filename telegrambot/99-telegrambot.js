@@ -326,7 +326,9 @@ module.exports = function (RED) {
                 self.users.push(id);	               
             }	               
             else {	
-                self.warn("Node " + id + " registered twice at the configuration node: ignoring.");	
+                if(self.verbose) {
+                    self.warn("Node " + id + " registered twice at the configuration node: ignoring.");	
+                }
             }	
         }
 
@@ -380,13 +382,15 @@ module.exports = function (RED) {
     // creates the message details object from the original message
     function getMessageDetails(botMsg) {
 
+        // Note that photos and videos can be sent as media group. The bot will receive the contents as single messages.
+        // Therefore the photo and video messages can contain a mediaGroupId if so....
         var messageDetails;
         if (botMsg.text) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
         } else if (botMsg.photo) {
             // photos are sent using several resolutions. Therefore photo is an array. We choose the one with the highest resolution in the array.
             var index = getPhotoIndexWithHighestResolution(botMsg.photo);
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'photo', content: botMsg.photo[index].file_id, caption: botMsg.caption, date: botMsg.date, blob: true, photos: botMsg.photo };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'photo', content: botMsg.photo[index].file_id, caption: botMsg.caption, date: botMsg.date, blob: true, photos: botMsg.photo, mediaGroupId: botMsg.media_group_id };
         } else if (botMsg.audio) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'audio', content: botMsg.audio.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.document) {
@@ -394,7 +398,7 @@ module.exports = function (RED) {
         } else if (botMsg.sticker) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'sticker', content: botMsg.sticker.file_id, date: botMsg.date, blob: true };
         } else if (botMsg.video) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video', content: botMsg.video.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video', content: botMsg.video.file_id, caption: botMsg.caption, date: botMsg.date, blob: true, mediaGroupId: botMsg.media_group_id };
         } else if (botMsg.video_note) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video_note', content: botMsg.video_note.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.voice) {
@@ -489,12 +493,13 @@ module.exports = function (RED) {
                         if (node.config.isAuthorized(chatid, username)) {
                             // downloadable "blob" message?
                             if (messageDetails.blob) {
-                                node.telegramBot.getFileLink(messageDetails.content).then(function (weblink) {
+                                var fileId = msg.payload.content;
+                                node.telegramBot.getFileLink(fileId).then(function (weblink) {
                                     msg.payload.weblink = weblink;
 
                                     // download and provide with path
                                     if (config.saveDataDir) {
-                                        node.telegramBot.downloadFile(messageDetails.content, config.saveDataDir).then(function (path) {
+                                        node.telegramBot.downloadFile(fileId, config.saveDataDir).then(function (path) {
                                             msg.payload.path = path;
                                             node.send([msg, null]);
                                         });
@@ -974,19 +979,20 @@ module.exports = function (RED) {
 								if(this.hasContent(msg)) {                                    
 									if(Array.isArray(msg.payload.content)) {																				
 										for (var i = 0; i < msg.payload.content.length; i++) {
-											if(typeof msg.payload.content[i].type !== "string") {
-												node.warn("msg.payload.content[" + i + "].type is not a string it is " + typeof msg.payload.content[i].type);
+                                            var mediaItem = msg.payload.content[i]; 
+											if(typeof mediaItem.type !== "string") {
+												node.warn("msg.payload.content[" + i + "].type is not a string it is " + typeof mediaItem.type);
 												break;
 											}
-											if(msg.payload.content[i].media === undefined) {
+											if(mediaItem.media === undefined) {
 												node.warn("msg.payload.content[" + i + "].media is not defined");
 												break;
 											}
-											if(msg.payload.content[i].caption === undefined || typeof msg.payload.content[i].caption !== "string") {
+											if(mediaItem.caption === undefined || typeof mediaItem.caption !== "string") {
 												node.warn("msg.payload.content[" + i + "].caption is not a string");
 												break;
 											}
-											if(msg.payload.content[i].parse_mode === undefined || typeof msg.payload.content[i].parse_mode !== "string") {
+											if(mediaItem.parse_mode === undefined || typeof mediaItem.parse_mode !== "string") {
 												node.warn("msg.payload.content[" + i + "].parse_mode is not a string");
 												break;
 											}	
@@ -997,7 +1003,7 @@ module.exports = function (RED) {
 											node.send(msg);
 										});										
 									} else {
-										node.warn("msg.payload.content is not an array");
+										node.warn("msg.payload.content for mediaGroup is not an array of mediaItem");
 									}									
                                 }
                                 break;

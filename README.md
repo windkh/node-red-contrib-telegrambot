@@ -363,10 +363,22 @@ The following types require a special content format to be used. See the underly
 - location
 - contact
 - venue
-
+- mediaGroup
 
 ![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")
 ![Alt text](images/TelegramBotSendPhoto2.png?raw=true "Setting the correct content type.")
+
+### Sending a mediaGroup as album 
+
+To send several photos as an album you can use the mediaGroup. For the typ of media Group you have to set the content to an array of object type [InputMediaPhoto](https://core.telegram.org/bots/api#inputmediaphoto). Please review the Json below.
+
+```javascript
+
+msg.payload = {
+ "type":"mediaGroup"
+}
+
+```
 
 
 ## Sending contact

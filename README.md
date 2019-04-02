@@ -373,11 +373,29 @@ The following types require a special content format to be used. See the underly
 To send several photos as an album you can use the mediaGroup. For the typ of media Group you have to set the content to an array of object type [InputMediaPhoto](https://core.telegram.org/bots/api#inputmediaphoto). Please review the Json below.
 
 ```javascript
-
 msg.payload = {
- "type":"mediaGroup"
+    "chatId": 123456789,
+    "messageId": 1,
+    "type": "mediaGroup",
+    "content": [
+        {
+            "type": "photo",
+            "media": "/pic/frame_1.jpg"
+        },
+        {
+            "type": "photo",
+            "media": "/pic/frame_2.jpg"
+        },
+        {
+            "type": "photo",
+            "media": "/pic/frame_3.jpg"
+        },
+        {
+            "type": "photo",
+            "media": "/pic/frame_4.jpg"
+        }
+    ]
 }
-
 ```
 
 

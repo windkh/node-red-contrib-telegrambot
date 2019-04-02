@@ -326,7 +326,9 @@ module.exports = function (RED) {
                 self.users.push(id);	               
             }	               
             else {	
-                self.warn("Node " + id + " registered twice at the configuration node: ignoring.");	
+                if(self.verbose) {
+                    self.warn("Node " + id + " registered twice at the configuration node: ignoring.");	
+                }
             }	
         }
 
@@ -380,13 +382,15 @@ module.exports = function (RED) {
     // creates the message details object from the original message
     function getMessageDetails(botMsg) {
 
+        // Note that photos and videos can be sent as media group. The bot will receive the contents as single messages.
+        // Therefore the photo and video messages can contain a mediaGroupId if so....
         var messageDetails;
         if (botMsg.text) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
         } else if (botMsg.photo) {
             // photos are sent using several resolutions. Therefore photo is an array. We choose the one with the highest resolution in the array.
             var index = getPhotoIndexWithHighestResolution(botMsg.photo);
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'photo', content: botMsg.photo[index].file_id, caption: botMsg.caption, date: botMsg.date, blob: true, photos: botMsg.photo };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'photo', content: botMsg.photo[index].file_id, caption: botMsg.caption, date: botMsg.date, blob: true, photos: botMsg.photo, mediaGroupId: botMsg.media_group_id };
         } else if (botMsg.audio) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'audio', content: botMsg.audio.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.document) {
@@ -394,7 +398,7 @@ module.exports = function (RED) {
         } else if (botMsg.sticker) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'sticker', content: botMsg.sticker.file_id, date: botMsg.date, blob: true };
         } else if (botMsg.video) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video', content: botMsg.video.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video', content: botMsg.video.file_id, caption: botMsg.caption, date: botMsg.date, blob: true, mediaGroupId: botMsg.media_group_id };
         } else if (botMsg.video_note) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video_note', content: botMsg.video_note.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.voice) {
@@ -489,12 +493,13 @@ module.exports = function (RED) {
                         if (node.config.isAuthorized(chatid, username)) {
                             // downloadable "blob" message?
                             if (messageDetails.blob) {
-                                node.telegramBot.getFileLink(messageDetails.content).then(function (weblink) {
+                                var fileId = msg.payload.content;
+                                node.telegramBot.getFileLink(fileId).then(function (weblink) {
                                     msg.payload.weblink = weblink;
 
                                     // download and provide with path
                                     if (config.saveDataDir) {
-                                        node.telegramBot.downloadFile(messageDetails.content, config.saveDataDir).then(function (path) {
+                                        node.telegramBot.downloadFile(fileId, config.saveDataDir).then(function (path) {
                                             msg.payload.path = path;
                                             node.send([msg, null]);
                                         });
@@ -855,16 +860,17 @@ module.exports = function (RED) {
     // type    : string type of message to send
     // content : message content
     // The type is a string can be any of the following:
-    // message content is String
-    // photo    content is String|stream.Stream|Buffer
-    // audio    content is String|stream.Stream|Buffer
-    // document content is String|stream.Stream|Buffer
-    // sticker  content is String|stream.Stream|Buffer
-    // video    content is String|stream.Stream|Buffer
-    // voice    content is String|stream.Stream|Buffer
-    // location content is an object that contains latitude and logitude
-    // contact  content is full contact object
-    // action   content is one of the following: 
+    // message     content is String
+    // photo       content is String|stream.Stream|Buffer
+    // audio       content is String|stream.Stream|Buffer
+    // document    content is String|stream.Stream|Buffer
+    // sticker     content is String|stream.Stream|Buffer
+    // video       content is String|stream.Stream|Buffer
+    // voice       content is String|stream.Stream|Buffer
+    // location    content is an object that contains latitude and logitude
+    // contact     content is full contact object
+    // mediaGroup  content is array of mediaObject
+    // action      content is one of the following: 
     //                      typing, upload_photo, record_video, upload_video, record_audio, upload_audio,  
     //                      upload_document, find_location, record_video_note, upload_video_note
     function TelegramOutNode(config) {
@@ -969,7 +975,38 @@ module.exports = function (RED) {
                                     });
                                 }
                                 break;
-
+                            case 'mediaGroup':
+								if(this.hasContent(msg)) {                                    
+									if(Array.isArray(msg.payload.content)) {																				
+										for (var i = 0; i < msg.payload.content.length; i++) {
+                                            var mediaItem = msg.payload.content[i]; 
+											if(typeof mediaItem.type !== "string") {
+												node.warn("msg.payload.content[" + i + "].type is not a string it is " + typeof mediaItem.type);
+												break;
+											}
+											if(mediaItem.media === undefined) {
+												node.warn("msg.payload.content[" + i + "].media is not defined");
+												break;
+											}
+											if(mediaItem.caption === undefined || typeof mediaItem.caption !== "string") {
+												node.warn("msg.payload.content[" + i + "].caption is not a string");
+												break;
+											}
+											if(mediaItem.parse_mode === undefined || typeof mediaItem.parse_mode !== "string") {
+												node.warn("msg.payload.content[" + i + "].parse_mode is not a string");
+												break;
+											}	
+										}											
+										node.telegramBot.sendMediaGroup(chatId, msg.payload.content, msg.payload.options).then(function (result) {
+											msg.payload.content = result;
+											msg.payload.sentMessageId = result.message_id;
+											node.send(msg);
+										});										
+									} else {
+										node.warn("msg.payload.content for mediaGroup is not an array of mediaItem");
+									}									
+                                }
+                                break;
                             case 'audio':
                                 if (this.hasContent(msg)) {
                                     node.telegramBot.sendAudio(chatId, msg.payload.content, msg.payload.options).then(function (result) {
@@ -1195,7 +1232,6 @@ module.exports = function (RED) {
                             // sendGame, setGameScore, getGameHighScores
                             // sendInvoice, answerShippingQuery, answerPreCheckoutQuery
                             // getStickerSet, uploadStickerFile, createNewStickerSet, addStickerToSet, setStickerPositionInSet, deleteStickerFromSet
-                            // sendMediaGroup  
 
                             default:
                             // unknown type nothing to send.

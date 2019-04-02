@@ -855,16 +855,17 @@ module.exports = function (RED) {
     // type    : string type of message to send
     // content : message content
     // The type is a string can be any of the following:
-    // message content is String
-    // photo    content is String|stream.Stream|Buffer
-    // audio    content is String|stream.Stream|Buffer
-    // document content is String|stream.Stream|Buffer
-    // sticker  content is String|stream.Stream|Buffer
-    // video    content is String|stream.Stream|Buffer
-    // voice    content is String|stream.Stream|Buffer
-    // location content is an object that contains latitude and logitude
-    // contact  content is full contact object
-    // action   content is one of the following: 
+    // message     content is String
+    // photo       content is String|stream.Stream|Buffer
+    // audio       content is String|stream.Stream|Buffer
+    // document    content is String|stream.Stream|Buffer
+    // sticker     content is String|stream.Stream|Buffer
+    // video       content is String|stream.Stream|Buffer
+    // voice       content is String|stream.Stream|Buffer
+    // location    content is an object that contains latitude and logitude
+    // contact     content is full contact object
+    // mediaGroup  content is array of mediaObject
+    // action      content is one of the following: 
     //                      typing, upload_photo, record_video, upload_video, record_audio, upload_audio,  
     //                      upload_document, find_location, record_video_note, upload_video_note
     function TelegramOutNode(config) {

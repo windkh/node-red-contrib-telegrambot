@@ -988,14 +988,6 @@ module.exports = function (RED) {
 												node.warn("msg.payload.content[" + i + "].media is not defined");
 												break;
 											}
-											if(mediaItem.caption === undefined || typeof mediaItem.caption !== "string") {
-												node.warn("msg.payload.content[" + i + "].caption is not a string");
-												break;
-											}
-											if(mediaItem.parse_mode === undefined || typeof mediaItem.parse_mode !== "string") {
-												node.warn("msg.payload.content[" + i + "].parse_mode is not a string");
-												break;
-											}	
 										}											
 										node.telegramBot.sendMediaGroup(chatId, msg.payload.content, msg.payload.options).then(function (result) {
 											msg.payload.content = result;
@@ -1197,7 +1189,7 @@ module.exports = function (RED) {
                                 // The userId must be passed in msg.payload.content: note that this is is a number not the username.
                                 // Right now there is no way for resolving the user_id by username in the official API.
                                 if (this.hasContent(msg)) {
-                                    node.telegramBot[type](chatId, msg.payload.content).then(function (result) {
+                                    node.telegramBot[type](chatId, msg.payload.content, msg.payload.options).then(function (result) {
                                         msg.payload.content = result;
                                         node.send(msg);
                                     });

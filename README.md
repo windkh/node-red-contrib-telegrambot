@@ -86,7 +86,11 @@ Version 5.4.0
 
 Added sendMediaGroup function: see https://github.com/windkh/node-red-contrib-telegrambot/pull/68
   
+Version 5.5.0
 
+Fixed restrictChatMember, kickChatMember, promoteChatMember, unbanChatMember functions: see https://github.com/windkh/node-red-contrib-telegrambot/issues/71
+  
+  
 # Warning
 The nodes are tested with nodejs 8.11.1 and node-red 0.18.7. This version is not tested with node-red 0.19.x and above.
 

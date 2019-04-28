@@ -1278,7 +1278,7 @@ module.exports = function (RED) {
             
             if (msg.payload) {
                 if (msg.payload.chatId) {
-                    if (msg.payload.messageId) {
+                    if (msg.payload.sentMessageId) {
 
                         var chatId = msg.payload.chatId;
                         var messageId = msg.payload.sentMessageId;
@@ -1293,7 +1293,7 @@ module.exports = function (RED) {
                         });
 
                     } else {
-                        node.warn("msg.payload.messageId is empty");
+                        node.warn("msg.payload.sentMessageId is empty");
                     }
                 } else {
                     node.warn("msg.payload.chatId is empty");

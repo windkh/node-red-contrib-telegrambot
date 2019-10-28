@@ -47,6 +47,8 @@ Skiepp for providing the send chat action idea.
 
 MK-2001 for providing the sendMediaGroup function.
 
+cowchimp  for adding the support for node-red 1.x (async)
+
 
 # Dependencies
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
@@ -90,7 +92,11 @@ Added sendMediaGroup function: see https://github.com/windkh/node-red-contrib-te
 Version 5.5.0
 
 Fixed restrictChatMember, kickChatMember, promoteChatMember, unbanChatMember functions: see https://github.com/windkh/node-red-contrib-telegrambot/issues/71
-  
+
+Version 6.0.0
+
+Modified nodes to support node-red 1.x
+
   
 # Warning
 The nodes are tested with nodejs 8.11.1 and node-red 0.18.7. This version is not tested with node-red 0.19.x and above.

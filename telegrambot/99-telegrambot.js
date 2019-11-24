@@ -327,7 +327,8 @@ module.exports = function (RED) {
             }	               
             else {	
                 if(self.verbose) {
-                    self.warn("Node " + id + " registered twice at the configuration node: ignoring.");	
+                    // This warnin was removed as it caused confusion: see https://github.com/windkh/node-red-contrib-telegrambot/issues/87
+                    // self.warn("Node " + id + " registered twice at the configuration node: ignoring.");	
                 }
             }	
         }

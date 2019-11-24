@@ -97,9 +97,17 @@ Version 6.0.0
 
 Modified nodes to support node-red 1.x
 
+Version 6.0.1
+
+Removed warning when nodes register twice at the configuration node
+
+Version 7.0.0
+
+Updated https://www.npmjs.com/package/node-telegram-bot-api to version 0.40.0
+
   
 # Warning
-The nodes are tested with nodejs 8.11.1 and node-red 0.18.7. This version is not tested with node-red 0.19.x and above.
+The nodes are tested with nodejs 8.11.1 and node-red 0.20.3. This version shold support node-red 1.x and above but I did not really test it.
 
 
 # Usage

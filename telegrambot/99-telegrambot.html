@@ -32,7 +32,7 @@
             privatekey: { value: "", required: false },
             certificate: { value: "", required: false },
             useselfsignedcertificate: { value: false, required: false },
-            
+            sslterminated: { value: false, required: false },
             verboselogging: { value: false, required: false }
         },
         credentials: {
@@ -58,6 +58,20 @@
             };
             updateOptions();
             $("#node-config-input-updatemode").change(updateOptions);
+
+            // sslTerminated on / off
+            var sslTerminated = function() {
+                var mode = $('#node-config-input-sslterminated').prop('checked');
+                if (mode === false) {
+                    $('#node-config-input-privatekey').parent().show();
+                    $('#node-config-input-certificate').parent().show();
+                } else {
+                    $('#node-config-input-privatekey').parent().hide();
+                    $('#node-config-input-certificate').parent().hide();
+                }
+            };
+            sslTerminated();
+            $('#node-config-input-sslterminated').change(sslTerminated);
 
             // socks5 on / off
             var useSocks5 = function() {
@@ -152,8 +166,12 @@
                     <label for="node-config-input-useselfsignedcertificate"><i class="fa fa-pencil"></i> Certificate is self-signed</label>
                     <input type="checkbox" id="node-config-input-useselfsignedcertificate" style="display: inline-block; width: auto; vertical-align: top;">
                 </div>
+                <div class="form-row">
+                    <label for="node-config-input-sslterminated"><i class="fa fa-pencil"></i> SSL terminated by reverse proxy</label>
+                    <input type="checkbox" id="node-config-input-sslterminated" style="display: inline-block; width: auto; vertical-align: top;">
+                </div>
 
-                <div class="form-tips" style="width: auto"><b>Tip:</b> Webhook mode requires a HTTPS certificate. The certificate can also be a self-signed (=custom) one. If any of the host, key, certificate properties is left blank the bot will default to polling mode.</div>
+                <div class="form-tips" style="width: auto"><b>Tip:</b> Webhook mode requires a HTTPS certificate. The certificate can also be a self-signed (=custom) one. If any of the host, key, certificate properties is left blank the bot will default to polling mode. If SSL termination is alredy handled by reverse proxy, key and certificate is not required.</div>
             </div>
         </div>
 

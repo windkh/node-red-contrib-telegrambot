@@ -71,7 +71,8 @@ module.exports = function (RED) {
         this.privateKey = n.privatekey;
         this.certificate = n.certificate;
         this.useSelfSignedCertificate = n.useselfsignedcertificate;
-    
+        this.sslTerminated = n.sslterminated;
+
         // 4. optional when request via SOCKS5 is used. 
         this.useSocks = n.usesocks;
         if(this.useSocks){
@@ -88,7 +89,7 @@ module.exports = function (RED) {
         
         this.useWebhook = false;
         if (this.updateMode == "webhook") {
-            if (this.botHost && this.privateKey && this.certificate) {
+            if (this.botHost && (this.sslTerminated || (this.privateKey && this.certificate))) {
                 this.useWebhook = true;
             } else{
                 self.error("Configuration data for webhook is not complete. Defaulting to polling mode.");
@@ -109,8 +110,10 @@ module.exports = function (RED) {
                                 {
                                     autoOpen: true,
                                     port : this.localBotPort,
-                                    key: this.privateKey,
-                                    cert: this.certificate,
+                                };
+                                if (!this.sslTerminated) {
+                                    webHook.key = this.privateKey;
+                                    webHook.cert = this.certificate;
                                 }
                                 var options =
                                 {
@@ -136,7 +139,7 @@ module.exports = function (RED) {
 
                                 var botUrl = "https://" + this.botHost + ":" + this.publicBotPort + "/" + this.token; 
                                 var setWebHookOptions;
-                                if (this.useSelfSignedCertificate){
+                                if (!this.sslTerminated && this.useSelfSignedCertificate){
                                     setWebHookOptions = {
                                         certificate: options.webHook.cert,
                                     };

@@ -49,6 +49,8 @@ MK-2001 for providing the sendMediaGroup function.
 
 cowchimp  for adding the support for node-red 1.x (async)
 
+JokerQyou  for adding the support for using webhook without certificate 
+
 
 # Dependencies
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
@@ -151,6 +153,8 @@ You should also replace YOUR_NAME_OR_COMPANY_NAME with some value. Note that the
 ```
 openssl req -newkey rsa:2048 -sha256 -nodes -keyout PRIVATE.key -x509 -days 365 -out PUBLIC.pem -subj "/C=NG/ST=Lagos/L=Lagos/O=YOUR_NAME_OR_COMPANY_NAME/CN=SERVER_NAME_OR_IP"
 ```
+
+Webhook can also be used without certificate but then the bot host must be behind a tunnel see https://github.com/windkh/node-red-contrib-telegrambot/pull/93
 
 SOCKS5 proxy support is optional when running behind a SOCKS5 proxy that requires authentication.
 

@@ -111,10 +111,10 @@ module.exports = function (RED) {
                                     autoOpen: true,
                                     port : this.localBotPort,
                                 };
-								if (!this.sslTerminated) {
-									webHook.key = this.privateKey;
+                                if (!this.sslTerminated) {
+                                    webHook.key = this.privateKey;
                                     webHook.cert = this.certificate;
-								}
+                                }
                                 var options =
                                 {
                                     webHook: webHook,

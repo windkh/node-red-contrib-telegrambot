@@ -115,6 +115,10 @@ Version 7.1.3
 
 Updated added sending and receiving animations: see https://github.com/windkh/node-red-contrib-telegrambot/issues/95
 
+Version 7.1.4
+
+Bot polling is not stopped when socks5 error (e.g. when network is down): see https://github.com/windkh/node-red-contrib-telegrambot/issues/97
+
   
 # Note
 The nodes are tested with nodejs 8.11.1 and node-red 0.20.3. This version shold support node-red 1.x and above but I did not really test it.

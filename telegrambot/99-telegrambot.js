@@ -202,8 +202,7 @@ module.exports = function (RED) {
                                             hint = "Network connection may be down. Trying again.";
                                         }
                                         else if (error.message.startsWith("EFATAL: Error: SOCKS connection failed. Connection refused.")) {
-                                            hint = "Username or password may be be wrong. Aborting.";
-                                            stopPolling = true;
+                                            hint = "Username or password may be be wrong or connection is down. Aborting.";
                                         }
                                         else if (error.message.startsWith("EFATAL: Error: connect ETIMEDOUT")) {
                                             hint = "Server did not respond. Maybe proxy blocked polling. Trying again.";

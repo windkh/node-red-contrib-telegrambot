@@ -39,7 +39,7 @@ greenstone7 for providing the callback query node.
 
 dceejay for cleaning up the project
 
-psyntium for providing the weblink for additional content link videos, pictures, audio files.
+psyntium for providing the weblink for additional content link videos, pictures, animations, audio files.
  
 MatthiasHunziker for extending the callback query node to support generic events
 
@@ -111,6 +111,10 @@ Version 7.1.2
 
 Updated added forwardMessage function: see https://github.com/windkh/node-red-contrib-telegrambot/issues/101
 
+Version 7.1.2
+
+Updated added sending and receiving animations: see https://github.com/windkh/node-red-contrib-telegrambot/issues/95
+
   
 # Note
 The nodes are tested with nodejs 8.11.1 and node-red 0.20.3. This version shold support node-red 1.x and above but I did not really test it.
@@ -121,7 +125,7 @@ The input node receives messages from the bot and sends a message object with th
 
  `msg.payload` contains the message details
   - **chatId**  : the unique id of the chat. This value needs to be passed to the out node when responding to the same chat.
-  - **type**    : the type of message received: message, photo, audio, location, video, voice, contact
+  - **type**    : the type of message received: message, photo, audio, location, video, animation, voice, contact
   - **content** : received message content: string or file_id, or object with full data (location, contact)
 
 `msg.originalMessage` contains the original message object from the underlying [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api) lib.
@@ -141,7 +145,7 @@ are authorized to use this bot. This is useful, if the bot should only accept in
 The values in the property fields must be separated by a , e.g.:
 Hugo,Sepp,Egon
 Leave the fields blank if you do not want to use this feature.
-saveDataDir is an optional configuration value that can be set to automatically download all contents like music, video, documents, etc.
+saveDataDir is an optional configuration value that can be set to automatically download all contents like music, video, animations, documents, etc.
 The "Verbose Logging" flag should only be activated when debugging network problems as this will create cyclic warnings when the network is down.
 
 By default the bot is polling every 300ms for new messages. But you can also make use of the webhook method to avoid polling.
@@ -182,6 +186,7 @@ The following types can be received (see type in output object):
 - audio - content is the file_id of the audio file
 - document - content is the file_id of the document
 - sticker - content is the file_id of the sticker
+- animation - content is the file_id of the animation file
 - video - content is the file_id of the video file
 - video_note - content is the file_id of the video note file
 - voice - content is the file_id of the voice file
@@ -400,10 +405,13 @@ You can use one of the following types to send your file as content:
 - video
 - video_note
 - sticker
+- animation
 - voice
 - document
+Note that some clients convert gif animations to videos. This will lead to problems when passing a received animation object to the
+sender node as the content is mp4 instead of gif.
 The content can be downloaded automatically to a local folder by setting the saveDataDir entry in the configuration node.
-You can add a caption to photo, audio, document, video, voice by setting the caption property as follows:
+You can add a caption to photo, audio, document, video, animation, voice by setting the caption property as follows:
 ```
 msg.payload.caption = "You must have a look at this!";
 ```

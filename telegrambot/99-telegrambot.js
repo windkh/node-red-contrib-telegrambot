@@ -397,10 +397,10 @@ module.exports = function (RED) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'photo', content: botMsg.photo[index].file_id, caption: botMsg.caption, date: botMsg.date, blob: true, photos: botMsg.photo, mediaGroupId: botMsg.media_group_id };
         } else if (botMsg.audio) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'audio', content: botMsg.audio.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
-        } else if (botMsg.document) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'document', content: botMsg.document.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.sticker) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'sticker', content: botMsg.sticker.file_id, date: botMsg.date, blob: true };
+        } else if (botMsg.animation) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'animation', content: botMsg.animation.file_id, caption: botMsg.caption, date: botMsg.date, blob: true, mediaGroupId: botMsg.media_group_id };
         } else if (botMsg.video) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video', content: botMsg.video.file_id, caption: botMsg.caption, date: botMsg.date, blob: true, mediaGroupId: botMsg.media_group_id };
         } else if (botMsg.video_note) {
@@ -413,6 +413,8 @@ module.exports = function (RED) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'venue', content: botMsg.venue, date: botMsg.date };
         } else if (botMsg.contact) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'contact', content: botMsg.contact, date: botMsg.date };
+        } else if (botMsg.document) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'document', content: botMsg.document.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.new_chat_title) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'new_chat_title', content: botMsg.new_chat_title, date: botMsg.date };
         } else if (botMsg.new_chat_photo) {
@@ -1065,6 +1067,19 @@ module.exports = function (RED) {
                                 case 'sticker':
                                     if (this.hasContent(msg)) {
                                         node.telegramBot.sendSticker(chatId, msg.payload.content, msg.payload.options).then(function (result) {
+                                            msg.payload.content = result;
+                                            msg.payload.sentMessageId = result.message_id;
+                                            nodeSend(msg);
+                                            if (nodeDone) {
+                                                nodeDone();
+                                            }
+                                        });
+                                    }
+                                    break;
+
+                                case 'animation':
+                                    if (this.hasContent(msg)) {
+                                        node.telegramBot.sendAnimation(chatId, msg.payload.content, msg.payload.options).then(function (result) {
                                             msg.payload.content = result;
                                             msg.payload.sentMessageId = result.message_id;
                                             nodeSend(msg);

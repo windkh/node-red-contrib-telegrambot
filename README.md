@@ -111,7 +111,7 @@ Version 7.1.2
 
 Updated added forwardMessage function: see https://github.com/windkh/node-red-contrib-telegrambot/issues/101
 
-Version 7.1.2
+Version 7.1.3
 
 Updated added sending and receiving animations: see https://github.com/windkh/node-red-contrib-telegrambot/issues/95
 

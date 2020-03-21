@@ -107,8 +107,12 @@ Version 7.0.0
 
 Updated https://www.npmjs.com/package/node-telegram-bot-api to version 0.40.0
 
+Version 7.1.2
+
+Updated added forwardMessage function: see https://github.com/windkh/node-red-contrib-telegrambot/issues/101
+
   
-# Warning
+# Note
 The nodes are tested with nodejs 8.11.1 and node-red 0.20.3. This version shold support node-red 1.x and above but I did not really test it.
 
 
@@ -548,6 +552,30 @@ But when a live location is updated, then you will receive the same message even
 edit an already existing message in the chat (edit_message). The example above contains an event handler node that
 receives those message edits, and filters for the ones that contain a location. 
 
+
+## Forwarding message
+All types of  messages can be forwarded to another chat (see forwardMessage).
+Just send a message to the sender node and add forward property to the payload.
+The forward object must contain the id of the chat the message should be sent to.
+In the following example the received message will be forwarded to the chat 1:
+
+```
+msg.payload.forward = { chatId : 1 };
+return msg;
+```
+See example-flow [forward message](examples/forwardmessage.json) in examples folder.
+
+The message id to forward is taken from: msg.payload.messageId. 
+The source chat id is taken from: msg.payload.chatId.
+Both properties are set by the receiver node, but you can also manually set those manually without having received anything.
+The following example sends message 2 from chat 1 to chat 3 (if you have sufficient permissions).
+
+```
+msg.payload.chatId = 1;
+msg.payload.messageId = 2;
+msg.payload.forward = { chatId : 3 };
+return msg;
+```
 
 ## Advanced options when sending messages.
 Text messages can be in markdown format to support fat and italic style. To enable markdown format

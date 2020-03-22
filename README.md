@@ -119,6 +119,10 @@ Version 7.1.4
 
 Bot polling is not stopped when socks5 error (e.g. when network is down): see https://github.com/windkh/node-red-contrib-telegrambot/issues/97
 
+Version 7.1.5
+
+You can now send the same message to many different chats.
+
   
 # Note
 The nodes are tested with nodejs 8.11.1 and node-red 0.20.3. This version shold support node-red 1.x and above but I did not really test it.
@@ -215,7 +219,7 @@ The following types indicate changes in the group or channel itself.
 
 ## Sender Node
 This node sends the payload to the chat. The payload must contain the following fields:
-msg.payload.chatId  - chatId
+msg.payload.chatId  - chatId or an array of chatIds if you want to send the same message to many chats
 msg.payload.type    - e.g. "message"
 msg.payload.content - your message text
 msg.error           - is set when an exception occurred

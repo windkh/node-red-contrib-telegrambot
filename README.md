@@ -123,6 +123,10 @@ Version 7.1.5
 
 You can now send the same message to many different chats.
 
+Version 7.2.0
+
+Added dynamic authorization.
+
   
 # Note
 The nodes are tested with nodejs 8.11.1 and node-red 0.20.3. This version shold support node-red 1.x and above but I did not really test it.
@@ -631,6 +635,43 @@ You can reply on that message or log it to a file to see who wanted to access yo
 The message needs to be formatted before the log to file node can be triggered. A simple function could look like this:
 ![Alt text](images/TelegramBotUnauthorizedAccess2.png?raw=true "Create logging string with full information.")
 [unauthorizedaccess flow](examples/unauthorizedaccess.json)
+
+
+## Dynamic athorization
+If you want to authorize and unauthorize users or chats during runtime you can insert a script into the config instead of a hard coded list.
+The script starts with { and ends with }.
+Generally spoken you can make use of the context in two ways (e.g. in a function node):
+1. context.global.maykey = myvalue; // = old notation
+2. global.set(mykey, myvalue); // = new notation
+
+Only the latter one can be seen in the context browser window while the first is only stored as variable in memory.
+For using a dynamic list stored in the context you must add a script into the configuration (in the row Users and/or ChatIds):
+1. {context.global.hereyourkey} for approach one
+2. {gobal.get("hereyoukey")} for approach two
+
+If the config starts with { and ends with } the expression is evaluated as script.
+For example you can write something like
+```
+{context.global.username}
+{context.global.chatids}
+```
+
+or 
+```
+{global.get("usernames")}
+{global.get("chatids")}
+```
+
+I would recommend using the latter notation.
+![Alt text](images/TelegramBotDynamicAuthorization.png?raw=true "Dynamic authorization")
+
+The authorization can be modified using a change node:
+![Alt text](images/TelegramBotDynamicAuthorization2.png?raw=true "Granting access using a change node.")
+
+As an alternative the authorization can be modified using a function node:
+![Alt text](images/TelegramBotDynamicAuthorization3.png?raw=true "Granting access using a function node.")
+(not that you can also use the function node with the new notation like gobal.set(key, value).
+[dynamic authorization flow](examples/dynamicauthorization.json)
 
 
 ## Implementing a simple bot

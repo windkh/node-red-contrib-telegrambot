@@ -20,6 +20,51 @@ module.exports = function (RED) {
 
         var self = this;
 
+        // this sandbox is a lightweight copy of the sandbox in the function node to be as compatibe as possible to the syntax allowed there. 
+        var sandbox = {
+            node : {},
+
+            context: {
+                get: function() {
+                    return sandbox.node.context().get.apply(sandbox.node,arguments);
+                },
+                keys: function() {
+                    return sandbox.node.context().keys.apply(sandbox.node,arguments);
+                },
+                get global() {
+                    return sandbox.node.context().global;
+                },
+                get flow() {
+                    return sandbox.node.context().flow;
+                }
+            },
+            flow: {
+                get: function() {
+                    return sandbox.node.context().flow.get.apply(sandbox.node,arguments);
+                },
+                keys: function() {
+                    return sandbox.node.context().flow.keys.apply(sandbox.node,arguments);
+                }
+            },
+            global: {
+                get: function() {
+                    return sandbox.node.context().global.get.apply(sandbox.node,arguments);
+                },
+                keys: function() {
+                    return sandbox.node.context().global.keys.apply(sandbox.node,arguments);
+                }
+            },
+            env: {
+                get: function(envVar) {
+                    var flow = sandbox.node._flow;
+                    return flow.getSetting(envVar);
+                }
+            }
+        };
+        sandbox.node = this;
+
+        this.config = n;
+
         // contains all the nodes that make use of the bot connection maintained by this configuration node.
         this.users = [];
 
@@ -28,18 +73,6 @@ module.exports = function (RED) {
         // Reading configuration properties...
         this.botname = n.botname;
         this.verbose = n.verboselogging;
-
-        this.usernames = [];
-        if (n.usernames) {
-            this.usernames = n.usernames.split(',');
-        }
-
-        this.chatids = [];
-        if (n.chatids) {
-            this.chatids = n.chatids.split(',').map(function (item) {
-                return parseInt(item, 10);
-            });
-        }
 
         this.baseApiUrl = n.baseapiurl;
 
@@ -277,11 +310,68 @@ module.exports = function (RED) {
                 done();
             }
         }
+          
+        this.getUserNames = function(node){
+            var usernames = [];
+            if (self.config.usernames !== "") {
+                var trimmedUsernames = self.config.usernames.trim(); 
+                if(trimmedUsernames.startsWith("{") && trimmedUsernames.endsWith("}")){   
+                    
+                    var expression = trimmedUsernames.substr(1, trimmedUsernames.length - 2);
+                    var code = `sandbox.${expression};`;
+                 
+                    try {
 
-        this.isAuthorizedUser = function (user) {
+                        usernames = eval(code);
+                        if(usernames === undefined){
+                            usernames = [];
+                        }
+                    } catch (e) {
+                        usernames = [];
+                    }
+                }
+                else{
+                    usernames = self.config.usernames.split(',');
+                }
+            }
+
+            return usernames;
+        }
+
+        this.getChatIds = function(node){
+            var chatids = [];
+            if (self.config.chatids  !== "") {
+                var trimmedChatIds = self.config.chatids.trim(); 
+                if(trimmedChatIds.startsWith("{") && trimmedChatIds.endsWith("}")){   
+                    
+                    var expression = trimmedChatIds.substr(1, trimmedChatIds.length - 2);
+                    var code = `sandbox.${expression};`;
+                 
+                    try {
+                        chatids = eval(code);
+                        if(chatids === undefined){
+                            chatids = [];
+                        }
+                    } catch (e) {
+                        chatids = [];
+                    }
+                }
+                else{
+                    chatids = self.config.chatids.split(',').map(function(item) {
+                        return parseInt(item, 10);
+                    });
+                }
+            }
+
+            return chatids;
+        }
+
+        this.isAuthorizedUser = function (node, user) {
             var isAuthorized = false;
-            if (self.usernames.length > 0) {
-                if (self.usernames.indexOf(user) >= 0) {
+
+            var usernames = self.getUserNames(node);
+            if (usernames.length > 0) {
+                if (usernames.indexOf(user) >= 0) {
                     isAuthorized = true;
                 }
             }
@@ -289,12 +379,12 @@ module.exports = function (RED) {
             return isAuthorized;
         }
 
-        this.isAuthorizedChat = function (chatid) {
+        this.isAuthorizedChat = function (node, chatid) {
             var isAuthorized = false;
-            var length = self.chatids.length;
-            if (length > 0) {
-                for (var i = 0; i < length; i++) {
-                    var id = self.chatids[i];
+            var chatids = self.getChatIds(node);
+            if (chatids.length > 0) {
+                for (var i = 0; i < chatids.length; i++) {
+                    var id = chatids[i];
                     if (id === chatid) {
                         isAuthorized = true;
                         break;
@@ -305,16 +395,16 @@ module.exports = function (RED) {
             return isAuthorized;
         }
 
-        this.isAuthorized = function (chatid, user) {
-            var isAuthorizedUser = self.isAuthorizedUser(user);
-            var isAuthorizedChatId = self.isAuthorizedChat(chatid);
+        this.isAuthorized = function (node, chatid, user) {
+            var isAuthorizedUser = self.isAuthorizedUser(node, user);
+            var isAuthorizedChatId = self.isAuthorizedChat(node, chatid);
 
             var isAuthorized = false;
 
             if (isAuthorizedUser || isAuthorizedChatId) {
                 isAuthorized = true;
             } else {
-                if (self.chatids.length === 0 && self.usernames.length === 0) {
+                if (self.config.chatids === "" && self.config.usernames === "") {
                     isAuthorized = true;
                 }
             }
@@ -495,7 +585,7 @@ module.exports = function (RED) {
                     if (messageDetails) {
                         var msg = { payload: messageDetails, originalMessage: botMsg };
 
-                        if (node.config.isAuthorized(chatid, username)) {
+                        if (node.config.isAuthorized(node, chatid, username)) {
                             // downloadable "blob" message?
                             if (messageDetails.blob) {
                                 var fileId = msg.payload.content;
@@ -575,7 +665,7 @@ module.exports = function (RED) {
 
                     var username = botMsg.from.username;
                     var chatid = botMsg.chat.id;
-                    if (node.config.isAuthorized(chatid, username)) {
+                    if (node.config.isAuthorized(node, chatid, username)) {
                         var msg;
                         var messageDetails;
                         if (botMsg.text) {
@@ -684,7 +774,7 @@ module.exports = function (RED) {
                     } else {
                         node.error("username or chatid undefined");
                     }
-                    if (node.config.isAuthorized(chatid, username)) {
+                    if (node.config.isAuthorized(node, chatid, username)) {
                         var msg;
                         var messageDetails;
 

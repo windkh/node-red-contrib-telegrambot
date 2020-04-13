@@ -63,6 +63,9 @@ module.exports = function (RED) {
         };
         sandbox.node = this;
 
+        // dictionary that contains all pending commands.
+        this.pendingCommands = {};
+
         this.config = n;
 
         // contains all the nodes that make use of the bot connection maintained by this configuration node.
@@ -434,6 +437,34 @@ module.exports = function (RED) {
             });
         }
 
+        this.createUniqueKey = function (username, chatid) {
+            return username + "@" + chatid;
+        }
+
+        this.setCommandPending = function (command, username, chatid) {
+            var key = self.createUniqueKey(username, chatid);
+            self.pendingCommands[key] = command;
+        }
+        
+        this.resetCommandPending = function (command, username, chatid) {
+            var key = self.createUniqueKey(username, chatid);
+            delete self.pendingCommands[key];
+        }
+
+        this.isCommandPending = function (command, username, chatid) {
+            var key = self.createUniqueKey(username, chatid);
+            
+            var isPending = false;
+            if(self.pendingCommands[key] !== undefined){
+                var value = self.pendingCommands[key];
+                if(value === command){
+                    isPending = true;
+                }
+            };
+
+            return isPending;
+        }
+
     }
     RED.nodes.registerType("telegram bot", TelegramBotNode, {
         credentials: {
@@ -699,15 +730,20 @@ module.exports = function (RED) {
 
                                 if(hasresponse){
                                     node.send([msg, null]);
+                                    node.config.setCommandPending(command, username, chatid);
                                 }
                                 else{
                                     node.send(msg);
                                 }
                             } else {
                                 if(hasresponse){
-                                    messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
-                                    msg = { payload: messageDetails, originalMessage: botMsg };
-                                    node.send([null, msg]);
+                                    var isPending = node.config.isCommandPending(command, username, chatid);
+                                    if(isPending){
+                                        messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
+                                        msg = { payload: messageDetails, originalMessage: botMsg };
+                                        node.send([null, msg]);
+                                        node.config.resetCommandPending(command, username, chatid);
+                                    }
                                 }
                             }
                         } else {

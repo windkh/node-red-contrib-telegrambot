@@ -133,6 +133,10 @@ Version 7.2.1
 
 Second output of command node can be disabled now.
 
+Version 8.0.0
+
+The command nodes will only send the response to output 2 if a command is pending.
+
   
 # Note
 The nodes are tested with nodejs 8.11.1 and node-red 0.20.3. This version shold support node-red 1.x and above but I did not really test it.
@@ -278,6 +282,8 @@ should be issued following the bot name like /foo@YourBot. This is important whe
 to one single group chat. To avoid that the bot handles commands that are not directly sent to it using the long notation
 you can set the "strict" mode in the options of the command node. In this case the bot only accepts the full command
 notation in group chats.  
+The second output is only issued if a command was received before. If another ocmmand was triggered in the meantime the 
+pending status of the first one is reset. The state is stored per user and per chat.
 
 
 ## Event Node

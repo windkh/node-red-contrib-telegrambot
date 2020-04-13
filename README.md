@@ -51,6 +51,8 @@ cowchimp  for adding the support for node-red 1.x (async)
 
 JokerQyou  for adding the support for using webhook without certificate 
 
+bonastreyair   for providing ideas for improving the command node
+
 
 # Dependencies
 The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
@@ -126,6 +128,10 @@ You can now send the same message to many different chats.
 Version 7.2.0
 
 Added dynamic authorization.
+
+Version 7.2.1
+
+Second output of command node can be disabled now.
 
   
 # Note

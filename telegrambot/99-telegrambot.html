@@ -316,10 +316,11 @@
             name: { value: "" },
             command: { value: ""},
             bot: { value: "", type: "telegram bot", required: true },
-            strict : { value: false }
-        },
+            strict : { value: false },
+            hasresponse: { value: false, required: false },
+          },
         inputs: 0,
-        outputs: 2,
+        outputs: 1,
         icon: "telegramc.png",
         paletteLabel: "command",
         label: function () {
@@ -327,6 +328,21 @@
         },
         labelStyle: function() {
             return this.name?"node_label_italic":"";
+        },
+        oneditprepare: function() {
+            var that = this;
+            // useresponse on / off
+            var hasresponse = function() {
+                var mode = $("#node-input-hasresponse").prop('checked');
+                if (mode === false) {
+                    that.outputs = 2;
+                } else {
+                    that.outputs = 1;
+                }
+            };
+            hasresponse();
+            $("#node-input-hasresponse").change(hasresponse);
+
         }
     });
 </script>
@@ -348,14 +364,22 @@
         <label for="node-input-strict"><i class="fa fa-tag"></i> Strict in group chats</label>
         <input type="checkbox" id="node-input-strict" style="display: inline-block; width: auto; vertical-align: top;">
     </div>
+
+    <hr align="middle"/>
+
+    <div class="form-row">
+        <label for="node-input-hasresponse"><i class="fa fa-lock"></i> Has response output</label>
+        <input type="checkbox" id="node-input-hasresponse" style="display: inline-block; width: auto; vertical-align: top;">
+    </div>
 </script>
 
 <script type="text/x-red" data-help-name="telegram command">
     <p>A telegram node that triggers the output when a specified command is received from the chat.</p>
+    <p>The secondary output can be used for complex scenarios when you want to work with responses. By default it is disabled.</p>
 
     <h3>Outputs</h3>
     <p>1. Standard Ouput: Message is sent to output 1 if it is from an authorized user and it contains the command at the beginning of the message.</p>
-    <p>2. Error Ouput: Message is sent to output 2 if it is from an authorized user but does not contain the specified command.</p>
+    <p>2. Secondary Ouput: Message is sent to output 2 if it is from an authorized user but does not contain the specified command.</p>
 </script>
 
 

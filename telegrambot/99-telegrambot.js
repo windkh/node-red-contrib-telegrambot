@@ -647,6 +647,11 @@ module.exports = function (RED) {
         var node = this;
         var command = config.command;
         var strict = config.strict;
+        var hasresponse = config.hasresponse;
+        if(hasresponse === undefined){
+            hasresponse = true;
+        }
+
         this.bot = config.bot;
 
         this.config = RED.nodes.getNode(this.bot);
@@ -691,11 +696,19 @@ module.exports = function (RED) {
 
                                 messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: remainingText };
                                 msg = { payload: messageDetails, originalMessage: botMsg };
-                                node.send([msg, null]);
+
+                                if(hasresponse){
+                                    node.send([msg, null]);
+                                }
+                                else{
+                                    node.send(msg);
+                                }
                             } else {
-                                messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
-                                msg = { payload: messageDetails, originalMessage: botMsg };
-                                node.send([null, msg]);
+                                if(hasresponse){
+                                    messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
+                                    msg = { payload: messageDetails, originalMessage: botMsg };
+                                    node.send([null, msg]);
+                                }
                             }
                         } else {
                             // unknown type --> no output

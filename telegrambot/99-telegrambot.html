@@ -317,10 +317,10 @@
             command: { value: ""},
             bot: { value: "", type: "telegram bot", required: true },
             strict : { value: false },
-            hasresponse: { value: false, required: false },
+            hasresponse: { value: true, required: false },
           },
         inputs: 0,
-        outputs: 1,
+        outputs: 2,
         icon: "telegramc.png",
         paletteLabel: "command",
         label: function () {
@@ -334,7 +334,7 @@
             // useresponse on / off
             var hasresponse = function() {
                 var mode = $("#node-input-hasresponse").prop('checked');
-                if (mode === false) {
+                if (mode === true) {
                     that.outputs = 2;
                 } else {
                     that.outputs = 1;

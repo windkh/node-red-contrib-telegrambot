@@ -649,7 +649,7 @@ The message needs to be formatted before the log to file node can be triggered. 
 [unauthorizedaccess flow](examples/unauthorizedaccess.json)
 
 
-## Dynamic athorization
+## Dynamic authorization
 If you want to authorize and unauthorize users or chats during runtime you can insert a script into the config instead of a hard coded list.
 The script starts with { and ends with }.
 Generally spoken you can make use of the context in two ways (e.g. in a function node):

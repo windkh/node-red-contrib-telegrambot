@@ -1,154 +1,56 @@
 # Telegram bot nodes for node-red
-
+[![platform](https://img.shields.io/badge/platform-Node--RED-red)](https://nodered.org)
 ![License](https://img.shields.io/github/license/windkh/node-red-contrib-telegrambot.svg)
 ![Release](https://img.shields.io/npm/v/node-red-contrib-telegrambot.svg)
 ![NPM](https://img.shields.io/npm/dm/node-red-contrib-telegrambot.svg)
 [![Known Vulnerabilities](https://snyk.io/test/npm/node-red-contrib-telegrambot/badge.svg)](https://snyk.io/test/npm/node-red-contrib-telegrambot)
 [![Telegram](https://img.shields.io/badge/Join-Telegram%20Chat-blue.svg)](https://t.me/nodered_telegrambot)
 
-This package contains a receiver and a sender node which act as a telegram bot.
-The only thing required is the token that can be retrieved by the @botfather telegram bot.
-https://core.telegram.org/bots
-
+This package contains a receiver and a sender node which act as a Telegram Bot.
+The only thing required is the `token` that can be retrieved by the `@botfather` [Telegram Bot](https://core.telegram.org/bots).
 
 # Thanks for your donation
 If you want to support this free project. Any help is welcome. You can donate by clicking one of the following links:
-
 <a target="blank" href="https://blockchain.com/btc/payment_request?address=1PBi7BoZ1mBLQx4ePbwh1MVoK2RaoiDsp5"><img src="https://img.shields.io/badge/Donate-Bitcoin-green.svg"/></a>
 <a target="blank" href="https://www.paypal.me/windkh"><img src="https://img.shields.io/badge/Donate-PayPal-blue.svg"/></a>
 
-
 # Live support
-
 ## Get help
-
 If you have an urgent problem, hire a mentor for a 1:1 live session on Git-Start:
-[![Get 1:1 live support for your issue.](https://git-start.com/assets/git-start-mentee-banner-medium.svg?sanitize=true)](https://git-start.com/help-request/create/windkh%2Fnode-red-contrib-telegrambot)
+[![Get 1:1 live support for your issue](https://git-start.com/assets/git-start-mentee-banner-medium.svg?sanitize=true)](https://git-start.com/help-request/create/windkh%2Fnode-red-contrib-telegrambot)
 
 ## Provide help
-
 Help others in paid 1:1 live sessions to get started.
-[![Give paid 1:1 live support.](https://git-start.com/assets/git-start-mentor-banner-medium.svg?sanitize=true)](https://git-start.com/help-request/overview/windkh%2Fnode-red-contrib-telegrambot)
-
+[![Give paid 1:1 live support](https://git-start.com/assets/git-start-mentor-banner-medium.svg?sanitize=true)](https://git-start.com/help-request/overview/windkh%2Fnode-red-contrib-telegrambot)
 
 # Credits
-dvv (Vladimir Dronnikov) for providing the saveDataDir configuration option.
-snippet-java for adding venue messages. And for providing the markdown problem fallback.
-
-greenstone7 for providing the callback query node.
-
-dceejay for cleaning up the project
-
-psyntium for providing the weblink for additional content link videos, pictures, animations, audio files.
- 
-MatthiasHunziker for extending the callback query node to support generic events
-
-Skiepp for providing the send chat action idea.
-
-MK-2001 for providing the sendMediaGroup function.
-
-cowchimp  for adding the support for node-red 1.x (async)
-
-JokerQyou  for adding the support for using webhook without certificate 
-
-bonastreyair   for providing ideas for improving the command node
-
+ - dvv (Vladimir Dronnikov): for providing the saveDataDir configuration option
+ - snippet-java: for adding venue messages and for providing the markdown problem fallback
+ - greenstone7: for providing the callback query node
+ - dceejay: for cleaning up the project
+ - psyntium: for providing the weblink for additional content link videos, pictures, animations, audio files
+ - MatthiasHunziker: for extending the callback query node to support generic events
+ - Skiepp: for providing the send chat action idea.
+ - MK-2001: for providing the sendMediaGroup function.
+ - cowchimp: for adding the support for `Node-RED v1.0+` (async)
+ - JokerQyou: for adding the support for using webhook without certificate 
+ - bonastreyair: for providing ideas for improving the command node
 
 # Dependencies
-The nodes are a simple wrapper around the  [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
-It also depends on [socks5-https-client](https://github.com/mattcg/socks5-https-client)
+The nodes are tested with `Node.js v8.11.1` and `Node-RED v0.20.3`. It also supports `Node-RED v1.0+`.
+ - [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
+ - [socks5-https-client](https://github.com/mattcg/socks5-https-client)
 
-# History
-Version 4.x.x 
-
-Breaking changes: the former callback query node was replaced by the generic event node. 
-You can replace the former callback query node in your existing flows with the event node. Please configure this event node
-to receive the callback query event.
-
-
-Version 4.8.0 
-
-In this version the result returned by the sender node was changed for direct commands like for example 
-editMessageLiveLocation, stopMessageLiveLocation, editMessageCaption, ...
-in a way that the msg.payload.content contains now the full object returned by the request instead of the
-msg.payload.sentMessageId property. All flows that did not make any use of those special functions should snot be affected.
-
-
-Version 5.0.0
-
-Finally webhooks are supported now. The configuration node was changed so that the required properties for webhook can be configured. 
-
-
-Version 5.2.1
-
-This version contains SOCKS5 support: see https://github.com/windkh/node-red-contrib-telegrambot/issues/43
-
- 
-Version 5.3.0
-
-Improved configuration node: grouped properties. Added support for custom and non custom certificates in webhook mode: see https://github.com/windkh/node-red-contrib-telegrambot/issues/66
-
-
-Version 5.4.0
-
-Added sendMediaGroup function: see https://github.com/windkh/node-red-contrib-telegrambot/pull/68
-  
-Version 5.5.0
-
-Fixed restrictChatMember, kickChatMember, promoteChatMember, unbanChatMember functions: see https://github.com/windkh/node-red-contrib-telegrambot/issues/71
-
-Version 6.0.0
-
-Modified nodes to support node-red 1.x
-
-Version 6.0.1
-
-Removed warning when nodes register twice at the configuration node
-
-Version 7.0.0
-
-Updated https://www.npmjs.com/package/node-telegram-bot-api to version 0.40.0
-
-Version 7.1.2
-
-Updated added forwardMessage function: see https://github.com/windkh/node-red-contrib-telegrambot/issues/101
-
-Version 7.1.3
-
-Updated added sending and receiving animations: see https://github.com/windkh/node-red-contrib-telegrambot/issues/95
-
-Version 7.1.4
-
-Bot polling is not stopped when socks5 error (e.g. when network is down): see https://github.com/windkh/node-red-contrib-telegrambot/issues/97
-
-Version 7.1.5
-
-You can now send the same message to many different chats.
-
-Version 7.2.0
-
-Added dynamic authorization.
-
-Version 7.2.1
-
-Second output of command node can be disabled now.
-
-Version 8.0.0
-
-The command nodes will only send the response to output 2 if a command is pending.
-
-  
-# Note
-The nodes are tested with nodejs 8.11.1 and node-red 0.20.3. This version shold support node-red 1.x and above but I did not really test it.
-
+# Changelog
+Changes can be followed [here](/CHANGELOG.md)
 
 # Usage
 The input node receives messages from the bot and sends a message object with the following layout:
 
- `msg.payload` contains the message details
-  - **chatId**  : the unique id of the chat. This value needs to be passed to the out node when responding to the same chat.
-  - **type**    : the type of message received: message, photo, audio, location, video, animation, voice, contact
-  - **content** : received message content: string or file_id, or object with full data (location, contact)
+`msg.payload` contains the message details
+ - **chatId** : the unique id of the chat. This value needs to be passed to the out node when responding to the same chat
+ - **type** : the type of message received: message, photo, audio, location, video, animation, voice, contact
+ - **content** : received message content: string or file_id, or object with full data (location, contact)
 
 `msg.originalMessage` contains the original message object from the underlying [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api) lib.
 
@@ -157,7 +59,6 @@ A simple echo flow looks like:
 
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")
 [echo flow](examples/echo.json)
-
 
 ## Configuration Node
 The only thing to be entered here is the token which you received from @botfather when creating a new bot.
@@ -230,7 +131,6 @@ The following types indicate changes in the group or channel itself.
 - migrate_from_chat_id - content is the chat id. The chat property describes the chat.
 - migrate_to_chat_id - content is the chat id. The chat property describes the chat.
 
-
 ## Sender Node
 This node sends the payload to the chat. The payload must contain the following fields:
 msg.payload.chatId  - chatId or an array of chatIds if you want to send the same message to many chats
@@ -270,9 +170,7 @@ arguments are passed in msg.payload.options (see examples for further details):
 
 ## Command Node
 The command node can be used for triggering a message when a specified command is received: e.g. help.
-See example below.
-It has two outputs
-
+See example below. It has two outputs:
  1. is triggered when the command is received
  2. is triggered when the command is not received
 
@@ -667,7 +565,6 @@ For example you can write something like
 {context.global.username}
 {context.global.chatids}
 ```
-
 or 
 ```
 {global.get("usernames")}
@@ -693,9 +590,7 @@ Putting all pieces together you will have a simple bot implementing some useful 
 
 All example flows can be found in the examples folder of this package.
 
-
 # License
-
 Author: Karl-Heinz Wind
 
 The MIT License (MIT)

@@ -63,8 +63,8 @@ module.exports = function (RED) {
         };
         sandbox.node = this;
 
-        // dictionary that contains all pending commands.
-        this.pendingCommands = {};
+        this.pendingCommands = {};  // dictionary that contains all pending commands.
+        this.commands = [];  // contains all configured command nodes
 
         this.config = n;
 
@@ -275,7 +275,6 @@ module.exports = function (RED) {
                     }
                 }
             }
-
             return this.telegramBot;
         }
 
@@ -284,7 +283,6 @@ module.exports = function (RED) {
         });
 
         this.abortBot = function (hint, done) {
-
             if (self.telegramBot !== null) {
                 if (self.telegramBot._polling) {
                     self.telegramBot.stopPolling()
@@ -461,8 +459,11 @@ module.exports = function (RED) {
                     isPending = true;
                 }
             };
-
             return isPending;
+        }
+
+        this.registerCommand = function (command) {
+            self.commands.push(command);
         }
 
     }
@@ -596,6 +597,7 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         var node = this;
         this.bot = config.bot;
+        node.filterCommands = config.filterCommands || false;
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
@@ -634,6 +636,8 @@ module.exports = function (RED) {
                                     }
                                 });
                                 // vanilla message
+                            } else if (node.filterCommands && node.config.commands.includes(messageDetails.content)) {
+                                // Do nothing  
                             } else {
                                 node.send([msg, null]);
                             }
@@ -688,6 +692,7 @@ module.exports = function (RED) {
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             this.config.register(node);
+            this.config.registerCommand(command);
 
             node.status({ fill: "red", shape: "ring", text: "not connected" });
 
@@ -728,17 +733,16 @@ module.exports = function (RED) {
                                 messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: remainingText };
                                 msg = { payload: messageDetails, originalMessage: botMsg };
 
-                                if(hasresponse){
+                                if (hasresponse) {
                                     node.send([msg, null]);
                                     node.config.setCommandPending(command, username, chatid);
-                                }
-                                else{
+                                } else {
                                     node.send(msg);
                                 }
                             } else {
-                                if(hasresponse){
+                                if (hasresponse) {
                                     var isPending = node.config.isCommandPending(command, username, chatid);
-                                    if(isPending){
+                                    if (isPending) {
                                         messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
                                         msg = { payload: messageDetails, originalMessage: botMsg };
                                         node.send([null, msg]);

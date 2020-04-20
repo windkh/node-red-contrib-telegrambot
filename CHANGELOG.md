@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+ - New option in `Telegram reciever node` to automatically filter configured `command nodes`
+ - New `CHANGELOG` file to remove the info from the `README` - [#107](https://github.com/windkh/node-red-contrib-telegrambot/pull/107)
+
 ### Changed
  - New updated icons to - [#106](https://github.com/windkh/node-red-contrib-telegrambot/issues/106)
 

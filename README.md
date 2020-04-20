@@ -1,5 +1,5 @@
 # Telegram bot nodes for node-red
-[![platform](https://img.shields.io/badge/platform-Node--RED-red)](https://nodered.org)
+[![Platform](https://img.shields.io/badge/platform-Node--RED-red)](https://nodered.org)
 ![License](https://img.shields.io/github/license/windkh/node-red-contrib-telegrambot.svg)
 ![Release](https://img.shields.io/npm/v/node-red-contrib-telegrambot.svg)
 ![NPM](https://img.shields.io/npm/dm/node-red-contrib-telegrambot.svg)

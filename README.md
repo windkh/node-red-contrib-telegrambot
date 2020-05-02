@@ -131,6 +131,9 @@ The following types indicate changes in the group or channel itself.
 - migrate_from_chat_id - content is the chat id. The chat property describes the chat.
 - migrate_to_chat_id - content is the chat id. The chat property describes the chat.
 
+Normally a receiver node receives all content that is sent to the bot. However if you have command nodes next to a receiver
+you can enable the filter flag in the config node so that commands meant for a command node will not be handled by the receiver node.
+
 ## Sender Node
 This node sends the payload to the chat. The payload must contain the following fields:
 msg.payload.chatId  - chatId or an array of chatIds if you want to send the same message to many chats

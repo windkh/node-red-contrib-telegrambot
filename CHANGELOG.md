@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
 ### Changed
  - New updated icons to - [#106](https://github.com/windkh/node-red-contrib-telegrambot/issues/106)
 
+## [8.1.0] - 2020-04-13
+### Added
+ - Reordered html properties.
+
 ## [8.0.0] - 2020-04-13
 ### Added
  - Command nodes will only send the response to the second output if a command is pending - [#103](https://github.com/windkh/node-red-contrib-telegrambot/issues/103)

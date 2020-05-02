@@ -255,7 +255,8 @@
         defaults: {
             name: { value: "" },
             bot: { value:"", type: "telegram bot", required: true },
-            saveDataDir: { value: "" }
+            saveDataDir: { value: "" },
+            filterCommands: { value: false },
         },
         inputs: 0,
         outputs: 2,
@@ -278,6 +279,10 @@
     <div class="form-row">
         <label for="node-input-saveDataDir"><i class="fa fa-hdd-o"></i> Download Directory</label>
         <input type="text" id="node-input-saveDataDir" placeholder="Download directory">
+    </div>
+    <div class="form-row">
+        <label for="node-input-filterCommands"><i class="fa fa-filter"></i> Filter</label>
+        <input type="checkbox" id="node-input-filterCommands" style="display: inline-block; width: auto; vertical-align: top;"> commands (from configured command nodes)
     </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
@@ -304,6 +309,7 @@
     <p>Other properties may be present depending on the type of message.</p>
     <code>msg.originalMessage</code> contains the raw data object from the underlying library,
     and contains many useful properties.</p>
+    <p>Note: If you are using other <code>command nodes</code>, you can set this node to filter those commands so that the message only appears in the configured command node and not in this node</p>
 </script>
 
 

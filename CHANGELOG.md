@@ -1,17 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [8.1.0] - 2020-05-02
 ### Added
- - New option in `Telegram reciever node` to automatically filter configured `command nodes`
+ - Reordered html properties
+ - New option in `Telegram reciever node` to automatically filter configured `command nodes` - [#108](https://github.com/windkh/node-red-contrib-telegrambot/pull/108)
  - New `CHANGELOG` file to remove the info from the `README` - [#107](https://github.com/windkh/node-red-contrib-telegrambot/pull/107)
 
 ### Changed
  - New updated icons to - [#106](https://github.com/windkh/node-red-contrib-telegrambot/issues/106)
-
-## [8.1.0] - 2020-04-13
-### Added
- - Reordered html properties.
 
 ## [8.0.0] - 2020-04-13
 ### Added

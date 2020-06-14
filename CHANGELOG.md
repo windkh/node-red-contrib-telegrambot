@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [8.2.0] - 2020-06-14
+### Fixed
+ - Fixed wrong chat id when sending to many chats - [#111](https://github.com/windkh/node-red-contrib-telegrambot/issues/111)
+ 
 ## [8.1.0] - 2020-05-02
 ### Added
  - Reordered html properties

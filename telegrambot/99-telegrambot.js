@@ -1493,8 +1493,10 @@ module.exports = function (RED) {
                         var length = chatIds.length;
                         for (var i = 0; i < length; i++) {
                             var chatId = chatIds[i];
-                            msg.payload.chatId = chatId;
-                            this.processMessage(chatId, msg, nodeSend, nodeDone); 
+
+                            var clonedMsg = RED.util.cloneMessage(msg);
+                            clonedMsg.payload.chatId = chatId;
+                            this.processMessage(chatId, clonedMsg, nodeSend, nodeDone); 
                         }
                     }   
                 } else {

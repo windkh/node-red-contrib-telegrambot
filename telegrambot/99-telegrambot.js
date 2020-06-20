@@ -743,9 +743,11 @@ module.exports = function (RED) {
                                 if (hasresponse) {
                                     var isPending = node.config.isCommandPending(command, username, chatid);
                                     if (isPending) {
-                                        messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
-                                        msg = { payload: messageDetails, originalMessage: botMsg };
-                                        node.send([null, msg]);
+                                        if (!botMsg.text.startsWith("/")) {
+                                            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
+                                            msg = { payload: messageDetails, originalMessage: botMsg };
+                                            node.send([null, msg]);
+                                        }
                                         node.config.resetCommandPending(command, username, chatid);
                                     }
                                 }

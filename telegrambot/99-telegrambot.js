@@ -20,7 +20,7 @@ module.exports = function (RED) {
 
         var self = this;
 
-        // this sandbox is a lightweight copy of the sandbox in the function node to be as compatibe as possible to the syntax allowed there. 
+        // this sandbox is a lightweight copy of the sandbox in the function node to be as compatibe as possible to the syntax allowed there.
         var sandbox = {
             node : {},
 
@@ -109,7 +109,7 @@ module.exports = function (RED) {
         this.useSelfSignedCertificate = n.useselfsignedcertificate;
         this.sslTerminated = n.sslterminated;
 
-        // 4. optional when request via SOCKS5 is used. 
+        // 4. optional when request via SOCKS5 is used.
         this.useSocks = n.usesocks;
         if (this.useSocks) {
             this.socksRequest = {
@@ -132,7 +132,7 @@ module.exports = function (RED) {
             }
         }
 
-        // Activates the bot or returns the already activated bot. 
+        // Activates the bot or returns the already activated bot.
         this.getTelegramBot = function () {
             if (!this.telegramBot) {
                 if (this.credentials) {
@@ -219,7 +219,7 @@ module.exports = function (RED) {
                                     if (self.verbose) {
                                         self.warn(error.message);
                                     }
-                                     
+
                                     var stopPolling = false;
                                     var hint;
                                     if (error.message === "ETELEGRAM: 401 Unauthorized") {
@@ -311,16 +311,16 @@ module.exports = function (RED) {
                 done();
             }
         }
-          
+
         this.getUserNames = function(node){
             var usernames = [];
             if (self.config.usernames !== "") {
-                var trimmedUsernames = self.config.usernames.trim(); 
-                if(trimmedUsernames.startsWith("{") && trimmedUsernames.endsWith("}")){   
-                    
+                var trimmedUsernames = self.config.usernames.trim();
+                if(trimmedUsernames.startsWith("{") && trimmedUsernames.endsWith("}")){
+
                     var expression = trimmedUsernames.substr(1, trimmedUsernames.length - 2);
                     var code = `sandbox.${expression};`;
-                 
+
                     try {
 
                         usernames = eval(code);
@@ -342,12 +342,12 @@ module.exports = function (RED) {
         this.getChatIds = function(node){
             var chatids = [];
             if (self.config.chatids  !== "") {
-                var trimmedChatIds = self.config.chatids.trim(); 
-                if(trimmedChatIds.startsWith("{") && trimmedChatIds.endsWith("}")){   
-                    
+                var trimmedChatIds = self.config.chatids.trim();
+                if(trimmedChatIds.startsWith("{") && trimmedChatIds.endsWith("}")){
+
                     var expression = trimmedChatIds.substr(1, trimmedChatIds.length - 2);
                     var code = `sandbox.${expression};`;
-                 
+
                     try {
                         chatids = eval(code);
                         if(chatids === undefined){
@@ -421,7 +421,7 @@ module.exports = function (RED) {
             else {
                 if (self.verbose) {
                     // This warnin was removed as it caused confusion: see https://github.com/windkh/node-red-contrib-telegrambot/issues/87
-                    // self.warn("Node " + id + " registered twice at the configuration node: ignoring.");	
+                    // self.warn("Node " + id + " registered twice at the configuration node: ignoring.");
                 }
             }
         }
@@ -443,7 +443,7 @@ module.exports = function (RED) {
             var key = self.createUniqueKey(username, chatid);
             self.pendingCommands[key] = command;
         }
-        
+
         this.resetCommandPending = function (command, username, chatid) {
             var key = self.createUniqueKey(username, chatid);
             delete self.pendingCommands[key];
@@ -451,7 +451,7 @@ module.exports = function (RED) {
 
         this.isCommandPending = function (command, username, chatid) {
             var key = self.createUniqueKey(username, chatid);
-            
+
             var isPending = false;
             if(self.pendingCommands[key] !== undefined){
                 var value = self.pendingCommands[key];
@@ -637,7 +637,7 @@ module.exports = function (RED) {
                                 });
                                 // vanilla message
                             } else if (node.filterCommands && node.config.commands.includes(messageDetails.content)) {
-                                // Do nothing  
+                                // Do nothing
                             } else {
                                 node.send([msg, null]);
                             }
@@ -961,7 +961,7 @@ module.exports = function (RED) {
 
 
                             // TODO: implement those
-                            // chosen_inline_result, 
+                            // chosen_inline_result,
                             // shippingQuery, preCheckoutQuery
 
                             default:
@@ -1016,8 +1016,8 @@ module.exports = function (RED) {
     // location    content is an object that contains latitude and logitude
     // contact     content is full contact object
     // mediaGroup  content is array of mediaObject
-    // action      content is one of the following: 
-    //                      typing, upload_photo, record_video, upload_video, record_audio, upload_audio,  
+    // action      content is one of the following:
+    //                      typing, upload_photo, record_video, upload_video, record_audio, upload_audio,
     //                      upload_document, find_location, record_video_note, upload_video_note
     function TelegramOutNode(config) {
         RED.nodes.createNode(this, config);
@@ -1462,8 +1462,8 @@ module.exports = function (RED) {
                             }
                             break;
 
-                        // TODO:                            
-                        // getUserProfilePhotos, getFile, 
+                        // TODO:
+                        // getUserProfilePhotos, getFile,
                         // setChatStickerSet, deleteChatStickerSet
                         // sendGame, setGameScore, getGameHighScores
                         // sendInvoice, answerShippingQuery, answerPreCheckoutQuery
@@ -1487,7 +1487,7 @@ module.exports = function (RED) {
                 if (msg.payload.chatId) {
                     if(!Array.isArray(msg.payload.chatId)){
                         var chatId = msg.payload.chatId;
-                        this.processMessage(chatId, msg, nodeSend, nodeDone); 
+                        this.processMessage(chatId, msg, nodeSend, nodeDone);
                     } else{
                         var chatIds = msg.payload.chatId;
                         var length = chatIds.length;
@@ -1496,9 +1496,9 @@ module.exports = function (RED) {
 
                             var clonedMsg = RED.util.cloneMessage(msg);
                             clonedMsg.payload.chatId = chatId;
-                            this.processMessage(chatId, clonedMsg, nodeSend, nodeDone); 
+                            this.processMessage(chatId, clonedMsg, nodeSend, nodeDone);
                         }
-                    }   
+                    }
                 } else {
                     node.warn("msg.payload.chatId is empty");
                 }

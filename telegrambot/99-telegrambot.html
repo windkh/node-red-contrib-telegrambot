@@ -324,6 +324,7 @@
             bot: { value: "", type: "telegram bot", required: true },
             strict : { value: false },
             hasresponse: { value: true, required: false },
+            noauth: { value: false, required: false },
           },
         inputs: 0,
         outputs: 2,
@@ -369,6 +370,10 @@
     <div class="form-row">
         <label for="node-input-strict"><i class="fa fa-tag"></i> Strict in group chats</label>
         <input type="checkbox" id="node-input-strict" style="display: inline-block; width: auto; vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-noauth"><i class="fa fa-lock"></i> No Auth needed</label>
+        <input type="checkbox" id="node-input-noauth" style="display: inline-block; width: auto; vertical-align: top;">
     </div>
 
     <hr align="middle"/>

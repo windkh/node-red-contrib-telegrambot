@@ -683,6 +683,7 @@ module.exports = function (RED) {
         var command = config.command;
         var strict = config.strict;
         var hasresponse = config.hasresponse;
+        var noauth = config.noauth;
         if(hasresponse === undefined){
             hasresponse = true;
         }
@@ -706,7 +707,7 @@ module.exports = function (RED) {
 
                     var username = botMsg.from.username;
                     var chatid = botMsg.chat.id;
-                    if (node.config.isAuthorized(node, chatid, username)) {
+                    if (noauth || node.config.isAuthorized(node, chatid, username)) {
                         var msg;
                         var messageDetails;
                         if (botMsg.text) {

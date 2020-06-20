@@ -683,6 +683,7 @@ module.exports = function (RED) {
         var command = config.command;
         var strict = config.strict;
         var hasresponse = config.hasresponse;
+        var multiresponse = config.multiresponse;
         var noauth = config.noauth;
         if(hasresponse === undefined){
             hasresponse = true;
@@ -748,8 +749,12 @@ module.exports = function (RED) {
                                             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
                                             msg = { payload: messageDetails, originalMessage: botMsg };
                                             node.send([null, msg]);
+                                            if (!multiresponse) {
+                                                node.config.resetCommandPending(command, username, chatid);
+                                            }
+                                        } else {
+                                            node.config.resetCommandPending(command, username, chatid);
                                         }
-                                        node.config.resetCommandPending(command, username, chatid);
                                     }
                                 }
                             }
@@ -778,6 +783,78 @@ module.exports = function (RED) {
         });
     }
     RED.nodes.registerType("telegram command", TelegramCommandNode);
+
+
+
+    // --------------------------------------------------------------------------------------------
+    // The exit node resets the multi response for a command node
+    // The payload needs two fields
+    // chatId  : string destination chat
+    // username: string username of the user who issued the command
+    function TelegramExitNode(config) {
+        RED.nodes.createNode(this, config);
+        var node = this;
+        this.bot = config.bot;
+
+        this.config = RED.nodes.getNode(this.bot);
+        if (this.config) {
+            this.config.register(node);
+
+            node.status({ fill: "red", shape: "ring", text: "not connected" });
+
+            node.telegramBot = this.config.getTelegramBot();
+            if (node.telegramBot) {
+                node.status({ fill: "green", shape: "ring", text: "connected" });
+            } else {
+                node.warn("bot not initialized.");
+                node.status({ fill: "red", shape: "ring", text: "bot not initialized" });
+            }
+        } else {
+            node.warn("config node failed to initialize.");
+            node.status({ fill: "red", shape: "ring", text: "config node failed to initialize" });
+        }
+
+        this.on('input', function (msg, nodeSend, nodeDone) {
+            nodeSend = nodeSend || function () { node.send.apply(node, arguments) };
+
+            node.status({ fill: "green", shape: "ring", text: "connected" });
+
+            if (msg.payload) {
+
+                var chatId = msg.payload && msg.payload.chatId
+                    || msg.originalMessage && msg.originalMessage.chat && msg.originalMessage.chat.id
+                    || msg.originalMessage && msg.originalMessage.from && msg.originalMessage.from.id
+                    || null;
+
+                if (chatId) {
+
+                    var username = msg.payload && msg.payload.username
+                        || msg.originalMessage && msg.originalMessage.from && msg.originalMessage.from.username
+                        || msg.originalMessage && msg.originalMessage.chat && msg.originalMessage.chat.username
+                        || msg.payload.content && msg.payload.content.chat && msg.payload.content.chat.username
+                        || null;
+
+                    if (username) {
+                        if (!Array.isArray(chatId)) {
+                            node.config.resetCommandPending(null, username, chatId);
+                        } else {
+                            var length = chatId.length;
+                            for (var i = 0; i < length; i++) {
+                                node.config.resetCommandPending(null, username, chatId[i]);
+                            }
+                        }
+                    } else {
+                        node.warn("username is empty");
+                    }
+                } else {
+                    node.warn("chatId is empty");
+                }
+            } else {
+                node.warn("msg.payload is empty");
+            }
+        });
+    }
+    RED.nodes.registerType("telegram exit", TelegramExitNode);
 
 
 

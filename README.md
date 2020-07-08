@@ -33,8 +33,9 @@ Help others in paid 1:1 live sessions to get started.
  - Skiepp: for providing the send chat action idea.
  - MK-2001: for providing the sendMediaGroup function.
  - cowchimp: for adding the support for `Node-RED v1.0+` (async)
- - JokerQyou: for adding the support for using webhook without certificate 
+ - JokerQyou: for adding the support for using webhook without certificate
  - bonastreyair: for providing ideas for improving the command node
+ - daevidpreis: for multi response and no auth commands.
 
 # Dependencies
 The nodes are tested with `Node.js v8.11.1` and `Node-RED v0.20.3`. It also supports `Node-RED v1.0+`.
@@ -72,13 +73,13 @@ saveDataDir is an optional configuration value that can be set to automatically 
 The "Verbose Logging" flag should only be activated when debugging network problems as this will create cyclic warnings when the network is down.
 
 By default the bot is polling every 300ms for new messages. But you can also make use of the webhook method to avoid polling.
-Before that you have to create your own certificate as described here: 
+Before that you have to create your own certificate as described here:
 https://core.telegram.org/bots/webhooks
 https://stackoverflow.com/questions/42713926/what-is-easy-way-to-create-and-use-a-self-signed-certification-for-a-telegram-we
 One of many pitfalls when creating certificates (that don't work) is, that the value CN you provided to openssl must match the bots domain name: see "bot host" above.
 
 Create our pair of private and public keys using the following command:
-Important: 
+Important:
 replace SERVER_NAME_OR_IP with the name you enter in the configuration node under "Webhook Bot Host". Both names must be equal, otherwise the telegram server won't send updates to your bot.
 You should also replace YOUR_NAME_OR_COMPANY_NAME with some value. Note that the certificate will expire after 365 days.
 ```
@@ -116,18 +117,18 @@ The following types can be received (see type in output object):
 - location - content is an object with latitude and longitude
 - venue - content is the venue object
 - contact - content is the contact information object
-Note that media groups are received not as group, but as separate messages of type photo and video. 
+Note that media groups are received not as group, but as separate messages of type photo and video.
 
-The following types indicate changes in the group or channel itself. 
+The following types indicate changes in the group or channel itself.
 - new_chat_title - content is the new chat title
 - new_chat_photo - content is the file_id (see photo)
 - new_chat_members - content is an array of new chat members
 - left_chat_member - content is an object describing the chat member that left
 - delete_chat_photo - content is true
 - pinned_message - content is the pinned message object
-- channel_chat_created - 
-- group_chat_created - 
-- supergroup_chat_created - 
+- channel_chat_created -
+- group_chat_created -
+- supergroup_chat_created -
 - migrate_from_chat_id - content is the chat id. The chat property describes the chat.
 - migrate_to_chat_id - content is the chat id. The chat property describes the chat.
 
@@ -182,9 +183,13 @@ Commands usually start with a / like for example /foo. According to the telegram
 should be issued following the bot name like /foo@YourBot. This is important when you add several different bots
 to one single group chat. To avoid that the bot handles commands that are not directly sent to it using the long notation
 you can set the "strict" mode in the options of the command node. In this case the bot only accepts the full command
-notation in group chats.  
-The second output is only issued if a command was received before. If another ocmmand was triggered in the meantime the 
+notation in group chats.
+The second output is only issued if a command was received before. If another ocmmand was triggered in the meantime the
 pending status of the first one is reset. The state is stored per user and per chat.
+
+
+## Exit Node
+Exits a multi response command.
 
 
 ## Event Node
@@ -233,6 +238,13 @@ When the command is received the first output is triggered and a dialog is opene
 The answer is send to the second output triggering the lower flow. Data is passed via global properties here.
 
 ![Alt text](images/TelegramBotConfirmationMessage3.png?raw=true "Keyboard Function 2")
+
+
+## Implementing a simple calculator
+With the "Multi response" option, a command node can be configured to handle all
+subsequent messages until another command is received or an exit node is triggered.
+![Alt text](images/TelegramBotCalculator.png?raw=true "Keyboard Flow")
+[calculator flow](examples/multiresponsecommand.json)
 
 
 ## Implementing a on reply node
@@ -288,7 +300,7 @@ As an alternative to 'editMessageReplyMarkup' you can also use 'editMessageText'
 ![Alt text](images/TelegramBotEditInlineKeyboard6.png?raw=true "Replacing the initial keyboard and the text")
 
 
-## Implementing an inline_query 
+## Implementing an inline_query
 Bots can be called from any chat via inline_query when the bot is set to inline mode in botfather via /setinline
 see https://core.telegram.org/bots/api#inline-mode
 A sample flow is provided in the examples folder and could look like this:
@@ -297,11 +309,11 @@ A sample flow is provided in the examples folder and could look like this:
 
 The inline_query must be answered by sending a results array.
 see https://core.telegram.org/bots/api#inlinequeryresult
-The example just returns two simple articles, but almost every kind of content can be returned. 
+The example just returns two simple articles, but almost every kind of content can be returned.
 ![Alt text](images/TelegramBotInlineQuery2.png?raw=true "Creating the results array")
 
 Note that the inline_query can also contain the location of the sender. To enable this call /setinlinegeo in botfather
- 
+
 
 ## Receiving a location
 Locations can be send to the chat. The bot can receive the longitude and latitude:
@@ -350,9 +362,9 @@ The following types require a special content format to be used. See the underly
 ![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")
 ![Alt text](images/TelegramBotSendPhoto2.png?raw=true "Setting the correct content type.")
 
-### Sending a mediaGroup as album 
+### Sending a mediaGroup as album
 
-To send several photos as an album you can use the mediaGroup. For the type of media group you have to set the content to an array of object type [InputMediaPhoto](https://core.telegram.org/bots/api#inputmediaphoto). 
+To send several photos as an album you can use the mediaGroup. For the type of media group you have to set the content to an array of object type [InputMediaPhoto](https://core.telegram.org/bots/api#inputmediaphoto).
 Please review the Json below.
 
 ```javascript
@@ -400,14 +412,14 @@ msg.payload.content : {  phone_number: "+49 110", first_name: "Polizei" };
 
 ## Sending chat actions
 When the bot needs some time for further processing but you want to give a hint to the user what is going on,
-then you can send a chat action which will appear at the top of the channel of the receiver. 
+then you can send a chat action which will appear at the top of the channel of the receiver.
 
 ```
 msg.payload.type = 'action';
 msg.payload.content = "typing";
 ```
 
-The content can be one of the following 
+The content can be one of the following
 - "typing" for text messages
 - "upload_photo" for photos
 - "record_video" or "upload_video" for videos
@@ -434,7 +446,7 @@ msg.payload.content = {
 
 msg.payload.options = {
     live_period : time
-};  
+};
 ```
 
 To be able to update this location message you need to store the message id of that sent message.
@@ -456,11 +468,11 @@ msg.payload.content = {
     latitude : lat,
     longitude : lng
 };
-  
+
 msg.payload.options = {
     chat_id : chatId,
     message_id : messageId
-};  
+};
 ```
 
 If you want to abort updating the location then you can send the stopMessageLiveLocation command.
@@ -473,7 +485,7 @@ msg.payload.type = 'stopMessageLiveLocation';
 msg.payload.options = {
     chat_id : chatId,
     message_id : messageId
-};  
+};
 ```
 
 ![Alt text](images/TelegramBotLiveLocation.png?raw=true "Live Location Flow")
@@ -483,7 +495,7 @@ msg.payload.options = {
 When a user sends his location then it is received by the standard message receiver node.
 But when a live location is updated, then you will receive the same message event as one would
 edit an already existing message in the chat (edit_message). The example above contains an event handler node that
-receives those message edits, and filters for the ones that contain a location. 
+receives those message edits, and filters for the ones that contain a location.
 
 
 ## Forwarding message
@@ -498,7 +510,7 @@ return msg;
 ```
 See example-flow [forward message](examples/forwardmessage.json) in examples folder.
 
-The message id to forward is taken from: msg.payload.messageId. 
+The message id to forward is taken from: msg.payload.messageId.
 The source chat id is taken from: msg.payload.chatId.
 Both properties are set by the receiver node, but you can also manually set those manually without having received anything.
 The following example sends message 2 from chat 1 to chat 3 (if you have sufficient permissions).
@@ -568,7 +580,7 @@ For example you can write something like
 {context.global.username}
 {context.global.chatids}
 ```
-or 
+or
 ```
 {global.get("usernames")}
 {global.get("chatids")}

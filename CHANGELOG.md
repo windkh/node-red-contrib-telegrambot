@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [8.3.1] - 2020-07-26
+### Fixed
+ - Fixed has response behavior - [#115](https://github.com/windkh/node-red-contrib-telegrambot/issues/115)
+ 
 ## [8.3.0] - 2020-07-26
 ### Fixed
  - Fixed typo in event node (callback_query) - [#114](https://github.com/windkh/node-red-contrib-telegrambot/issues/114)

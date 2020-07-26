@@ -713,6 +713,10 @@ module.exports = function (RED) {
                             var message = botMsg.text;
                             var tokens = message.split(" ");
 
+                            // check if this is a command at all first
+                            var isCommandMessage = tokens[0].startsWith("/");
+
+                            // then if this command is meant for this node
                             var isChatCommand = tokens[0] === command;
                             var command2 = command + "@" + node.botname;
                             var isDirectCommand = tokens[0] === command2;
@@ -740,14 +744,19 @@ module.exports = function (RED) {
                                     node.send(msg);
                                 }
                             } else {
-                                if (hasresponse) {
-                                    var isPending = node.config.isCommandPending(command, username, chatid);
-                                    if (isPending) {
-                                        messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
-                                        msg = { payload: messageDetails, originalMessage: botMsg };
-                                        node.send([null, msg]);
-                                        node.config.resetCommandPending(command, username, chatid);
+                                // Here we check if the received message is probably a resonse to a pending command.
+                                if (!isCommandMessage) {
+                                    if (hasresponse) {
+                                        var isPending = node.config.isCommandPending(command, username, chatid);
+                                        if (isPending) {
+                                            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
+                                            msg = { payload: messageDetails, originalMessage: botMsg };
+                                            node.send([null, msg]);
+                                            node.config.resetCommandPending(command, username, chatid);
+                                        }
                                     }
+                                } else {
+                                    // Here we just ignore what happened as we do not know if another node is registered for that command.
                                 }
                             }
                         } else {

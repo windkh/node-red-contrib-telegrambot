@@ -536,6 +536,10 @@ module.exports = function (RED) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'contact', content: botMsg.contact, date: botMsg.date };
         } else if (botMsg.document) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'document', content: botMsg.document.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
+        } else if (botMsg.invoice) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'invoice', content: botMsg.invoice, date: botMsg.date };
+        } else if (botMsg.successful_payment) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'successful_payment', content: botMsg.successful_payment, date: botMsg.date };
         } else if (botMsg.new_chat_title) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'new_chat_title', content: botMsg.new_chat_title, date: botMsg.date };
         } else if (botMsg.new_chat_photo) {
@@ -564,8 +568,6 @@ module.exports = function (RED) {
             // unknown type --> no output
 
             // TODO:
-            // 'successful_payment',
-            // 'invoice',
             // 'game',
         }
 
@@ -1471,11 +1473,70 @@ module.exports = function (RED) {
                             }
                             break;
 
+                        // See https://core.telegram.org/bots/payments
+                        // See https://core.telegram.org/bots/api#sendinvoice
+                        case "sendInvoice":
+                            if (this.hasContent(msg)) {
+                                node.telegramBot[type](chatId,
+                                    msg.payload.content.title, 
+                                    msg.payload.content.description, 
+                                    msg.payload.content.payload, 
+                                    msg.payload.content.providerToken, 
+                                    msg.payload.content.startParameter, 
+                                    msg.payload.content.currency, 
+                                    msg.payload.content.prices, 
+                                    msg.payload.options).then(function (result) {
+                                    msg.payload.content = result;
+                                    nodeSend(msg);
+                                    if (nodeDone) {
+                                        nodeDone();
+                                    }
+                                });
+                            }
+                            break;
+
+                            case "answerShippingQuery":
+                                if (this.hasContent(msg)) {
+                                    var shippingQueryId = msg.payload.shippingQueryId;
+                                    var ok = msg.payload.ok; // this type requires ok to be set: see https://core.telegram.org/bots/api#answershippingquery
+                                    var shippingOptions = msg.payload.options; // the optional shipping options
+                                    var errorMeessage = msg.payload.errorMeessage; // the error message is optional when ok is false
+                                    node.telegramBot.answerShippingQuery(
+                                        shippingQueryId,
+                                        ok, 
+                                        shippingOptions,
+                                        errorMeessage 
+                                        ).then(function (result) {
+                                        msg.payload.content = result;
+                                        nodeSend(msg);
+                                        if (nodeDone) {
+                                            nodeDone();
+                                        }
+                                    });
+                                }
+                                break;
+
+                            case "answerPreCheckoutQuery":
+                                if (this.hasContent(msg)) {
+                                    var preCheckOutQueryId = msg.payload.preCheckOutQueryId;
+                                    var ok = msg.payload.ok; // this type requires ok to be set: see https://core.telegram.org/bots/api#answerprecheckoutquery
+                                    node.telegramBot.answerPreCheckoutQuery(
+                                        preCheckOutQueryId,
+                                        ok
+                                        ).then(function (result) {
+                                        msg.payload.content = result;
+                                        nodeSend(msg);
+                                        if (nodeDone) {
+                                            nodeDone();
+                                        }
+                                    });
+                                }
+                                break;
+
                         // TODO:                            
                         // getUserProfilePhotos, getFile, 
                         // setChatStickerSet, deleteChatStickerSet
                         // sendGame, setGameScore, getGameHighScores
-                        // sendInvoice, answerShippingQuery, answerPreCheckoutQuery
                         // getStickerSet, uploadStickerFile, createNewStickerSet, addStickerToSet, setStickerPositionInSet, deleteStickerFromSet
 
                         default:

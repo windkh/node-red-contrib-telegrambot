@@ -169,6 +169,9 @@ arguments are passed in msg.payload.options (see examples for further details):
 - getChatMembersCount
 - getChat
 - getChatMember
+- sendInvoice
+- answerShippingQuery
+- answerPreCheckoutQuery
 
 
 ## Command Node
@@ -585,6 +588,11 @@ As an alternative the authorization can be modified using a function node:
 (not that you can also use the function node with the new notation like gobal.set(key, value).
 [dynamic authorization flow](examples/dynamicauthorization.json)
 
+## Payments
+This feature is under construction. See 
+https://core.telegram.org/bots/payments
+https://core.telegram.org/bots/api#sendinvoice
+[send invoice flow](examples/sendinvoice.json)
 
 ## Implementing a simple bot
 Putting all pieces together you will have a simple bot implementing some useful functions.

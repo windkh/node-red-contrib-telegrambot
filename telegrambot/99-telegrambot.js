@@ -215,6 +215,11 @@ module.exports = function (RED) {
                                 this.telegramBot.on('polling_error', function (error) {
 
                                     self.setUsersStatus({ fill: "red", shape: "ring", text: "polling error" })
+                                    // We reset the polling status after the 80% of the timeout
+                                    setTimeout( function()
+                                    {
+                                        self.setUsersStatus({ fill: "green", shape: "ring", text: "polling" })
+                                    }, (self.pollInterval * 0.80));
 
                                     if (self.verbose) {
                                         self.warn(error.message);

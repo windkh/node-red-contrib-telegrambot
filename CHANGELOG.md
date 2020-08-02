@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [8.3.3] - 2020-07-26
+### Polling Error status is reset after 80% poll interval
+ - Reset error status after a period when polling. - [#97](https://github.com/windkh/node-red-contrib-telegrambot/issues/97)
+ 
 ## [8.3.2] - 2020-07-26
 ### Alpha feature sendInvoice
  - Added sendInvoice, answerShippingQuery, answerPreCheckoutQuery for testing - [#119](https://github.com/windkh/node-red-contrib-telegrambot/issues/119)

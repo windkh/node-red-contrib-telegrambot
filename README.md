@@ -43,7 +43,7 @@ The nodes are tested with `Node.js v8.11.1` and `Node-RED v0.20.3`. It also supp
  - [socks5-https-client](https://github.com/mattcg/socks5-https-client)
 
 # Changelog
-Changes can be followed [here](/CHANGELOG.md)
+Changes can be followed [here](/CHANGELOG.md).
 
 # Usage
 The input node receives messages from the bot and sends a message object with the following layout:
@@ -62,47 +62,60 @@ A simple echo flow looks like:
 [echo flow](examples/echo.json)
 
 ## Configuration Node
-The only thing to be entered here is the token which you received from @botfather when creating a new bot.
-The string is automatically trimmed.
-The node contains two optional properties: users and chatids. You may enter a list of names and/or chatids that
-are authorized to use this bot. This is useful, if the bot should only accept incoming calls from dedicated persons.
-The values in the property fields must be separated by a , e.g.:
-Hugo,Sepp,Egon
-Leave the fields blank if you do not want to use this feature.
-saveDataDir is an optional configuration value that can be set to automatically download all contents like music, video, animations, documents, etc.
-The "Verbose Logging" flag should only be activated when debugging network problems as this will create cyclic warnings when the network is down.
+<img src="images/TelegramBotConfigurationNodeDialog.png" title="Configuration node dialog" width="600" />
 
-By default the bot is polling every 300ms for new messages. But you can also make use of the webhook method to avoid polling.
-Before that you have to create your own certificate as described here: 
-https://core.telegram.org/bots/webhooks
+The only thing to be entered here is the token which you received from @botfather when creating a new bot. The string is automatically trimmed.
+
+### Configuration properties *Users* and *ChatIds*
+The node contains two optional properties: ***Users*** and ***ChatIds***. You may enter a list of names and/or chatIds that are authorized to use this bot. This is useful, if the bot should only accept incoming calls from dedicated persons.
+The values in the property fields must be separated by a , e.g.: 
+Hugo,Sepp,Egon 
+Leave the fields blank if you do not want to use this feature.
+
+### Configuration property *Server URL*
+t.b.d.
+
+The API Base URL can be changed for testing or when using a proxy.
+
+
+### Configuration property flag *Verbose Logging*
+The ***Verbose Logging*** flag should only be activated when debugging network problems as this will create cyclic warnings when the network is down.
+
+### Configuration property *Update Mode*
+The update mode can be chosen from *Polling* or *Webhook*.
+
+#### Polling mode
+By default the bot is polling every 300ms for new messages. This polling interval can be set via the property ***Poll Interval*** in the *Polling Options*.
+
+#### Webhook mode
+The ***Webhook*** method may be chosen to avoid polling.
+As a prerequisite you have to create your own certificate as described there: 
+https://core.telegram.org/bots/webhooks 
 https://stackoverflow.com/questions/42713926/what-is-easy-way-to-create-and-use-a-self-signed-certification-for-a-telegram-we
-One of many pitfalls when creating certificates (that don't work) is, that the value CN you provided to openssl must match the bots domain name: see "bot host" above.
+One of many pitfalls when creating certificates (that don't work) is, that the value CN you provided to openssl must match the bots domain name: see *Bot Host* below.
 
 Create our pair of private and public keys using the following command:
-Important: 
-replace SERVER_NAME_OR_IP with the name you enter in the configuration node under "Webhook Bot Host". Both names must be equal, otherwise the telegram server won't send updates to your bot.
-You should also replace YOUR_NAME_OR_COMPANY_NAME with some value. Note that the certificate will expire after 365 days.
 ```
 openssl req -newkey rsa:2048 -sha256 -nodes -keyout PRIVATE.key -x509 -days 365 -out PUBLIC.pem -subj "/C=NG/ST=Lagos/L=Lagos/O=YOUR_NAME_OR_COMPANY_NAME/CN=SERVER_NAME_OR_IP"
 ```
+Important: 
+Replace SERVER_NAME_OR_IP with the name you enter in the configuration node under ***Bot Host*** in the *Webhook Options*. Both names must be equal, otherwise the telegram server won't send updates to your bot.
+You should also replace YOUR_NAME_OR_COMPANY_NAME with some value. Note that the certificate will expire after 365 days.
 
-Webhook can also be used without certificate but then the bot host must be behind a tunnel see https://github.com/windkh/node-red-contrib-telegrambot/pull/93
+Webhook can also be used without certificate but then the bot host must be behind a tunnel see https://github.com/windkh/node-red-contrib-telegrambot/pull/93.
 
-SOCKS5 proxy support is optional when running behind a SOCKS5 proxy that requires authentication.
+### Configuration property flag *Use SOCKS5*
+SOCKS5 proxy support is optional when running behind a SOCKS5 proxy that requires authentication. In this case, additional configuration properties have to be set in the configuration node.
 
 
 ## Receiver Node
-This node receives all messages from a chat. Simply invite the bot to a chat.
-(You can control if the bot receives every message by calling /setprivacy @botfather.)
-The original message from the underlying node library is stored in msg.originalMessage.
-msg.payload contains the most important data like chatId, type and content. The content depends
-on the message type. E.g. if you receive a message then the content is a string. If you receive a location,
-then the content is an object containing latitude and longitude.
-The second output is triggered when security is applied and the user is not authorized to access the bot. See below.
+![node-appearance-receiver](images/TelegramBotNodeReceiver.png "Receiver node appearance")  
 
-When the receiver node receives data like videos, documents and so on, the file is downloaded automatically to the local harddisc when
-saveDataDir is set in the configuration node. The directory is also part of the message payload: msg.payload.path
-In addition to that the message contains the direct download link in the payload: msg.payload.weblink
+This node receives all messages from a chat. 
+Therefore, simply invite the bot to a chat. You can control if the bot receives every message by calling /setprivacy @botfather.
+
+The original message from the underlying node library is stored in `msg.originalMessage`. The `msg.payload` contains the most important data like **chatId**, **type** and **content**. The content format depends on the message type. E.g. if you receive a message then the content format is a string. If you receive a location, the content format is an object containing latitude and longitude. 
+The node's second output is triggered when security is applied and the user is not authorized to access the bot. See below.
 
 The following types can be received (see type in output object):
 - message - content is text
@@ -119,7 +132,7 @@ The following types can be received (see type in output object):
 - contact - content is the contact information object
 Note that media groups are received not as group, but as separate messages of type photo and video. 
 
-The following types indicate changes in the group or channel itself. 
+The following types indicate changes in the group or channel itself: 
 - new_chat_title - content is the new chat title
 - new_chat_photo - content is the file_id (see photo)
 - new_chat_members - content is an array of new chat members
@@ -132,19 +145,31 @@ The following types indicate changes in the group or channel itself.
 - migrate_from_chat_id - content is the chat id. The chat property describes the chat.
 - migrate_to_chat_id - content is the chat id. The chat property describes the chat.
 
-Normally a receiver node receives all content that is sent to the bot. However if you have command nodes next to a receiver
-you can enable the filter flag in the config node so that commands meant for a command node will not be handled by the receiver node.
+### Configuration property *Download Directory*
+When the receiver node receives data like videos, documents and so on, the file is downloaded automatically to the local harddisc when the node's property ***Download Directory*** is set in the configuration node. The directory may also be part of the message payload: `msg.payload.path`.
+In addition to that the message contains the direct download link in the payload: `msg.payload.weblink`.
+
+### Configuration property *Filter*
+Normally a receiver node receives all content that is sent to the bot. However if you have command nodes next to a receiver you can enable the *commands* flag in the configuration property ***Filter*** so that commands meant for a command node will not be handled by the receiver node.
+
 
 ## Sender Node
-This node sends the payload to the chat. The payload must contain the following fields:
-msg.payload.chatId  - chatId or an array of chatIds if you want to send the same message to many chats
-msg.payload.type    - e.g. "message"
-msg.payload.content - your message text
-msg.error           - is set when an exception occurred
+![node-appearance-sender](images/TelegramBotNodeSender.png "Sender node appearance")  
 
-Next to sending content the sender node can be used to issue direct commands to the API. The msg.payload.type
-needs to be set to one of the following, the msg.payload.content contains the required arguments while additional
-arguments are passed in msg.payload.options (see examples for further details):
+This node sends the payload to the chat. The payload must contain the following fields:
+- `msg.payload.chatId`  - chatId or an array of chatIds if you want to send the same message to several chats
+- `msg.payload.type`    - e.g. "message"
+- `msg.payload.content` - your message text
+
+Basically the input `msg` is forwarded unchanged to the node's output. In case of an exception within the node the output `msg` is extended by `msg.error`. 
+
+Additionally to sending content the sender node can be used to issue direct commands to the API. In this case the `msg.payload` fields contain (see examples for further details):
+- `msg.payload.type` - one of the commands listed below
+- `msg.payload.content` - required command arguments
+- `msg.payload.options` (optional) - additional command arguments
+
+
+The `msg.payload.type` needs to be set to one of the following values:
 - editMessageCaption
 - editMessageText
 - editMessageReplyMarkup
@@ -175,7 +200,14 @@ arguments are passed in msg.payload.options (see examples for further details):
 - answerPreCheckoutQuery
 
 
+
+# xxx Hier geht's weiter..
+
+
 ## Command Node
+![node-appearance-command](images/TelegramBotNodeCommand.png "Command node appearance")  
+
+
 The command node can be used for triggering a message when a specified command is received: e.g. help.
 See example below. It has two outputs:
  1. is triggered when the command is received
@@ -192,6 +224,9 @@ pending status of the first one is reset. The state is stored per user and per c
 
 
 ## Event Node
+![node-appearance-event](images/TelegramBotNodeEvent.png "Event node appearance")  
+
+
 The node receives events from the bot like:
 - callback_query of inline keyboards.
 See example-flow [inline keyboard flow](examples/inlinekeyboard.json) in examples folder.
@@ -206,18 +241,21 @@ See example-flow [inline keyboard flow](examples/inlinekeyboard.json) in example
 
 
 ## Reply Node
+![node-appearance-reply](images/TelegramBotNodeReply.png "Reply node appearance")  
+
 The reply node waits for an answer to a specified message. It should be used in conjunction with the sender node:
 See example below.
 
 
-## Implementing a simple echo
+## Examples
+### Implementing a simple echo
 This example is self-explaining. The received message is returned to the sender.
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")
 
 [echo flow](examples/echo.json)
 
 
-## Implementing a /help command
+### Implementing a /help command
 This flow returns the help message of your bot. It receives the command and creates a new message, which is returned:
 ![Alt text](images/TelegramBotHelp.png?raw=true "Help Command Flow")
 
@@ -226,7 +264,7 @@ This flow returns the help message of your bot. It receives the command and crea
 **Note**: You can access the sender's data via the originalMessage property.
 
 
-## Implementing a keyboard
+### Implementing a keyboard
 Keyboards are very useful for getting additional data from the sender.
 When the command is received the first output is triggered and a dialog is opened:
 ![Alt text](images/TelegramBotConfirmationMessage.png?raw=true "Keyboard Flow")
@@ -239,7 +277,7 @@ The answer is send to the second output triggering the lower flow. Data is passe
 ![Alt text](images/TelegramBotConfirmationMessage3.png?raw=true "Keyboard Function 2")
 
 
-## Implementing a on reply node
+### Implementing a on reply node
 Next to the keyboard the bot could also ask a question and wait for the answer.
 When the user responds to a specified message the telegram reply node can be used:
 ![Alt text](images/TelegramBotOnReplyMessage.png?raw=true "OnReply Flow")
@@ -256,7 +294,7 @@ the node will not be triggered.
 The last function shows how to evaluate the answer using a function node with two outputs.
 
 
-## Implementing an inline keyboard
+### Implementing an inline keyboard
 An inline keyboard contains buttons that can send a callback query back to the bot to trigger any kind of function.
 When the command is received the first output is triggered and a inline keyboard is shown:
 ![Alt text](images/TelegramBotInlineKeyboard1.png?raw=true "Inline Keyboard Flow")
@@ -265,12 +303,12 @@ When the command is received the first output is triggered and a inline keyboard
 ![Alt text](images/TelegramBotInlineKeyboard2.png?raw=true "Inline Keyboard Function 1")
 
 The callback query is received by the event node. It must be answered like shown as follows:
-Here you can add your code to trigger the desired bot command. The answer contains the callback query data in msg.payload.content.
+Here you can add your code to trigger the desired bot command. The answer contains the callback query data in `msg.payload.content`.
 
 ![Alt text](images/TelegramBotInlineKeyboard3.png?raw=true "Inline Keyboard Function 2")
 
 
-## Edit an inline keyboard
+### Edit an inline keyboard
 An inline keyboard can be modified using the 'editMessageReplyMarkup' instruction. To be able to modify an existing message you need
 to know the messageId of the message of the keyboard.
 A sample flow is provided in the examples folder and could look like this:
@@ -292,7 +330,7 @@ As an alternative to 'editMessageReplyMarkup' you can also use 'editMessageText'
 ![Alt text](images/TelegramBotEditInlineKeyboard6.png?raw=true "Replacing the initial keyboard and the text")
 
 
-## Implementing an inline_query 
+### Implementing an inline_query 
 Bots can be called from any chat via inline_query when the bot is set to inline mode in botfather via /setinline
 see https://core.telegram.org/bots/api#inline-mode
 A sample flow is provided in the examples folder and could look like this:
@@ -307,18 +345,18 @@ The example just returns two simple articles, but almost every kind of content c
 Note that the inline_query can also contain the location of the sender. To enable this call /setinlinegeo in botfather
  
 
-## Receiving a location
+### Receiving a location
 Locations can be send to the chat. The bot can receive the longitude and latitude:
 ![Alt text](images/TelegramBotLocation.png?raw=true "Location Function")
 
 
-## Sending messages to a specified chat
+### Sending messages to a specified chat
 If you have the chatId, you can send any message without the need of having received something before.
 ![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending a message")
 [sendmessagetochat flow](examples/sendmessagetochat.json)
 
 
-## Sending photos, videos, ...
+### Sending photos, videos, ...
 Next to sending text messages you can send almost any content like photos and videos. Set the right type and content and you are done.
 If you want to respond to a received message with a picture you could write:
 ```
@@ -337,6 +375,7 @@ You can use one of the following types to send your file as content:
 - animation
 - voice
 - document
+
 Note that some clients convert gif animations to videos. This will lead to problems when passing a received animation object to the
 sender node as the content is mp4 instead of gif.
 The content can be downloaded automatically to a local folder by setting the saveDataDir entry in the configuration node.
@@ -354,7 +393,7 @@ The following types require a special content format to be used. See the underly
 ![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")
 ![Alt text](images/TelegramBotSendPhoto2.png?raw=true "Setting the correct content type.")
 
-### Sending a mediaGroup as album 
+#### Sending a mediaGroup as album 
 
 To send several photos as an album you can use the mediaGroup. For the type of media group you have to set the content to an array of object type [InputMediaPhoto](https://core.telegram.org/bots/api#inputmediaphoto). 
 Please review the Json below.
@@ -387,7 +426,7 @@ msg.payload = {
 [sendmediagroup flow](examples/sendmediagroup.json)
 
 
-## Sending contact
+### Sending contact
 Sending a contact is limited to the fields supported by the underlying API to "phone_number" and "first_name".
 But you can also receive "last_name" if the client sends it.
 
@@ -402,7 +441,7 @@ msg.payload.content : {  phone_number: "+49 110", first_name: "Polizei" };
 ![Alt text](images/TelegramBotSendContact2.png?raw=true "Send Contact Function")
 
 
-## Sending chat actions
+### Sending chat actions
 When the bot needs some time for further processing but you want to give a hint to the user what is going on,
 then you can send a chat action which will appear at the top of the channel of the receiver. 
 
@@ -425,7 +464,7 @@ Of course a real bot would send the real data after finishing the processing, bu
 [sendchataction flow](examples/sendchataction.json)
 
 
-## Sending live locations
+### Sending live locations
 Locations can be send to the chat as described above and then updated afterwards: live location update.
 To achieve this you have to provide the live_period in seconds in the options when sending the location.
 
@@ -483,14 +522,14 @@ msg.payload.options = {
 ![Alt text](images/TelegramBotLiveLocation.png?raw=true "Live Location Flow")
 [livelocation flow](examples/livelocation.json)
 
-## Receiving live location updates
+### Receiving live location updates
 When a user sends his location then it is received by the standard message receiver node.
 But when a live location is updated, then you will receive the same message event as one would
 edit an already existing message in the chat (edit_message). The example above contains an event handler node that
 receives those message edits, and filters for the ones that contain a location. 
 
 
-## Forwarding message
+### Forwarding message
 All types of  messages can be forwarded to another chat (see forwardMessage).
 Just send a message to the sender node and add forward property to the payload.
 The forward object must contain the id of the chat the message should be sent to.
@@ -502,8 +541,8 @@ return msg;
 ```
 See example-flow [forward message](examples/forwardmessage.json) in examples folder.
 
-The message id to forward is taken from: msg.payload.messageId. 
-The source chat id is taken from: msg.payload.chatId.
+The message id to forward is taken from: `msg.payload.messageId`. 
+The source chat id is taken from: `msg.payload.chatId`.
 Both properties are set by the receiver node, but you can also manually set those manually without having received anything.
 The following example sends message 2 from chat 1 to chat 3 (if you have sufficient permissions).
 
@@ -514,7 +553,7 @@ msg.payload.forward = { chatId : 3 };
 return msg;
 ```
 
-## Advanced options when sending messages.
+### Advanced options when sending messages.
 Text messages can be in markdown format to support fat and italic style. To enable markdown format
 set the parse_mode options property as follows:
 ```
@@ -534,7 +573,7 @@ msg.payload.options = true;
 ```
 
 
-## Configuring security
+### Configuring security
 The configuration node contains two properties for applying security to your bot. You can choose between configuring
 the single usernames or configure one or more chat-ids that are allowed to access the bot. The values must be separated using a comma like shown in the screenshot.
 
@@ -544,7 +583,7 @@ the single usernames or configure one or more chat-ids that are allowed to acces
 Everybody in this group is allowed to use the bot if you enter the chat-id of the group into the lower field of the configuration node.
 
 
-## Detecting unauthorized access.
+### Detecting unauthorized access.
 The receiver node has a second output, that is triggered when authorization fails. The message is send to this output for further processing.
 You can reply on that message or log it to a file to see who wanted to access your bot.
 ![Alt text](images/TelegramBotUnauthorizedAccess.png?raw=true "Logging unauthorized access")
@@ -554,7 +593,7 @@ The message needs to be formatted before the log to file node can be triggered. 
 [unauthorizedaccess flow](examples/unauthorizedaccess.json)
 
 
-## Dynamic authorization
+### Dynamic authorization
 If you want to authorize and unauthorize users or chats during runtime you can insert a script into the config instead of a hard coded list.
 The script starts with { and ends with }.
 Generally spoken you can make use of the context in two ways (e.g. in a function node):
@@ -589,13 +628,13 @@ As an alternative the authorization can be modified using a function node:
 (not that you can also use the function node with the new notation like gobal.set(key, value).
 [dynamic authorization flow](examples/dynamicauthorization.json)
 
-## Payments
+### Payments
 This feature is under construction. See 
 https://core.telegram.org/bots/payments
 https://core.telegram.org/bots/api#sendinvoice
 [send invoice flow](examples/sendinvoice.json)
 
-## Implementing a simple bot
+### Implementing a simple bot
 Putting all pieces together you will have a simple bot implementing some useful functions.
 ![Alt text](images/TelegramBotExample.png?raw=true "Bot example")
 [simplebot flow](examples/simplebot.json)

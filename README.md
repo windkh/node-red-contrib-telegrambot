@@ -8,11 +8,6 @@ xxx ToDo
 [![NPM](https://img.shields.io/npm/v/node-red-contrib-telegrambot?logo=npm)](https://www.npmjs.org/package/node-red-contrib-telegrambot)
 [![Known Vulnerabilities](https://snyk.io/test/npm/node-red-contrib-telegrambot/badge.svg)](https://snyk.io/test/npm/node-red-contrib-telegrambot)
 [![Telegram](https://img.shields.io/badge/Join-Telegram%20Chat-blue.svg?logo=telegram)](https://t.me/nodered_telegrambot)
-Do you mean a table which describes the logic within the function getMessageDetails(botMsg)?
-E.g. a table with these coloumns:
-- text: chatId, messageId, type (= "message"), content (text)
-- photo: chatId, messageId, type (= "photo"), content (photo[index].file_id with index = different photo sizes), caption, date, blob (= true), photos (???), mediaGroupId
-- audio: chatId, messageId, type (= "audio"), content (file_id), cation, date, blob (= true)
 ...
 
 This package contains a receiver and a sender node which act as a Telegram Bot.
@@ -109,9 +104,10 @@ E.g. a table with these coloumns:
 
 #### Webhook mode
 The *Webhook* method may be chosen to avoid polling.
-As a prerequisite you have to create your own certificate as described there: 
-https://core.telegram.org/bots/webhooks  
-https://stackoverflow.com/questions/42713926/what-is-easy-way-to-create-and-use-a-self-signed-certification-for-a-telegram-we  
+As a prerequisite you have to create your own certificate as described there:
+- https://core.telegram.org/bots/webhooks 
+- https://stackoverflow.com/questions/42713926/what-is-easy-way-to-create-and-use-a-self-signed-certification-for-a-telegram-we  
+
 One of many pitfalls when creating certificates (that don't work) is, that the value CN you provided to openssl must match the bots domain name: see *Bot Host* below.
 Do you mean a table which describes the logic within the function getMessageDetails(botMsg)?
 E.g. a table with these coloumns:
@@ -279,9 +275,9 @@ See example-flow [inline keyboard flow](examples/inlinekeyboard.json) in example
 - **edited_message_text** which is triggered when someone alters an already sent message text.
 - **edited_message_caption** which is triggered when someone alters an already sent caption e.g. of a photo.
 - **channel_post** which is triggered when the bot is member of a public channel (/setprivacy to disabled!).
-- **edited_channel_post** which is triggeren when someone alters an already sent message in a public channel.
-- **edited_channel_post_text** which is triggeren when someone alters an already sent message text in a public channel.
-- **edited_channel_post_caption** which is triggeren when someone alters an already sent caption of e.g. a photo in a public channel.
+- **edited_channel_post** which is triggered when someone alters an already sent message in a public channel.
+- **edited_channel_post_text** which is triggered when someone alters an already sent message text in a public channel.
+- **edited_channel_post_caption** which is triggered when someone alters an already sent caption of e.g. a photo in a public channel.
 
 
 ## Reply Node
@@ -402,19 +398,19 @@ The message id needs to be saved in the flow or global context. This is just a d
 
 **Fig. 22:** Storing messageId function example 
 
-As next the initial keyboard has to be replaced with a modified one using the magic 'editMessageReplyMarkup' command as type.
+As next the initial keyboard has to be replaced with a modified one using the api command *editMessageReplyMarkup* command as type.
 
 <img src="images/TelegramBotEditInlineKeyboard4.png" title="Replacing the initial keyboard" width="650" />
 
 **Fig. 23:** Replace keyboard function example 
 
-The following switch node just handles the response and hides the keyboard using another magic command: 'deleteMessage':
+The following switch node just handles the response and hides the keyboard using another api command *deleteMessage*:
 
 <img src="images/TelegramBotEditInlineKeyboard5.png" title="Handling the keyboard response" width="650" />
 
 **Fig. 24:** Handling the keyboard response function example 
 
-As an alternative to 'editMessageReplyMarkup' you can also use 'editMessageText' to replace the keyboard and also the text as follows:
+As an alternative to '*ditMessageReplyMarkup* you can also use the api command *editMessageText* to replace the keyboard and also the text as follows:
 
 <img src="images/TelegramBotEditInlineKeyboard6.png" title="Replacing the initial keyboard and the text" width="650" />
 
@@ -422,22 +418,22 @@ As an alternative to 'editMessageReplyMarkup' you can also use 'editMessageText'
 
 
 ## Implementing an inline_query 
-Bots can be called from any chat via inline_query when the bot is set to inline mode in botfather via /setinline
-see https://core.telegram.org/bots/api#inline-mode
+Bots can be called from any chat via inline_query when the bot is set to inline mode in botfather via /setinline (see https://core.telegram.org/bots/api#inline-mode).  
 A sample flow is provided in the examples folder and could look like this:
+
 ![Alt text](images/TelegramBotInlineQuery1.png?raw=true "Answer Inline Query Flow")  
 [inlinequery flow](examples/inlinequery.json)  
 **Fig. 26:** inline_query example flow  
 
 The inline_query must be answered by sending a results array.
-See https://core.telegram.org/bots/api#inlinequeryresult
+See https://core.telegram.org/bots/api#inlinequeryresult.  
 The example just returns two simple articles, but almost every kind of content can be returned. 
 
 <img src="images/TelegramBotInlineQuery2.png" title="Creating the results array" width="700" />
 
 **Fig. 27:** Create results array function example 
 
-Note that the inline_query can also contain the location of the sender. To enable this call /setinlinegeo in botfather
+Note that the inline_query can also contain the location of the sender. To enable this call /setinlinegeo in botfather.
  
 
 ## Receiving a location
@@ -602,7 +598,7 @@ Of course a real bot would send the real data after finishing the processing, bu
 An example flow sending a chat action is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendChatAction.png?raw=true "Sending a chat action")  
-[sendchataction flow](examples/sendchataction.json)
+[sendchataction flow](examples/sendchataction.json)  
 **Fig. 37:** Sending chat actions example flow 
 
 The *send chat action* function node may contain: 
@@ -796,8 +792,8 @@ The authorization can be modified using a change node:
 As an alternative, the authorization can be modified using a function node:
 
 <img src="images/TelegramBotDynamicAuthorization3.png" title="Granting access using a function node" width="550" />  
-[dynamic authorization flow](examples/dynamicauthorization.json)
 
+[dynamic authorization flow](examples/dynamicauthorization.json)
 **Fig. 46:** Granting access using a function node
 
 Note that you can also use the function node with the new notation like gobal.set(key, value).
@@ -805,8 +801,8 @@ Note that you can also use the function node with the new notation like gobal.se
 
 ## Payments
 This feature is under construction. See 
-https://core.telegram.org/bots/payments
-https://core.telegram.org/bots/api#sendinvoice
+https://core.telegram.org/bots/payments  
+https://core.telegram.org/bots/api#sendinvoice  
 [send invoice flow](examples/sendinvoice.json)
 
 ## Implementing a simple bot

@@ -793,14 +793,14 @@ As an alternative, the authorization can be modified using a function node:
 
 <img src="images/TelegramBotDynamicAuthorization3.png" title="Granting access using a function node" width="550" />  
 
-[dynamic authorization flow](examples/dynamicauthorization.json)
+[dynamic authorization flow](examples/dynamicauthorization.json)  
 **Fig. 46:** Granting access using a function node
 
 Note that you can also use the function node with the new notation like gobal.set(key, value).
 
 
 ## Payments
-This feature is under construction. See 
+This feature is under construction. See  
 https://core.telegram.org/bots/payments  
 https://core.telegram.org/bots/api#sendinvoice  
 [send invoice flow](examples/sendinvoice.json)

@@ -110,8 +110,8 @@ E.g. a table with these coloumns:
 #### Webhook mode
 The *Webhook* method may be chosen to avoid polling.
 As a prerequisite you have to create your own certificate as described there: 
-https://core.telegram.org/bots/webhooks 
-https://stackoverflow.com/questions/42713926/what-is-easy-way-to-create-and-use-a-self-signed-certification-for-a-telegram-we
+https://core.telegram.org/bots/webhooks  
+https://stackoverflow.com/questions/42713926/what-is-easy-way-to-create-and-use-a-self-signed-certification-for-a-telegram-we  
 One of many pitfalls when creating certificates (that don't work) is, that the value CN you provided to openssl must match the bots domain name: see *Bot Host* below.
 Do you mean a table which describes the logic within the function getMessageDetails(botMsg)?
 E.g. a table with these coloumns:
@@ -795,8 +795,8 @@ The authorization can be modified using a change node:
 
 As an alternative, the authorization can be modified using a function node:
 
+<img src="images/TelegramBotDynamicAuthorization3.png" title="Granting access using a function node" width="550" />  
 [dynamic authorization flow](examples/dynamicauthorization.json)
-<img src="images/TelegramBotDynamicAuthorization3.png" title="Granting access using a function node" width="550" />
 
 **Fig. 46:** Granting access using a function node
 

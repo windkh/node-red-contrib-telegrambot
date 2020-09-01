@@ -75,7 +75,8 @@ The mandatory configuration entries are
 
 which you received from @botfather when creating a new bot. 
 
-<img src="images/TelegramBotConfigurationNodeDialog.png" title="Configuration node dialog" width="600" />  
+<img src="images/TelegramBotConfigurationNodeDialog.png" title="Configuration node dialog" width="600" />
+
 **Fig. 2:** Configuration node dialog 
 
 
@@ -290,19 +291,20 @@ All example flows can be found in the examples folder of this package.
 ## Implementing a simple echo
 This example is self-explaining. The received message is returned to the sender.
 
-![Alt text](images/TelegramBotEcho.png?raw=true "Echo flow")
-[echo flow](examples/echo.json)
+![Alt text](images/TelegramBotEcho.png?raw=true "Echo flow")  
+[echo flow](examples/echo.json)  
 **Fig. 8:** Simple echo flow 
 
 
 ## Implementing a /help command
 This flow returns the help message of your bot. It receives the command and creates a new message, which is returned:
-![Alt text](images/TelegramBotHelp.png?raw=true "Help command flow")
+![Alt text](images/TelegramBotHelp.png?raw=true "Help command flow")  
 **Fig. 9:** Help command flow example 
 
 The shown function node may contain:
 
 <img src="images/TelegramBotHelp2.png" title="Help function" width="600" />
+
 **Fig. 10:** Help command function example 
 
 **Note**: You can access the sender's data via the `msg.originalMessage` property.

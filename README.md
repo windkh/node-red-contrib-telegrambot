@@ -1,6 +1,5 @@
 xxx ToDo
-- Bilder numerieren
-- Typos in 99-telegrambot.html suchen
+- Tabelle mit Message-Inhalten einfügen
 
 # Telegram bot nodes for node-red
 [![Platform](https://img.shields.io/badge/platform-Node--RED-red)](https://nodered.org)
@@ -9,7 +8,12 @@ xxx ToDo
 [![NPM](https://img.shields.io/npm/v/node-red-contrib-telegrambot?logo=npm)](https://www.npmjs.org/package/node-red-contrib-telegrambot)
 [![Known Vulnerabilities](https://snyk.io/test/npm/node-red-contrib-telegrambot/badge.svg)](https://snyk.io/test/npm/node-red-contrib-telegrambot)
 [![Telegram](https://img.shields.io/badge/Join-Telegram%20Chat-blue.svg?logo=telegram)](https://t.me/nodered_telegrambot)
-
+Do you mean a table which describes the logic within the function getMessageDetails(botMsg)?
+E.g. a table with these coloumns:
+- text: chatId, messageId, type (= "message"), content (text)
+- photo: chatId, messageId, type (= "photo"), content (photo[index].file_id with index = different photo sizes), caption, date, blob (= true), photos (???), mediaGroupId
+- audio: chatId, messageId, type (= "audio"), content (file_id), cation, date, blob (= true)
+...
 
 This package contains a receiver and a sender node which act as a Telegram Bot.
 The only thing required is the `token` that can be retrieved by the `@botfather` [Telegram Bot](https://core.telegram.org/bots).
@@ -82,7 +86,7 @@ which you received from @botfather when creating a new bot.
 
 ### Configuration properties *Users* and *ChatIds*
 The node contains the two optional properties: ***Users*** and ***ChatIds***. You may enter a list of names and/or chatIds that are authorized to use this bot. This is useful, if the bot should only accept incoming calls from dedicated persons resp. chat groups.
-The values in the property fields must be separated by a , e.g.: 
+The values in the property fields must be separated by a comma e.g.: 
 Hugo,Sepp,Egon 
 Leave the fields blank if you do not want to use this feature to mask senders.
 
@@ -96,7 +100,12 @@ Typically this field is left blank.
 The update mode can be chosen from *Polling* or *Webhook*.
 
 #### Polling mode
-By default the bot is polling every 300ms for new messages. This polling interval can be set via the property ***Poll Interval*** in the *Polling Options*.
+By default the bot is polling every 300ms for new messages. This polling interval can be set via the property ***Poll Interval*** in the Do you mean a table which describes the logic within the function getMessageDetails(botMsg)?
+E.g. a table with these coloumns:
+- text: chatId, messageId, type (= "message"), content (text)
+- photo: chatId, messageId, type (= "photo"), content (photo[index].file_id with index = different photo sizes), caption, date, blob (= true), photos (???), mediaGroupId
+- audio: chatId, messageId, type (= "audio"), content (file_id), cation, date, blob (= true)
+...*Polling Options*.
 
 #### Webhook mode
 The *Webhook* method may be chosen to avoid polling.
@@ -104,7 +113,12 @@ As a prerequisite you have to create your own certificate as described there:
 https://core.telegram.org/bots/webhooks 
 https://stackoverflow.com/questions/42713926/what-is-easy-way-to-create-and-use-a-self-signed-certification-for-a-telegram-we
 One of many pitfalls when creating certificates (that don't work) is, that the value CN you provided to openssl must match the bots domain name: see *Bot Host* below.
-
+Do you mean a table which describes the logic within the function getMessageDetails(botMsg)?
+E.g. a table with these coloumns:
+- text: chatId, messageId, type (= "message"), content (text)
+- photo: chatId, messageId, type (= "photo"), content (photo[index].file_id with index = different photo sizes), caption, date, blob (= true), photos (???), mediaGroupId
+- audio: chatId, messageId, type (= "audio"), content (file_id), cation, date, blob (= true)
+...
 Create our pair of private and public keys using the following command:
 ```
 openssl req -newkey rsa:2048 -sha256 -nodes -keyout PRIVATE.key -x509 -days 365 -out PUBLIC.pem -subj "/C=NG/ST=Lagos/L=Lagos/O=YOUR_NAME_OR_COMPANY_NAME/CN=SERVER_NAME_OR_IP"
@@ -236,9 +250,6 @@ The `msg.payload.type` needs to be set to one of the following values:
 
 
 
-# xxx Hier geht's weiter..
-
-
 ## Command Node
 ![node-appearance-command](images/TelegramBotNodeCommand.png "Command node appearance")  
 **Fig. 5:** Command node appearance
@@ -250,13 +261,9 @@ See example below. It has two outputs:
  2. is triggered when the command is not received
 
 The second one is useful when you want to use a keyboard. See example below.
-Commands usually start with a / like for example /foo. According to the telegram api documentation the command
-should be issued following the bot name like /foo@YourBot. This is important when you add several different bots
-to one single group chat. To avoid that the bot handles commands that are not directly sent to it using the long notation
-you can set the "strict" mode in the options of the command node. In this case the bot only accepts the full command
-notation in group chats.  
-The second output is only issued if a command was received before. If another ocmmand was triggered in the meantime the 
-pending status of the first one is reset. The state is stored per user and per chat.
+Commands usually start with a / like for example /foo. According to the telegram api documentation the command should be issued following the bot name like /foo@YourBot. This is important when you add several different bots to one single group chat. To avoid that the bot handles commands that are not directly sent to it using the long notation you can set the "strict" mode in the options of the command node. In this case the bot only accepts the full command notation in group chats.  
+
+The second output is only issued if a command was received before. If another ocmmand was triggered in the meantime, the pending status of the first one is reset. The state is stored per user and per chat.
 
 
 ## Event Node
@@ -265,24 +272,23 @@ pending status of the first one is reset. The state is stored per user and per c
 
 
 The node receives events from the bot like:
-- callback_query of inline keyboards.
+- **callback_query** of inline keyboards.
 See example-flow [inline keyboard flow](examples/inlinekeyboard.json) in examples folder.
-- inline_query
-- edited_message which is triggered when someone alters an already sent message.
-- edited_message_text which is triggered when someone alters an already sent message text.
-- edited_message_caption which is triggered when someone alters an already sent caption e.g. of a photo.
-- channel_post which is triggered when the bot is member of a public channel (/setprivacy to disabled!).
-- edited_channel_post which is triggeren when someone alters an already sent message in a public channel.
-- edited_channel_post_text which is triggeren when someone alters an already sent message text in a public channel.
-- edited_channel_post_caption which is triggeren when someone alters an already sent caption of e.g. a photo in a public channel.
+- **inline_query**
+- **edited_message** which is triggered when someone alters an already sent message.
+- **edited_message_text** which is triggered when someone alters an already sent message text.
+- **edited_message_caption** which is triggered when someone alters an already sent caption e.g. of a photo.
+- **channel_post** which is triggered when the bot is member of a public channel (/setprivacy to disabled!).
+- **edited_channel_post** which is triggeren when someone alters an already sent message in a public channel.
+- **edited_channel_post_text** which is triggeren when someone alters an already sent message text in a public channel.
+- **edited_channel_post_caption** which is triggeren when someone alters an already sent caption of e.g. a photo in a public channel.
 
 
 ## Reply Node
 ![node-appearance-reply](images/TelegramBotNodeReply.png "Reply node appearance")  
 **Fig. 7:** Reply node appearance
 
-The reply node waits for an answer to a specified message. It should be used in conjunction with the sender node:
-See example below.
+The reply node waits for an answer to a specified message. It should be used in conjunction with the sender node.
 
 
 # Examples
@@ -336,6 +342,7 @@ When the user responds to a specified message the telegram reply node can be use
 ![Alt text](images/TelegramBotOnReplyMessage.png?raw=true "OnReply Flow") 
 [onreplymessage flow](examples/onreplymessage.json)  
 **Fig. 14:** On reply example flow 
+
 The *create question* function node may contain:
 
 <img src="images/TelegramBotOnReplyMessage2.png" title="On reply create question function" width="600" />
@@ -378,6 +385,7 @@ There you can add your code to trigger the desired bot command. The answer conta
 ## Edit an inline keyboard
 An inline keyboard can be modified using the 'editMessageReplyMarkup' instruction. To be able to modify an existing message you need to know the messageId of the message of the keyboard.
 A sample flow is provided in the examples folder and could look like this:
+
 ![Alt text](images/TelegramBotEditInlineKeyboard1.png?raw=true "Edit Inline Keyboard Flow")  
 [editinlinekeyboard flow](examples/editinlinekeyboard.json)  
 **Fig. 20:** Edit an inline keyboard example flow 
@@ -421,37 +429,54 @@ A sample flow is provided in the examples folder and could look like this:
 [inlinequery flow](examples/inlinequery.json)  
 **Fig. 26:** inline_query example flow  
 
-# xxx Hier geht's weiter mit Bildunterschriften
-
-
 The inline_query must be answered by sending a results array.
-see https://core.telegram.org/bots/api#inlinequeryresult
+See https://core.telegram.org/bots/api#inlinequeryresult
 The example just returns two simple articles, but almost every kind of content can be returned. 
-![Alt text](images/TelegramBotInlineQuery2.png?raw=true "Creating the results array")
+
+<img src="images/TelegramBotInlineQuery2.png" title="Creating the results array" width="700" />
+
+**Fig. 27:** Create results array function example 
 
 Note that the inline_query can also contain the location of the sender. To enable this call /setinlinegeo in botfather
  
 
 ## Receiving a location
 Locations can be send to the chat. The bot can receive the longitude and latitude:
-![Alt text](images/TelegramBotLocation.png?raw=true "Location Function")
+
+## xxx Hier fehlt ein Flow screenshot. 
+
+The *create location message* function node may contain:
+
+<img src="images/TelegramBotLocation.png" title="Location Function" width="500" />
+
+**Fig. 28:** Create location message function example 
 
 
 ## Sending messages to a specified chat
 If you have the chatId, you can send any message without the need of having received something before.
-![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending a message")  
-[sendmessagetochat flow](examples/sendmessagetochat.json)
+
+![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending to a chat")  
+[sendmessagetochat flow](examples/sendmessagetochat.json)  
+**Fig. 29:** Sending messages to a chat example flow  
+
+A basic message sending function looks as follows:
+
+<img src="images/TelegramBotSendToChat2.png" title="Basic sending a message" width="600" />
+
+**Fig. 30:** Basic sending message to a chat function example 
+
+Sending markdown contents in messages is described below.
 
 
 ## Sending photos, videos, ...
-Next to sending text messages you can send almost any content like photos and videos. Set the right type and content and you are done.
+Additionally to sending text messages you can send almost any file based content like photos and videos. Set the right type and content and you are done.
 If you want to respond to a received message with a picture you could write:
 ```
 msg.payload.content = 'foo.jpg';
 msg.payload.type = 'photo';
 ```
 
-**Note**: that the chatId is already the correct one when you reuse the received msg object from a receiver node.
+**Note**: The chatId is already the correct one when you reuse the received msg object from a receiver node.
 
 You can use one of the following types to send your file as content:
 - [photo](examples/sendphoto.json)
@@ -465,8 +490,8 @@ You can use one of the following types to send your file as content:
 
 Note that some clients convert gif animations to videos. This will lead to problems when passing a received animation object to the
 sender node as the content is mp4 instead of gif.
-The content can be downloaded automatically to a local folder by setting the saveDataDir entry in the configuration node.
-You can add a caption to photo, audio, document, video, animation, voice by setting the caption property as follows:
+The content can be downloaded automatically to a local folder by setting the **Download Directory** property in the receiver node configuration dialog.
+You can add a caption to photo, audio, document, video, video_note, animation, voice by setting the caption property as follows:
 ```
 msg.payload.caption = "You must have a look at this!";
 ```
@@ -477,15 +502,22 @@ The following types require a special content format to be used. See the underly
 - venue
 - mediaGroup
 
-![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")  
-**Fig. xxx:** Photo sending example flow 
+An example flow to send a photo is shown in the following figure:
 
-![Alt text](images/TelegramBotSendPhoto2.png?raw=true "Setting the correct content type.")
+![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")  
+**Fig. 31:** Photo sending example flow 
+
+The *send picture* function node may contain: 
+
+<img src="images/TelegramBotSendPhoto2.png" title="Setting the correct content type" width="600" />
+
+**Fig. 32:** Send picture function example 
+
 
 ### Sending a mediaGroup as album 
 
-To send several photos as an album you can use the mediaGroup. For the type of media group you have to set the content to an array of object type [InputMediaPhoto](https://core.telegram.org/bots/api#inputmediaphoto). 
-Please review the Json below.
+To send several photos as an album you can use the mediaGroup type. For this type of media group you have to set the content to an array of object type [InputMediaPhoto](https://core.telegram.org/bots/api#inputmediaphoto). 
+The contents of the `msg.payload`object is shown below (in JSON format).
 
 ```javascript
 msg.payload = {
@@ -512,7 +544,18 @@ msg.payload = {
     ]
 }
 ```
-[sendmediagroup flow](examples/sendmediagroup.json)
+An example flow sending a media group is shown in the following figure:
+
+![Alt text](images/TelegramBotSendMediaGroup.png?raw=true "Sending a photo")  
+[sendmediagroup flow](examples/sendmediagroup.json)  
+**Fig. 33:** Sending media group example flow 
+
+The *create media group* function node may contain: 
+
+<img src="images/TelegramBotSendMediaGroup2.png" title="Setting the correct content type" width="600" />
+
+**Fig. 34:** Create media group function example 
+
 
 
 ## Sending contact
@@ -523,17 +566,21 @@ But you can also receive "last_name" if the client sends it.
 msg.payload.type = 'contact';
 msg.payload.content : {  phone_number: "+49 110", first_name: "Polizei" };
 ```
+An example flow sending a contact is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendContact.png?raw=true "Send Contact Flow")  
 [sendcontacttochat flow](examples/sendcontacttochat.json)  
-**Fig. xxx:** Sending contact example flow 
+**Fig. 35:** Sending contact example flow 
 
-![Alt text](images/TelegramBotSendContact2.png?raw=true "Send Contact Function")
+The *contact* function node may contain: 
+
+<img src="images/TelegramBotSendContact2.png" title="Send contact function" width="450" />
+
+**Fig. 36:** Contact function example 
 
 
 ## Sending chat actions
-When the bot needs some time for further processing but you want to give a hint to the user what is going on,
-then you can send a chat action which will appear at the top of the channel of the receiver. 
+When the bot needs some time for further processing but you want to give a hint to the user what is going on, then you can send a chat action which will appear at the top of the channel of the receiver. 
 
 ```
 msg.payload.type = 'action';
@@ -541,22 +588,33 @@ msg.payload.content = "typing";
 ```
 
 The content can be one of the following 
-- "typing" for text messages
-- "upload_photo" for photos
-- "record_video" or "upload_video" for videos
-- "record_audio" or "upload_audio" for audio files
-- "upload_document" for general files
-- "find_location" for location data
-- "record_video_note" or "upload_video_note" for video notes
+- **typing** for text messages
+- **upload_photo** for photos
+- **record_video** or **upload_video** for videos
+- **record_audio** or **upload_audio** for audio files
+- **upload_document** for general files
+- **find_location** for location data
+- **record_video_note** or **upload_video_note** for video notes
 
 The following example illustrate how to send for example "typing...".
 Of course a real bot would send the real data after finishing the processing, but this is not part of the example.
+
+An example flow sending a chat action is shown in the following figure:
+
+![Alt text](images/TelegramBotSendChatAction.png?raw=true "Sending a chat action")  
 [sendchataction flow](examples/sendchataction.json)
+**Fig. 37:** Sending chat actions example flow 
+
+The *send chat action* function node may contain: 
+
+<img src="images/TelegramBotSendChatAction2.png" title="Sending a chat action function" width="600" />
+
+**Fig. 38:** Send chat action function example 
 
 
 ## Sending live locations
 Locations can be send to the chat as described above and then updated afterwards: live location update.
-To achieve this you have to provide the live_period in seconds in the options when sending the location.
+To achieve this, you have to provide the live_period in seconds in the options when sending the location.
 
 ```
 msg.payload.type = 'location';
@@ -578,7 +636,7 @@ var messageId = msg.payload.sentMessageId;
 flow.set("messageId", messageId);
 ```
 
-Now you can edit the location as often as you want within the live_period:
+Now you can edit the location as often as you want within the live_period using the API command **editMessageLiveLocation**:
 
 ```
 var messageId = flow.get("messageId");
@@ -596,7 +654,7 @@ msg.payload.options = {
 };  
 ```
 
-If you want to abort updating the location then you can send the stopMessageLiveLocation command.
+If you want to abort updating the location then you can send the API command **stopMessageLiveLocation**.
 
 ```
 var messageId = flow.get("messageId");
@@ -609,33 +667,32 @@ msg.payload.options = {
 };  
 ```
 
+An example flow sending the live location is shown in the following figure:
+
 ![Alt text](images/TelegramBotLiveLocation.png?raw=true "Live Location Flow")  
 [livelocation flow](examples/livelocation.json)  
-**Fig. xxx:** Sending live location example flow 
+**Fig. 39:** Sending live location example flow 
 
 ## Receiving live location updates
 When a user sends his location then it is received by the standard message receiver node.
-But when a live location is updated, then you will receive the same message event as one would
-edit an already existing message in the chat (edit_message). The example above contains an event handler node that
-receives those message edits, and filters for the ones that contain a location. 
+In the case of a live location update, you will receive the same message event as one would edit an already existing message in the chat (edit_message). The example above contains an event handler node that receives those message edits, and filters for the ones that contain a location. 
 
 
 ## Forwarding message
 All types of  messages can be forwarded to another chat (see forwardMessage).
-Just send a message to the sender node and add forward property to the payload.
-The forward object must contain the id of the chat the message should be sent to.
+Just send a message to the sender node and add forward property to the payload. The forward object must contain the **chatId** of the chat the message should be sent to.
 In the following example the received message will be forwarded to the chat 1:
 
 ```
 msg.payload.forward = { chatId : 1 };
 return msg;
 ```
-See example-flow [forward message](examples/forwardmessage.json) in examples folder.
+See the example flow [forward message](examples/forwardmessage.json) in the examples folder.
 
-The message id to forward is taken from: `msg.payload.messageId`. 
-The source chat id is taken from: `msg.payload.chatId`.
-Both properties are set by the receiver node, but you can also manually set those manually without having received anything.
-The following example sends message 2 from chat 1 to chat 3 (if you have sufficient permissions).
+The **messageId** to forward is taken from: `msg.payload.messageId`. 
+The source **chatId** is taken from: `msg.payload.chatId`.
+Both properties are set by the receiver node, but you can also set those manually without having received anything.
+The following example sends message 2 from chat 1 to chat 3:
 
 ```
 msg.payload.chatId = 1;
@@ -644,15 +701,23 @@ msg.payload.forward = { chatId : 3 };
 return msg;
 ```
 
+Remark: You need to have sufficient permissions to be able to do this message forwarding.
+
 ## Advanced options when sending messages.
-Text messages can be in markdown format to support fat and italic style. To enable markdown format
-set the parse_mode options property as follows:
+Text messages can be formatted as markdown, e.g. to support bold and italic style. To enable markdown format
+set the *parse_mode* options property as follows:
 ```
 msg.payload.options = {parse_mode : "Markdown"};
 ```
+An example function node may contain:
+
+![Alt text](images/TelegramBotSendToChatMarkdown.png?raw=true "Sending to a chat")  
+[sendmessagetochat flow](examples/sendmessagetochat.json)  
+**Fig. 40:** Sending messages to a chat example flow  
+
 
 Telegram always adds a preview when you send a web link. To suppress this behavior you can disable the preview
-by setting the options property as follows:
+by setting the *disable_web_page_preview* options property as follows:
 ```
 msg.payload.options = {disable_web_page_preview : true};
 ```
@@ -665,13 +730,15 @@ msg.payload.options = true;
 
 
 ## Configuring security
-The configuration node contains two properties for applying security to your bot. You can choose between configuring
-the single usernames or configure one or more chat-ids that are allowed to access the bot. The values must be separated using a comma like shown in the screenshot.
+The configuration node contains two properties for applying security to your bot. You can choose between configuring the single user names or configure one or more chatIds that are allowed to access the bot. The values must be separated by a comma like shown in the screenshot.
 
-![Alt text](images/TelegramBotSecurity.png?raw=true "Applying security")
+<img src="images/TelegramBotSecurity.png" title="Applying security" width="500" />
 
-**Note**: that the chat-ids are positive in chats where you talk to the bot in an 1:1 manner. A negative chat-id indicates a group-chat.
-Everybody in this group is allowed to use the bot if you enter the chat-id of the group into the lower field of the configuration node.
+**Fig. 41:** Security configuration in the bot configuration node 
+
+
+**Note**: The chatIds are positive in chats where you talk to the bot in an 1:1 manner. A negative chatId indicates a group chat.
+Everybody in this group is allowed to use the bot if you enter the chatId of the group into the lower field of the configuration node.
 
 
 ## Detecting unauthorized access.
@@ -680,26 +747,29 @@ You can reply on that message or log it to a file to see who wanted to access yo
 
 ![Alt text](images/TelegramBotUnauthorizedAccess.png?raw=true "Logging unauthorized access")  
 [unauthorizedaccess flow](examples/unauthorizedaccess.json)  
-**Fig. xxx:** Detecting unautorized access example flow 
+**Fig. 42:** Detecting unautorized access example flow 
 
-The message needs to be formatted before the log to file node can be triggered. A simple function could look like this:
+The message needs to be formatted before the log to file node can be triggered. 
+A simple function may look like this:
 
-![Alt text](images/TelegramBotUnauthorizedAccess2.png?raw=true "Create logging string with full information.")
+<img src="images/TelegramBotUnauthorizedAccess2.png" title="Create logging string with full information" width="600" />
+
+**Fig. 43:** Create log string function example
 
 
 ## Dynamic authorization
 If you want to authorize and unauthorize users or chats during runtime you can insert a script into the config instead of a hard coded list.
 The script starts with { and ends with }.
 Generally spoken you can make use of the context in two ways (e.g. in a function node):
-1. context.global.maykey = myvalue; // = old notation
+1. context.global.mykey = myvalue; // = old notation
 2. global.set(mykey, myvalue); // = new notation
 
 Only the latter one can be seen in the context browser window while the first is only stored as variable in memory.
 For using a dynamic list stored in the context you must add a script into the configuration (in the row Users and/or ChatIds):
 1. {context.global.hereyourkey} for approach one
-2. {gobal.get("hereyoukey")} for approach two
+2. {gobal.get("hereyourkey")} for approach two
 
-If the config starts with { and ends with } the expression is evaluated as script.
+If the config starts with { and ends with } the expression is evaluated as a script.
 For example you can write something like
 ```
 {context.global.username}
@@ -711,16 +781,27 @@ or
 {global.get("chatids")}
 ```
 
-I would recommend using the latter notation.
-![Alt text](images/TelegramBotDynamicAuthorization.png?raw=true "Dynamic authorization")
+Usage of the latter notation is recommended.
+
+<img src="images/TelegramBotDynamicAuthorization.png" title="Dynamic authorization" width="700" />
+
+**Fig. 44:** Dynamic authorization with scripting contents
 
 The authorization can be modified using a change node:
-![Alt text](images/TelegramBotDynamicAuthorization2.png?raw=true "Granting access using a change node.")
 
-As an alternative the authorization can be modified using a function node:
-![Alt text](images/TelegramBotDynamicAuthorization3.png?raw=true "Granting access using a function node.")
-(not that you can also use the function node with the new notation like gobal.set(key, value).
+<img src="images/TelegramBotDynamicAuthorization2.png" title="Granting access using a change node" width="550" />
+
+**Fig. 45:** Granting access using a change node
+
+As an alternative, the authorization can be modified using a function node:
+
 [dynamic authorization flow](examples/dynamicauthorization.json)
+<img src="images/TelegramBotDynamicAuthorization3.png" title="Granting access using a function node" width="550" />
+
+**Fig. 46:** Granting access using a function node
+
+Note that you can also use the function node with the new notation like gobal.set(key, value).
+
 
 ## Payments
 This feature is under construction. See 
@@ -733,7 +814,7 @@ Putting all pieces together you will have a simple bot implementing some useful 
 
 ![Alt text](images/TelegramBotExample.png?raw=true "Bot example")  
 [simplebot flow](examples/simplebot.json)  
-**Fig. xxx:** Simple bot example flow 
+**Fig. 47:** Simple bot example flow 
 
 
 # License

@@ -313,30 +313,33 @@ The shown function node may contain:
 ## Implementing a keyboard
 Keyboards are very useful for getting additional data from the sender.
 When the command is received the first output is triggered and a dialog is opened:
-![Alt text](images/TelegramBotConfirmationMessage.png?raw=true "Keyboard flow")
-[keyboard flow](examples/keyboard.json)
+![Alt text](images/TelegramBotConfirmationMessage.png?raw=true "Keyboard flow")  
+[keyboard flow](examples/keyboard.json)  
 **Fig. 11:** Keyboard example 
 
 The *confirmation message* function node may contain:
 
 <img src="images/TelegramBotConfirmationMessage2.png" title="Keyboard confirmation message function" width="600" />
+
 **Fig. 12:** Keyboard confirmation message function example 
 
 The answer is send to the second output triggering the lower flow. Data is passed via global properties here.  
 The *create response* function node may contain: 
 
 <img src="images/TelegramBotConfirmationMessage3.png" title="Keyboard create response function" width="600" />
+
 **Fig. 13:** Keyboard create response function example 
 
 ## Implementing an on reply node
 Next to the keyboard the bot could also ask a question and wait for the answer.
 When the user responds to a specified message the telegram reply node can be used:
-![Alt text](images/TelegramBotOnReplyMessage.png?raw=true "OnReply Flow")
-[onreplymessage flow](examples/onreplymessage.json)
+![Alt text](images/TelegramBotOnReplyMessage.png?raw=true "OnReply Flow") 
+[onreplymessage flow](examples/onreplymessage.json)  
 **Fig. 14:** On reply example flow 
 The *create question* function node may contain:
 
 <img src="images/TelegramBotOnReplyMessage2.png" title="On reply create question function" width="600" />
+
 **Fig. 15:** On reply create question function example 
 
 The question is sent to the chat. This node triggers the on reply node waiting for the answer.
@@ -347,6 +350,7 @@ the get reply node will not be triggered.
 The function node *switch answer* shows how to evaluate the answer using a function node with two outputs:
 
 <img src="images/TelegramBotOnReplyMessage3.png" title="On reply switch answer function" width="600" />
+
 **Fig. 16:** On reply switch answer function example 
 
 
@@ -354,52 +358,58 @@ The function node *switch answer* shows how to evaluate the answer using a funct
 An inline keyboard contains buttons that can send a callback query back to the bot to trigger any kind of function.
 When the command is received the first output is triggered and a inline keyboard is shown:
 
-![Alt text](images/TelegramBotInlineKeyboard1.png?raw=true "Inline Keyboard Flow")
-[inlinekeyboard flow](examples/inlinekeyboard.json)
+![Alt text](images/TelegramBotInlineKeyboard1.png?raw=true "Inline Keyboard Flow")  
+[inlinekeyboard flow](examples/inlinekeyboard.json)  
 **Fig. 17:** Inline keyboard example flow 
 
 The *inline keyboard message* function node may contain:
 
 <img src="images/TelegramBotInlineKeyboard2.png" title="Inline keyboard message function" width="550" />
+
 **Fig. 18:** Inline keyboard message function example 
 
 The callback query is received by the event node. It must be answered like shown as follows.
 There you can add your code to trigger the desired bot command. The answer contains the callback query data in `msg.payload.content`.
 
-![Alt text](images/TelegramBotInlineKeyboard3.png?raw=true "Inline Keyboard Function 2")
+![Alt text](images/TelegramBotInlineKeyboard3.png?raw=true "Inline Keyboard Function 2")  
 **Fig. 19:** Inline keyboard set answer options function example 
 
 
 ## Edit an inline keyboard
 An inline keyboard can be modified using the 'editMessageReplyMarkup' instruction. To be able to modify an existing message you need to know the messageId of the message of the keyboard.
 A sample flow is provided in the examples folder and could look like this:
-![Alt text](images/TelegramBotEditInlineKeyboard1.png?raw=true "Edit Inline Keyboard Flow")
-[editinlinekeyboard flow](examples/editinlinekeyboard.json)
+![Alt text](images/TelegramBotEditInlineKeyboard1.png?raw=true "Edit Inline Keyboard Flow")  
+[editinlinekeyboard flow](examples/editinlinekeyboard.json)  
 **Fig. 20:** Edit an inline keyboard example flow 
 
 The *initial inline keyboard message* function node may contain:
 
 <img src="images/TelegramBotEditInlineKeyboard2.png" title="Show initial keyboard function" width="700" />
+
 **Fig. 21:** Inline keyboard initial inline keyboard message function example 
 
 The message id needs to be saved in the flow or global context. This is just a demo assuming that there is only one single chat:
 
 <img src="images/TelegramBotEditInlineKeyboard3.png" title="Storing the messageId of the keyboard" width="650" />
+
 **Fig. 22:** Storing messageId function example 
 
 As next the initial keyboard has to be replaced with a modified one using the magic 'editMessageReplyMarkup' command as type.
 
 <img src="images/TelegramBotEditInlineKeyboard4.png" title="Replacing the initial keyboard" width="650" />
+
 **Fig. 23:** Replace keyboard function example 
 
 The following switch node just handles the response and hides the keyboard using another magic command: 'deleteMessage':
 
 <img src="images/TelegramBotEditInlineKeyboard5.png" title="Handling the keyboard response" width="650" />
+
 **Fig. 24:** Handling the keyboard response function example 
 
 As an alternative to 'editMessageReplyMarkup' you can also use 'editMessageText' to replace the keyboard and also the text as follows:
 
 <img src="images/TelegramBotEditInlineKeyboard6.png" title="Replacing the initial keyboard and the text" width="650" />
+
 **Fig. 25:** Alternatively replacing the initial keyboard and the text function example 
 
 
@@ -407,9 +417,9 @@ As an alternative to 'editMessageReplyMarkup' you can also use 'editMessageText'
 Bots can be called from any chat via inline_query when the bot is set to inline mode in botfather via /setinline
 see https://core.telegram.org/bots/api#inline-mode
 A sample flow is provided in the examples folder and could look like this:
-![Alt text](images/TelegramBotInlineQuery1.png?raw=true "Answer Inline Query Flow")
-[inlinequery flow](examples/inlinequery.json)
-**Fig. 26:** inline_query example flow 
+![Alt text](images/TelegramBotInlineQuery1.png?raw=true "Answer Inline Query Flow")  
+[inlinequery flow](examples/inlinequery.json)  
+**Fig. 26:** inline_query example flow  
 
 # xxx Hier geht's weiter mit Bildunterschriften
 
@@ -429,7 +439,7 @@ Locations can be send to the chat. The bot can receive the longitude and latitud
 
 ## Sending messages to a specified chat
 If you have the chatId, you can send any message without the need of having received something before.
-![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending a message")
+![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending a message")  
 [sendmessagetochat flow](examples/sendmessagetochat.json)
 
 
@@ -467,7 +477,7 @@ The following types require a special content format to be used. See the underly
 - venue
 - mediaGroup
 
-![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")
+![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")  
 **Fig. xxx:** Photo sending example flow 
 
 ![Alt text](images/TelegramBotSendPhoto2.png?raw=true "Setting the correct content type.")
@@ -514,8 +524,8 @@ msg.payload.type = 'contact';
 msg.payload.content : {  phone_number: "+49 110", first_name: "Polizei" };
 ```
 
-![Alt text](images/TelegramBotSendContact.png?raw=true "Send Contact Flow")
-[sendcontacttochat flow](examples/sendcontacttochat.json)
+![Alt text](images/TelegramBotSendContact.png?raw=true "Send Contact Flow")  
+[sendcontacttochat flow](examples/sendcontacttochat.json)  
 **Fig. xxx:** Sending contact example flow 
 
 ![Alt text](images/TelegramBotSendContact2.png?raw=true "Send Contact Function")
@@ -599,8 +609,8 @@ msg.payload.options = {
 };  
 ```
 
-![Alt text](images/TelegramBotLiveLocation.png?raw=true "Live Location Flow")
-[livelocation flow](examples/livelocation.json)
+![Alt text](images/TelegramBotLiveLocation.png?raw=true "Live Location Flow")  
+[livelocation flow](examples/livelocation.json)  
 **Fig. xxx:** Sending live location example flow 
 
 ## Receiving live location updates
@@ -668,8 +678,8 @@ Everybody in this group is allowed to use the bot if you enter the chat-id of th
 The receiver node has a second output, that is triggered when authorization fails. The message is send to this output for further processing.
 You can reply on that message or log it to a file to see who wanted to access your bot.
 
-![Alt text](images/TelegramBotUnauthorizedAccess.png?raw=true "Logging unauthorized access")
-[unauthorizedaccess flow](examples/unauthorizedaccess.json)
+![Alt text](images/TelegramBotUnauthorizedAccess.png?raw=true "Logging unauthorized access")  
+[unauthorizedaccess flow](examples/unauthorizedaccess.json)  
 **Fig. xxx:** Detecting unautorized access example flow 
 
 The message needs to be formatted before the log to file node can be triggered. A simple function could look like this:
@@ -721,8 +731,8 @@ https://core.telegram.org/bots/api#sendinvoice
 ## Implementing a simple bot
 Putting all pieces together you will have a simple bot implementing some useful functions.
 
-![Alt text](images/TelegramBotExample.png?raw=true "Bot example")
-[simplebot flow](examples/simplebot.json)
+![Alt text](images/TelegramBotExample.png?raw=true "Bot example")  
+[simplebot flow](examples/simplebot.json)  
 **Fig. xxx:** Simple bot example flow 
 
 

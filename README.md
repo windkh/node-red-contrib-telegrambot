@@ -64,7 +64,7 @@ The output node sends the content to a specified chat. The node's input `msg` ob
 
 A simple echo flow looks like:
 
-![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow") 
+![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow")  
 [echo flow](examples/echo.json)  
 **Fig. 1:** Simple echo flow 
 
@@ -183,7 +183,7 @@ Normally, a receiver node receives all content that is sent to the bot. However 
 
 
 ## Sender Node
-This node **sends contents** to a telegram user or to a telegram chat. It is triggered by an incoming `msg` object at its input containing all necessary telegram information.
+This node **sends contents** to a telegram user or to a telegram chat. It is triggered by an incoming `msg` object at its input containing all necessary telegram information.  
 ![node-appearance-sender](images/TelegramBotNodeSender.png "Sender node appearance")  
 **Fig. 4:** Sender node appearance
 

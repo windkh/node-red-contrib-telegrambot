@@ -65,7 +65,7 @@ The output node sends the content to a specified chat. The node's input `msg` ob
 A simple echo flow looks like:
 
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo Flow") 
-[echo flow](examples/echo.json)
+[echo flow](examples/echo.json)  
 **Fig. 1:** Simple echo flow 
 
 ## Configuration Node
@@ -75,7 +75,7 @@ The mandatory configuration entries are
 
 which you received from @botfather when creating a new bot. 
 
-<img src="images/TelegramBotConfigurationNodeDialog.png" title="Configuration node dialog" width="600" />
+<img src="images/TelegramBotConfigurationNodeDialog.png" title="Configuration node dialog" width="600" />  
 **Fig. 2:** Configuration node dialog 
 
 

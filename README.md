@@ -783,7 +783,7 @@ The callback query answer has a show_alert option to control the visibility of t
 It is directly mapped to the options property.
 ```
 msg.payload.options = true;
-```fields
+```
 
 
 ## Configuring security

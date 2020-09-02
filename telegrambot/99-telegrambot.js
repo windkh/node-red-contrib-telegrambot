@@ -516,7 +516,7 @@ module.exports = function (RED) {
         // Therefore the photo and video messages can contain a mediaGroupId if so....
         var messageDetails;
         if (botMsg.text) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text, date: botMsg.date };
         } else if (botMsg.photo) {
             // photos are sent using several resolutions. Therefore photo is an array. We choose the one with the highest resolution in the array.
             var index = getPhotoIndexWithHighestResolution(botMsg.photo);
@@ -530,7 +530,7 @@ module.exports = function (RED) {
         } else if (botMsg.video) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video', content: botMsg.video.file_id, caption: botMsg.caption, date: botMsg.date, blob: true, mediaGroupId: botMsg.media_group_id };
         } else if (botMsg.video_note) {
-            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video_note', content: botMsg.video_note.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'video_note', content: botMsg.video_note.file_id, caption: botMsg.caption, date: botMsg.date, blob: true }; // maybe video_note will get a caption in future, right now it is not available.
         } else if (botMsg.voice) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'voice', content: botMsg.voice.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
         } else if (botMsg.location) {

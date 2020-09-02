@@ -3,12 +3,16 @@ xxx ToDo
 - xxx suchen und beheben
 - Grafiken der Beispiele noch aufhübschen (Beschneiden)
 - Issueing api commands: Abschnitt noch mit Verlinkung auf api und Erläuterung erweitern
-- Event node: Abschnitt noch mit Verlinkung auf api und Erläuterung erweitern
+- Event node: Abschnitt noch mitIn addition Verlinkung auf api und Erläuterung erweitern
+
+
+- Examples im Node-RED testen
+
+
 
 # Telegram bot nodes for node-red
 [![Platform](https://img.shields.io/badge/platform-Node--RED-red)](https://nodered.org)
 ![License](https://img.shields.io/github/license/windkh/node-red-contrib-telegrambot.svg)
-![Release](https://img.shields.io/npm/v/node-red-contrib-telegrambot.svg)
 [![NPM](https://img.shields.io/npm/v/node-red-contrib-telegrambot?logo=npm)](https://www.npmjs.org/package/node-red-contrib-telegrambot)
 [![Known Vulnerabilities](https://snyk.io/test/npm/node-red-contrib-telegrambot/badge.svg)](https://snyk.io/test/npm/node-red-contrib-telegrambot)
 [![Telegram](https://img.shields.io/badge/Join-Telegram%20Chat-blue.svg?logo=telegram)](https://t.me/nodered_telegrambot)
@@ -21,15 +25,6 @@ The only thing required is the `token` that can be retrieved by the `@botfather`
 If you want to support this free project. Any help is welcome. You can donate by clicking one of the following links:
 <a target="blank" href="https://blockchain.com/btc/payment_request?address=1PBi7BoZ1mBLQx4ePbwh1MVoK2RaoiDsp5"><img src="https://img.shields.io/badge/Donate-Bitcoin-green.svg"/></a>
 <a target="blank" href="https://www.paypal.me/windkh"><img src="https://img.shields.io/badge/Donate-PayPal-blue.svg"/></a>
-
-# Live support
-## Get help
-If you have an urgent problem, hire a mentor for a 1:1 live session on Git-Start:
-[![Get 1:1 live support for your issue](https://git-start.com/assets/git-start-mentee-banner-medium.svg?sanitize=true)](https://git-start.com/help-request/create/windkh%2Fnode-red-contrib-telegrambot)
-
-## Provide help
-Help others in paid 1:1 live sessions to get started.
-[![Give paid 1:1 live support](https://git-start.com/assets/git-start-mentor-banner-medium.svg?sanitize=true)](https://git-start.com/help-request/overview/windkh%2Fnode-red-contrib-telegrambot)
 
 # Credits
  - dvv (Vladimir Dronnikov): for providing the saveDataDir configuration option
@@ -58,11 +53,13 @@ Changes can be followed [here](/CHANGELOG.md).
 ### Receiver and sender nodes
 The *Telegram receiver* node receives messages from the bot and sends a message object with the following layout:
 
-`msg.payload` contains the message details
- - **chatId** : the unique id of the chat. This value needs to be passed to the out node when responding to the same chat
- - **type** : the type of message received. Types see table below
- - **content** : received message content: string or file_id, or object with full data (location, contact)
- - and additional elements depending on the *type* (see table below)
+`msg.payload` contains the message details with the following elements:
+- ***chatId*** : The unique id of the chat. This value needs to be passed to the out node when responding to the same chat
+- ***type*** : The type of message received. Types see table below
+- ***content*** : Received message content: String or file_id, or object with full data (location, contact)
+- Additional:
+ - ***date*** (Optional element): Date the message was sent in Unix time (integer)
+ - **further elements** depending on the *type* (see table below)
 
 `msg.originalMessage` contains the original message object from the underlying [**node-telegram-bot-api**](https://github.com/yagop/node-telegram-bot-api) lib.
 
@@ -118,33 +115,33 @@ The `msg.payload` contains several elements additional to *chatId*, *type* and *
 The following table shows the relationship between the message *type* and additional elements.
 
 
-| *msg.payload.type* | *msg.payload.content* | *chat* | *caption* | *date* | *blob* | *photos* | *mediaGroupId* |
-| - | - | - | - | - | - | - | - |
-| **message** | text |-|-|-|-|-|-|
-| **photo** | photo[index].file_id |-| optional | optional | true | + | optional |
-| **audio**| audio.file_id | - | optional | optional | true | - | - |
-| **sticker**| sticker.file_id |  - | -  | optional | true | - | - |
-| **animation**| animation.file_id | - | optional | optional | true | - | optional |
-| **video**| video.file_id |  - | optional | optional | true | - | optional |
-| **video_note**| video_note.file_id | - | optional | optional | true | - | - |
-| **voice**| voice.file_id | - | optional | optional | true | - | - |
-| **location**| location | - | - | optional | - | - | - |
-| **venue**| venue | - | - | optional | - | - | - |
-| **contact**| contact | - | - | optional | - | - | - |
-| **document**| document.file_id | - | optional | optional | true | - | - |
-| **invoice**| invoice | - | - | optional | - | - | - |
-| **successful_payment**| successful_payment | - | - | optional | - | - | - |
-| **new_chat_title**| new_chat_title | - | - | optional | - | - | - |
-| **new_chat_photo**| new_chat_photo[index].file_id | - | - | optional | true | + | - |
-| **new_chat_members**| new_chat_members | - | - | optional | - | - | - |
-| **left_chat_member**| left_chat_members | - | - | optional | - | - | - |
-| **delete_chat_photo**| delete_chat_photo | - | - | optional | - | - | - |
-| **pinned_message**| pinned_message | - | - | optional | - | - | - |
-| **channel_chat_created**| channel_chat_created | - | - | optional | - | - | - |
-| **group_chat_created**| group_chat_created | + | - | optional | - | - | - |
-| **supergroup_chat_created**| supergroup_chat_created |  + | - | optional | - | - | - |
-| **migrate_from_chat_id**| migrate_from_chat_id |  + | - | optional | - | - | - |
-| **migrate_to_chat_id**| migrate_to_chat_id |  + | - | optional | - | - | - |
+| *msg.payload.type* | *msg.payload.content* | *chat* | *caption* | *blob* | *photos* | *mediaGroupId* |
+| :- | :- | :-: | :-: | :-: | :-: | :-: |
+| **message** | text |-|-|-|-|-|
+| **photo** | photo[index].file_id |-| optional | true | + | optional |
+| **audio**| audio.file_id | - | optional | true | - | - |
+| **sticker**| sticker.file_id |  - | -  | true | - | - |
+| **animation**| animation.file_id | - | optional | true | - | optional |
+| **video**| video.file_id |  - | optional | true | - | optional |
+| **video_note**| video_note.file_id | - | - | true | - | - |
+| **voice**| voice.file_id | - | optional | true | - | - |
+| **location**| location | - | - | - | - | - |
+| **venue**| venue | - | - | - | - | - |
+| **contact**| contact | - | - | - | - | - |
+| **document**| document.file_id | - | optional | true | - | - |
+| **invoice**| invoice | - | - | - | - | - |
+| **successful_payment**| successful_payment | - | - | - | - | - |
+| **new_chat_title**| new_chat_title | - | - | - | - | - |
+| **new_chat_photo**| new_chat_photo[index].file_id | - | - | true | + | - |
+| **new_chat_members**| new_chat_members | - | - | - | - | - |
+| **left_chat_member**| left_chat_members | - | - | - | - | - |
+| **delete_chat_photo**| delete_chat_photo | - | - | - | - | - |
+| **pinned_message**| pinned_message | - | - | - | - | - |
+| **channel_chat_created**| channel_chat_created | - | - | - | - | - |
+| **group_chat_created**| group_chat_created | + | - | - | - | - |
+| **supergroup_chat_created**| supergroup_chat_created |  + | - |- | - | - |
+| **migrate_from_chat_id**| migrate_from_chat_id |  + | - | - | - | - |
+| **migrate_to_chat_id**| migrate_to_chat_id |  + | - | - | - | - |
 
 Legend:
 - **-** : Element is not present in `msg.payload` structure
@@ -233,17 +230,19 @@ This node can **receive telegram messages** sent to the bot and also **receive m
 ![node-appearance-receiver](images/TelegramBotNodeReceiver.png "Receiver node appearance")  
 **Fig. 4:** Receiver node appearance
 
-**Telegram messages** sent to the bot are automatically received (if not masked via the configuration node property *Users*).
-
+**Telegram messages** sent to the bot are automatically received (if not masked via the configuration node property *Users*).  
 To be able to receive **telegram chat messages**, simply invite the bot to a chat. If the configuration node property *ChatIds* is not set, all chat messages are received.
 
 You can control if the bot receives every message by calling **/setprivacy @botfather** (refer also to [**there**](https://core.telegram.org/bots#privacy-mode)).
 
 ### Outputs
-The original message from the underlying node library is stored in `msg.originalMessage`. The `msg.payload` contains the most important data like **chatId**, **type** and **content**. The content format depends on the message type. E.g. if you receive a message then the content format is a string, if you receive a location, the content format is an object containing latitude and longitude.
+The original message from the underlying node library is stored in `msg.originalMessage`. The `msg.payload` contains the most important data like **chatId**, **type** and **content**. Additional elements are present in the `msg.payload` structure and depend on the message *type*. These additional elements are described in the table **Tab. 1** above.
 
-Basically the node's first output (***Standard Output***) is used for the `msg` object.  
-The node's second output (***Unauthorized Output***) is triggered when security is applied (via configuration properties *Users* and *ChatIds*) and the telegram message sender is not authorized to access the bot.
+The content format depends on the message type. E.g. if you receive a text message then the content format is a string, if you receive a location, the content format is an object containing latitude and longitude. See also ["available methods" in the api core description](https://core.telegram.org/bots/api#available-methods).
+
+The node has two outputs:
+1. The node's upper output (***Standard Output***) is used if the message is from an authorized user.  
+2. The node's lower output (***Unauthorized Output***) is used when security is applied (via configuration properties *Users* and *ChatIds*) and the user is not authorized to access the bot.
 
 
 ### Configuration property *Download Directory*
@@ -265,6 +264,11 @@ The input `msg.payload` must contain the following elements:
 - `msg.payload.type`    - e.g. **message**, **document**, **photo**, etc. (see section *Receiver Node* above)
 - `msg.payload.content` - your message content (e.g. message text)
 
+Additional elements are present in the `msg.payload` structure and depend on the message *type*. These additional elements are described in the table **Tab. 1** above.
+
+The content format depends on the message type. E.g. if you send a text message then the content format is a string, if you send a location, the content format is an object containing latitude and longitude. See also ["available methods" in the api core description](https://core.telegram.org/bots/api#available-methods).
+
+
 ### Outputs
 Basically the input `msg` object is forwarded unchanged to the node's output. In case of an exception within the node the output `msg` object is extended by `msg.error`.
 
@@ -276,54 +280,43 @@ Additionally to sending content, the sender node can be used to issue commands d
 
 
 The `msg.payload.type` needs to be set to one of the following values:
-- editMessageCaption
-- editMessageText
-- editMessageReplyMarkup
+- editMessageCaption, editMessageText, editMessageReplyMarkup
 - deleteMessage
-- editMessageLiveLocation
-- stopMessageLiveLocation
-- callback_query
-- inline_query
+- editMessageLiveLocation, stopMessageLiveLocation
+- callback_query, inline_query
 - action
-- leaveChat
-- kickChatMember
-- unbanChatMember
-- restrictChatMember
-- promoteChatMember
-- exportChatInviteLink
-- setChatPhoto
-- deleteChatPhoto
-- setChatTitle
-- setChatDescription
-- pinChatMessage
-- unpinChatMessage
-- getChatAdministrators
-- getChatMembersCount
-- getChat
-- getChatMember
-- sendInvoice
-- answerShippingQuery
-- answerPreCheckoutQuery
+- leaveChat, exportChatInviteLink
+- kickChatMember, unbanChatMember, restrictChatMember, promoteChatMember
+- setChatPhoto, deleteChatPhoto, setChatTitle, setChatDescription
+- pinChatMessage, unpinChatMessage
+- getChatAdministrators, getChatMembersCount, getChat, getChatMember
+- sendInvoice, answerShippingQuery, answerPreCheckoutQuery
+
+The content format of the command arguments (required and optional) depends on the api command.  
+See also ["available methods" in the api core description](https://core.telegram.org/bots/api#available-methods).
 
 
 
 ## Command Node
+The command node can be used for triggering a message when a specified command is received: e.g. help. See examples below. 
+
 ![node-appearance-command](images/TelegramBotNodeCommand.png "Command node appearance")  
 **Fig. 6:** Command node appearance
 
+### Outputs
+The node has two outputs:
+1. The node's upper output (***Standard Output***) is used if the message is from an authorized user and it contains a specified command at the beginning of the message.  
+2. The node's lower output (***Unauthorized Output***) is used in all other cases. This may be the case when security is applied (via configuration properties *Users* and *ChatIds*) and the user is not authorized to access the bot or if it is from an autorized user and the message does not contain a specified command.
 
-The command node can be used for triggering a message when a specified command is received: e.g. help.
-See example below. It has two outputs:
- 1. is triggered when the command is received
- 2. is triggered when the command is not received
-
-The second one is useful when you want to use a keyboard. See example below.
+The second output is useful when you want to use a keyboard. See example below.
 Commands usually start with a / like for example /foo. According to the telegram api documentation the command should be issued following the bot name like /foo@YourBot. This is important when you add several different bots to one single group chat. To avoid that the bot handles commands that are not directly sent to it using the long notation you can set the "strict" mode in the options of the command node. In this case the bot only accepts the full command notation in group chats.  
 
-The second output is only issued if a command was received before. If another ocmmand was triggered in the meantime, the pending status of the first one is reset. The state is stored per user and per chat.
+The second output is only issued if a command was received before. If another command was triggered in the meantime, the pending status of the first one is reset. The state is stored per user and per chat.
 
 
 ## Event Node
+A telegram node that triggers the output when a event is received from a chat.
+
 ![node-appearance-event](images/TelegramBotNodeEvent.png "Event node appearance")  
 **Fig. 7:** Event node appearance
 
@@ -342,10 +335,25 @@ See example-flow [inline keyboard flow](examples/inlinekeyboard.json) in example
 
 
 ## Reply Node
+A telegram node that is triggered when someone answered to a specified message.
+
 ![node-appearance-reply](images/TelegramBotNodeReply.png "Reply node appearance")  
 **Fig. 8:** Reply node appearance
 
 The reply node waits for an answer to a specified message. It should be used in conjunction with the sender node.
+
+### Input
+Standard Input: Calls the *onReplyToMessage* of the bot.
+
+### Output
+Standard Output: Contains the result from the *onReplyToMessage* call.
+
+This node may be useful, when the bot e.g. sent a message and you want to take some action when someone responded to this specified message. Responding to messages is done by clicking on the message in your client and choose *answer* from the popup.
+
+The `msg.payload` contains:
+- **chatId** : Destination chatId
+- **sentMessageId** : The id of the previously sent message in the chat
+- **content** : The message content.
 
 
 # Examples

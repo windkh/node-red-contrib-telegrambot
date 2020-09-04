@@ -1,6 +1,6 @@
 {
     "name": "node-red-contrib-telegrambot",
-    "version": "8.4.0",
+    "version": "8.5.0",
     "description": "Telegram bot nodes for Node-RED",
     "dependencies": {
         "node-telegram-bot-api" : "^0.50.0",
@@ -12,12 +12,12 @@
         }
     },
     "keywords": [
-        "node-red", 
-        "telegram", 
+        "node-red",
+        "telegram",
         "bot"
     ],
-    "repository" : { 
-        "type" : "git", 
+    "repository" : {
+        "type" : "git",
         "url" : "https://github.com/windkh/node-red-contrib-telegrambot"
     },
     "author": "Karl-Heinz Wind",

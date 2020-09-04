@@ -159,12 +159,13 @@ The values in the property fields must be separated by a comma e.g.:
 Hugo,Sepp,Egon
 Leave the fields *Users* and *ChatIds* blank if you do not want to use this feature to mask senders.
 
-User names can only be used, if a telegram user has set its Username in the Telegram settings:
+User names can only be used, if a telegram user has set its Username in the Telegram settings. The following screenshot shows the according settings dialog in the Telegram app where you can set your personal preferences:
 
 <img src="images/TelegramSettingsUsername.png" title="Telegram user name settings" width="350" />
 
-**Fig. 3:** Telegram settings dialog
-When no *Username* is set you can only filter via the *ChatId* property.
+**Fig. 3:** Telegram app settings dialog (example Android phone app)
+
+If no *Username* is set you can only filter via the *ChatId* property.
 
 
 ### Configuration property *Server URL*
@@ -588,43 +589,39 @@ The *send picture* function node may contain:
 To send several photos as an album you can use the mediaGroup type. For this type of media group you have to set the content to an array of object type [InputMediaPhoto](https://core.telegram.org/bots/api#inputmediaphoto).
 The contents of the `msg.payload`object is shown below (in JSON format).
 
-```javascript
-msg.payload = {
-    "chatId": 123456789,
-    "messageId": 1,
-    "type": "mediaGroup",
-    "content": [
-        {
-            "type": "photo",
-            "media": "/pic/frame_1.jpg"
-        },
-        {
-            "type": "photo",
-            "media": "/pic/frame_2.jpg"
-        },
-        {
-            "type": "photo",
-            "media": "/pic/frame_3.jpg"
-        },
-        {
-            "type": "photo",
-            "media": "/pic/frame_4.jpg"
-        }
-    ]
-}
-```
 An example flow sending a media group is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendMediaGroup.png?raw=true "Sending a photo")  
 [**sendmediagroup flow**](examples/sendmediagroup.json)  
 **Fig. 36:** Sending media group example flow
 
-The *create media group* function node may contain:
+<details>
+  <summary>Click to expand code snippet for <em><b>create media group</b></em> function</summary>
 
-<img src="images/TelegramBotSendMediaGroup2.png" title="Setting the correct content type" width="600" />
+```
+// sendMediaGroup example: send  between 2 and 10 media.
+// Note that type can also be video.
+// and the caption property is optional.
+// see https://core.telegram.org/bots/api#inputmediaphoto
+// see https://core.telegram.org/bots/api#inputmediavideo
 
-**Fig. 37:** Create media group function example
+msg.payload.type = "mediaGroup";
+msg.payload.content = [
+    {
+        type : "photo",
+        media : "/pic/frame_1.jpg",
+        caption : "Photo 1"
+    },
+    {
+        type : "photo",
+        media : ""/pic/frame_2.jpg",
+        caption : "Photo 2"
+    }
+];
 
+return msg;
+```
+</details>
 
 
 ## Sending contacts

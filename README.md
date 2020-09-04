@@ -360,7 +360,10 @@ The `msg.payload` contains:
 
 
 # Examples
-All example flows can be found in the examples folder of this package.
+***
+**Remark**: Example flows are present in the examples subdirectory. In Node-RED they can be imported via the import function and then selecting *Examples* in the vertical tab menue.  
+All example flows can also be found in the examples folder of this package.
+***
 
 ## Implementing a simple echo
 This example is self-explaining. The received message is returned to the sender.
@@ -372,14 +375,31 @@ This example is self-explaining. The received message is returned to the sender.
 
 ## Implementing a /help command
 This flow returns the help message of your bot. It receives the command and creates a new message, which is returned:
+
 ![Alt text](images/TelegramBotHelp.png?raw=true "Help command flow")  
+[**help message flow**](examples/sendhelpmessage.json)  
 **Fig. 11:** Help command flow example
 
-The shown function node may contain:
 
-<img src="images/TelegramBotHelp2.png" title="Help function" width="600" />
+<details>
+  <summary>Click to expand code snippet for <em><b>create help text</b></em> function</summary>
 
-**Fig. 12:** Help command function example
+```javascript
+var helpMessage = "/help - shows help\r\n";
+
+helpMessage += "/foo - opens a dialog\r\n";
+
+helpMessage += "\r\n";
+helpMessage += "You are welcome: "+msg.originalMessage.from.username;
+helpMessage += "Your chat id is " + msg.payload.chatId;
+helpMessage += "\r\n";
+
+msg.payload.content = helpMessage;
+
+return msg;
+```
+</details>
+<br>
 
 **Note**: You can access the sender's data via the `msg.originalMessage` property.
 
@@ -387,46 +407,97 @@ The shown function node may contain:
 ## Implementing a keyboard
 Keyboards are very useful for getting additional data from the sender.
 When the command is received the first output is triggered and a dialog is opened:
+
 ![Alt text](images/TelegramBotConfirmationMessage.png?raw=true "Keyboard flow")  
 [**keyboard flow**](examples/keyboard.json)  
-**Fig. 13:** Keyboard example
-
-The *confirmation message* function node may contain:
-
-<img src="images/TelegramBotConfirmationMessage2.png" title="Keyboard confirmation message function" width="600" />
-
-**Fig. 14:** Keyboard confirmation message function example
+**Fig. 12:** Keyboard example
 
 The answer is send to the second output triggering the lower flow. Data is passed via global properties here.  
-The *create response* function node may contain:
 
-<img src="images/TelegramBotConfirmationMessage3.png" title="Keyboard create response function" width="600" />
+<details>
+  <summary>Click to expand code snippet for <em><b>confirmation message</b></em> function</summary>
 
-**Fig. 15:** Keyboard create response function example
+```javascript
+context.global.keyboard = { pending : true };
+
+var opts = {
+  reply_to_message_id: msg.payload.messageId,
+  reply_markup: JSON.stringify({
+    keyboard: [
+      ['Yes'],
+      ['No']],
+      'resize_keyboard' : true,
+      'one_time_keyboard' : true
+  })
+};
+
+msg.payload.content = 'Really?';
+msg.payload.options = opts;
+
+return [ msg ];
+```
+</details>
+
+<details>
+  <summary>Click to expand code snippet for <em><b>create response</b></em> function</summary>
+
+```javascript
+if (context.global.keyboard.pending) {
+    context.global.keyboard.pending = false;
+
+    if(msg.payload.content === 'Yes') {
+        msg.payload.content = 'Yes';
+        return [msg, null];
+    }
+    else     {
+        msg.payload.content = 'No';
+        return [null, msg];
+    }
+}
+```
+</details>
+
 
 ## Implementing an on reply node
 Next to the keyboard the bot could also ask a question and wait for the answer.
 When the user responds to a specified message the telegram reply node can be used:
+
 ![Alt text](images/TelegramBotOnReplyMessage.png?raw=true "OnReply Flow")
 [**onreplymessage flow**](examples/onreplymessage.json)  
-**Fig. 16:** On reply example flow
-
-The *create question* function node may contain:
-
-<img src="images/TelegramBotOnReplyMessage2.png" title="On reply create question function" width="600" />
-
-**Fig. 17:** On reply create question function example
+**Fig. 13:** On reply example flow
 
 The question is sent to the chat. This node triggers the on reply node waiting for the answer.
 
 **Note**: The user has to explicitly respond to this message. If the user only writes some text,
 the get reply node will not be triggered.
 
-The function node *switch answer* shows how to evaluate the answer using a function node with two outputs:
 
-<img src="images/TelegramBotOnReplyMessage3.png" title="On reply switch answer function" width="600" />
+<details>
+  <summary>Click to expand code snippet for <em><b>create question</b></em> function</summary>
 
-**Fig. 18:** On reply switch answer function example
+```javascript
+msg.payload.type = 'message';
+msg.payload.content = 'Really?';
+msg.payload.options = {reply_to_message_id : msg.payload.messageId}
+
+return [ msg ];
+```
+</details>
+
+<details>
+  <summary>Click to expand code snippet for <em><b>switch answer</b></em> function</summary>
+
+```javascript
+if(msg.payload.content === 'Yes')
+{
+    return [msg, null];   
+}
+else
+{
+    return [null, msg];   
+}
+```
+</details>
 
 
 ## Implementing an inline keyboard
@@ -435,21 +506,51 @@ When the command is received the first output is triggered and a inline keyboard
 
 ![Alt text](images/TelegramBotInlineKeyboard1.png?raw=true "Inline Keyboard Flow")  
 [**inlinekeyboard flow**](examples/inlinekeyboard.json)  
-**Fig. 19:** Inline keyboard example flow
-
-The *inline keyboard message* function node may contain:
-
-<img src="images/TelegramBotInlineKeyboard2.png" title="Inline keyboard message function" width="550" />
-
-**Fig. 20:** Inline keyboard message function example
+**Fig. 14:** Inline keyboard example flow
 
 The callback query is received by the event node. It must be answered like shown as follows.
 There you can add your code to trigger the desired bot command. The answer contains the callback query data in `msg.payload.content`.
 
-<img src="images/TelegramBotInlineKeyboard3.png" title="Inline keyboard message function" width="550" />  
+<details>
+  <summary>Click to expand code snippet for <em><b>inline keyboard message</b></em> function</summary>
 
-**Fig. 21:** Inline keyboard set answer options function example
+```javascript
+var opts = {
+  reply_to_message_id: msg.payload.messageId,
+  reply_markup: JSON.stringify({
+    "inline_keyboard": [[
+                {
+                    "text": "Yes",
+                    "callback_data": "FOO YES"
+                },
+                {
+                    "text": "No",
+                    "callback_data": "FOO NO"
+                }]
+            ]
+  })
+};
 
+msg.payload.content = 'Are you sure?';
+msg.payload.options = opts;
+
+return [ msg ];
+```
+</details>
+
+<details>
+  <summary>Click to expand code snippet for <em><b>set answer options</b></em> function</summary>
+
+```javascript
+var show_alert = false; // you can set this to true to open a dialog with the answer in the client.
+
+// msg.payload.content contains the callback data from the keyboard.
+// You may change this value here.
+msg.payload.options = show_alert;
+
+return [ msg ];
+```
+</details>
 
 ## Edit an inline keyboard
 An inline keyboard can be modified using the 'editMessageReplyMarkup' instruction. To be able to modify an existing message you need to know the messageId of the message of the keyboard.
@@ -457,37 +558,153 @@ A sample flow is provided in the examples folder and could look like this:
 
 ![Alt text](images/TelegramBotEditInlineKeyboard1.png?raw=true "Edit Inline Keyboard Flow")  
 [**editinlinekeyboard flow**](examples/editinlinekeyboard.json)  
-**Fig. 22:** Edit an inline keyboard example flow
+**Fig. 15:** Edit an inline keyboard example flow
 
-The *initial inline keyboard message* function node may contain:
+The message id needs to be saved in the flow or global context (via node *save messageId*). This is just a demo assuming that there is only one single chat.  
 
-<img src="images/TelegramBotEditInlineKeyboard2.png" title="Show initial keyboard function" width="650" />
+As next the initial keyboard has to be replaced with a modified one using the api command *editMessageReplyMarkup* command as type (via node *edit inline keyboard message*).  
+As an alternative to '*editMessageReplyMarkup* you can also use the api command *editMessageText* to replace the keyboard and also the text as given in the function example *edit message text*.
 
-**Fig. 23:** Inline keyboard initial inline keyboard message function example
+The switch node *evaluate callback query* just handles the response and hides the keyboard using another api command *deleteMessage*.  
 
-The message id needs to be saved in the flow or global context. This is just a demo assuming that there is only one single chat:
+<details>
+  <summary>Click to expand code snippet for <em><b>initial inline keyboard message</b></em> function</summary>
 
-<img src="images/TelegramBotEditInlineKeyboard3.png" title="Storing the messageId of the keyboard" width="650" />
+```javascript
+context.global.keyboard = { pending : true, messageId : msg.payload.messageId };
 
-**Fig. 24:** Storing messageId function example
+var opts = {
+  reply_to_message_id: msg.payload.messageId,
+  reply_markup: JSON.stringify({
+    "inline_keyboard": [[
+                {
+                    "text": "Yes",
+                    "callback_data": "FOO YES"
+                },
+                {
+                    "text": "No",
+                    "callback_data": "FOO NO"
+                }]
+            ]
+  })
+};
 
-As next the initial keyboard has to be replaced with a modified one using the api command *editMessageReplyMarkup* command as type.
+msg.payload.content = 'Do you want to hide the inline keyboard?';
+msg.payload.options = opts;
 
-<img src="images/TelegramBotEditInlineKeyboard4.png" title="Replacing the initial keyboard" width="650" />
+return [ msg ];
+```
+</details>
 
-**Fig. 25:** Replace keyboard function example
+<details>
+  <summary>Click to expand code snippet for <em><b>save messageId</b></em> function</summary>
 
-The following switch node just handles the response and hides the keyboard using another api command *deleteMessage*:
+```javascript
+// We store the messageId to be able to edit this reply in the callback query.
+context.global.keyboard.messageId = msg.payload.sentMessageId;
+return [ msg ];
+```
+</details>
 
-<img src="images/TelegramBotEditInlineKeyboard5.png" title="Handling the keyboard response" width="650" />
+<details>
+  <summary>Click to expand code snippet for <em><b>edit inline keyboard message</b></em> function</summary>
 
-**Fig. 26:** Handling the keyboard response function example
+```javascript
+// This is the message id of the initial keyboard that is simply exchanged by a new one.
+var messageId = context.global.keyboard.messageId;
 
-As an alternative to '*ditMessageReplyMarkup* you can also use the api command *editMessageText* to replace the keyboard and also the text as follows:
+// This is a sample of how to send a second inline keyboard with modified buttons
+var reply_markup = JSON.stringify({
+    "inline_keyboard": [[
+                {
+                    "text": "Are you really sure?",
+                    "callback_data": "FOO YES REALLY"
+                },
+                {
+                    "text": "No",
+                    "callback_data": "FOO NO"
+                }]
+            ]
+  });
 
-<img src="images/TelegramBotEditInlineKeyboard6.png" title="Replacing the initial keyboard and the text" width="650" />
 
-**Fig. 27:** Alternatively replacing the initial keyboard and the text function example
+var options = {
+    chat_id : msg.payload.chatId,
+    reply_markup : reply_markup,
+    message_id : messageId
+};
+
+msg.payload.type = 'editMessageReplyMarkup';
+msg.payload.content = reply_markup;
+msg.payload.options = options;
+
+return [ msg ];
+```
+</details>
+
+<details>
+  <summary>Click to expand code snippet for <em><b>evaluate callback query</b></em> function</summary>
+
+```javascript
+// This is a sample switch to demonstrate the handling of the user input.
+if(msg.payload.content === "FOO YES REALLY")
+{
+    // Hide the keyboard and forget the messageId
+    msg.payload.type = 'deleteMessage';
+    msg.payload.content = context.global.keyboard.messageId
+    context.global.keyboard.messageId = null;
+
+    // You could also send a editMessageReplyMarkup with an empty reply_markup here
+    return [ null, msg ];
+}
+else
+{
+    var show_alert = false; // you can set this to true to open a dialog with the answer in the client.
+
+    // msg.payload.content contains the callback data from the keyboard.
+    // You may change this value here.
+    msg.payload.options = show_alert;
+
+    return [ msg, null ];
+}
+```
+</details>
+
+<details>
+  <summary>Click to expand code snippet for <em><b> an alternative to node edit inline keyboard message</b></em> function</summary>
+
+```javascript
+// This is the message id of the initial keyboard that is simply exchanged by a new one.
+var messageId = context.global.keyboard.messageId;
+
+// This is a sample of how to send a second inline keyboard with modified buttons
+var reply_markup = JSON.stringify({
+    "inline_keyboard": [[
+                {
+                    "text": "Are you really sure?",
+                    "callback_data": "FOO YES REALLY"
+                },
+                {
+                    "text": "No",
+                    "callback_data": "FOO NO"
+                }]
+            ]
+  });
+
+
+var options = {
+    chat_id : msg.payload.chatId,
+    reply_markup : reply_markup,
+    message_id : messageId
+};
+
+msg.payload.type = 'editMessageText';
+msg.payload.content = "Confirmation question";
+msg.payload.options = options;
+
+return [ msg ];
+```
+</details>
 
 
 ## Implementing an inline_query
@@ -496,30 +713,85 @@ A sample flow is provided in the examples folder and could look like this:
 
 ![Alt text](images/TelegramBotInlineQuery1.png?raw=true "Answer Inline Query Flow")  
 [**inlinequery flow**](examples/inlinequery.json)  
-**Fig. 28:** inline_query example flow  
+**Fig. 16:** inline_query example flow  
 
 The inline_query must be answered by sending a results array.
 See https://core.telegram.org/bots/api#inlinequeryresult.  
 The example just returns two simple articles, but almost every kind of content can be returned.
 
-<img src="images/TelegramBotInlineQuery2.png" title="Creating the results array" width="700" />
-
-**Fig. 29:** Create results array function example
-
 Note that the inline_query can also contain the location of the sender. To enable this call /setinlinegeo in botfather.
+
+<details>
+  <summary>Click to expand code snippet for <em><b>create results</b></em> function</summary>
+
+```javascript
+// we have to set the results propery with the answer(s)
+// see https://core.telegram.org/bots/api#inlinequeryresult
+var results = [
+    // result 1 is InlineQueryResultArticle
+    {
+        type : "article",
+        id : "1",
+        title : "Result 1",
+
+        // InputTextMessageContent see https://core.telegram.org/bots/api#inputmessagecontent
+        input_message_content : {
+            message_text : "The message 1",
+            parse_mode : "Markdown",
+            disable_web_page_preview : true
+        }
+    },
+
+    // result 2 is InlineQueryResultArticle
+    {
+        type : "article",
+        id : "2",
+        title : "Result 2",
+
+        // InputTextMessageContent see https://core.telegram.org/bots/api#inputmessagecontent
+        input_message_content : {
+            message_text : "The message 2",
+            parse_mode : "Markdown",
+            disable_web_page_preview : false
+        }
+    }
+];
+
+msg.payload.results = results;
+
+return msg;
+```
+</details>
+
 
 
 ## Receiving a location
 Locations can be send to the chat. The bot can receive the longitude and latitude:
 
 ![Alt text](images/TelegramBotLocation.png?raw=true "Receive location")  
-**Fig. 30:** Receiving a location example  
+[**receivinglocation flow**](examples/receivinglocation.json)  
+**Fig. 17:** Receiving a location example  
 
-The *create location message* function node may contain:
+<details>
+  <summary>Click to expand code snippet for <em><b>create location message</b></em> function</summary>
 
-<img src="images/TelegramBotLocation2.png" title="Location Function" width="450" />
+```javascript
+if(msg.payload.location) {
+    var lat = msg.payload.location.latitude;
+    var lng = msg.payload.location.longitude;
+    var user = msg.payload.from.username;
 
-**Fig. 31:** Create location message function example
+    msg.payload.type = 'message';
+    msg.payload.content = user + ' moved to lat=' + lat + ' lon=' + lng;
+
+    return msg;
+}
+else {
+    return null;
+}
+```
+</details>
+
 
 
 ## Sending messages to a specified chat
@@ -527,21 +799,27 @@ If you have the chatId, you can send any message without the need of having rece
 
 ![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending to a chat")  
 [**sendmessagetochat flow**](examples/sendmessagetochat.json)  
-**Fig. 32:** Sending messages to a chat example flow  
-
-A basic message sending function looks as follows:
-
-<img src="images/TelegramBotSendToChat2.png" title="Basic sending a message" width="600" />
-
-**Fig. 33:** Basic sending message to a chat function example
+**Fig. 18:** Sending messages to a chat example flow  
 
 Sending markdown contents in messages is described below.
+
+<details>
+  <summary>Click to expand code snippet for <em><b>send to specific chat</b></em> function</summary>
+
+```javascript
+
+msg.payload = {chatId : 138708568, type : 'message', content : 'ping'}
+
+return msg;
+```
+</details>
+
 
 
 ## Sending photos, videos, ...
 Additionally to sending text messages you can send almost any file based content like photos and videos. Set the right type and content and you are done.
 If you want to respond to a received message with a picture you could write:
-```
+```javascript
 msg.payload.content = 'foo.jpg';
 msg.payload.type = 'photo';
 ```
@@ -562,7 +840,7 @@ Note that some clients convert gif animations to videos. This will lead to probl
 sender node as the content is mp4 instead of gif.
 The content can be downloaded automatically to a local folder by setting the **Download Directory** property in the receiver node configuration dialog.
 You can add a caption to photo, audio, document, video, video_note, animation, voice by setting the caption property as follows:
-```
+```javascript
 msg.payload.caption = "You must have a look at this!";
 ```
 
@@ -575,13 +853,27 @@ The following types require a special content format to be used. See the underly
 An example flow to send a photo is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")  
-**Fig. 34:** Photo sending example flow
+**Fig. 19:** Photo sending example flow
 
-The *send picture* function node may contain:
+<details>
+  <summary>Click to expand code snippet for <em><b>send picture</b></em> function</summary>
 
-<img src="images/TelegramBotSendPhoto2.png" title="Setting the correct content type" width="600" />
+```javascript
+msg.payload.content = 'foo.jpeg';
+msg.payload.type = 'photo';
 
-**Fig. 35:** Send picture function example
+/* type can be one of the following
+photo
+audio
+video
+sticker
+voice
+document
+*/
+
+return msg;
+```
+</details>
 
 
 ### Sending a mediaGroup as album
@@ -593,12 +885,13 @@ An example flow sending a media group is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendMediaGroup.png?raw=true "Sending a photo")  
 [**sendmediagroup flow**](examples/sendmediagroup.json)  
-**Fig. 36:** Sending media group example flow
+**Fig. 20:** Sending media group example flow
+
 
 <details>
   <summary>Click to expand code snippet for <em><b>create media group</b></em> function</summary>
 
-```
+```javascript
 // sendMediaGroup example: send  between 2 and 10 media.
 // Note that type can also be video.
 // and the caption property is optional.
@@ -614,7 +907,7 @@ msg.payload.content = [
     },
     {
         type : "photo",
-        media : ""/pic/frame_2.jpg",
+        media : "/pic/frame_2.jpg",
         caption : "Photo 2"
     }
 ];
@@ -624,11 +917,12 @@ return msg;
 </details>
 
 
+
 ## Sending contacts
 Sending a contact is limited to the elements supported by the underlying API to "phone_number" and "first_name".
 But you can also receive "last_name" if the client sends it.
 
-```
+```javascript
 msg.payload.type = 'contact';
 msg.payload.content : {  phone_number: "+49 110", first_name: "Polizei" };
 ```
@@ -636,19 +930,37 @@ An example flow sending a contact is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendContact.png?raw=true "Send Contact Flow")  
 [**sendcontacttochat flow**](examples/sendcontacttochat.json)  
-**Fig. 38:** Sending contact example flow
+**Fig. 21:** Sending contact example flow
 
-The *contact* function node may contain:
+<details>
+  <summary>Click to expand code snippet for <em><b>contact</b></em> function</summary>
 
-<img src="images/TelegramBotSendContact2.png" title="Send contact function" width="450" />
+```javascript
+msg.payload =
+{
+    chatId : 12345,
+    type : "contact",
+    content :
+    {
+        phone_number: "+49 110",
+        first_name: "first",
+        last_name: "last"
+    },
+    options :
+    {
+        disable_notification : true
+    }
+}
 
-**Fig. 39:** Contact function example
+return msg;
+```
+</details>
 
 
 ## Sending chat actions
 When the bot needs some time for further processing but you want to give a hint to the user what is going on, then you can send a chat action which will appear at the top of the channel of the receiver.
 
-```
+```javascript
 msg.payload.type = 'action';
 msg.payload.content = "typing";
 ```
@@ -669,20 +981,60 @@ An example flow sending a chat action is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendChatAction.png?raw=true "Sending a chat action")  
 [**sendchataction flow**](examples/sendchataction.json)  
-**Fig. 40:** Sending chat actions example flow
+**Fig. 22:** Sending chat actions example flow
 
-The *send chat action* function node may contain:
+<details>
+  <summary>Click to expand code snippet for <em><b>send chat action</b></em> function</summary>
 
-<img src="images/TelegramBotSendChatAction2.png" title="Sending a chat action function" width="600" />
+```javascript
+// demonstrates sending a chat action (see https://core.telegram.org/bots/api#sendchataction)
+var type = msg.payload.type;
+msg.payload.type = "action";
 
-**Fig. 41:** Send chat action function example
+switch(type){
+    case "message":
+        msg.payload.content = "typing";
+        break;
+
+    case "photo":
+        msg.payload.content = "upload_photo";
+        break;
+
+    case "video":
+        msg.payload.content = "upload_video";
+        break;
+
+    case "audio":
+        msg.payload.content = "upload_audio";
+        break;
+
+    case "document":
+        msg.payload.content = "upload_document";
+        break;
+
+    case "location":
+        msg.payload.content = "find_location";
+        break;
+
+    case "video_note":
+        msg.payload.content = "upload_video_note";
+        break;
+
+    default:
+        msg = null;
+        break;
+}
+
+return msg;
+```
+</details>
 
 
 ## Sending live locations
 Locations can be send to the chat as described above and then updated afterwards: live location update.
 To achieve this, you have to provide the live_period in seconds in the options when sending the location.
 
-```
+```javascript
 msg.payload.type = 'location';
 msg.payload.content = {
     latitude : lat,
@@ -697,14 +1049,14 @@ msg.payload.options = {
 To be able to update this location message you need to store the message id of that sent message.
 This can be done by storing it somewhere in the flow context as follows:
 
-```
+```javascript
 var messageId = msg.payload.sentMessageId;
 flow.set("messageId", messageId);
 ```
 
 Now you can edit the location as often as you want within the live_period using the API command **editMessageLiveLocation**:
 
-```
+```javascript
 var messageId = flow.get("messageId");
 var chatId = msg.payload.chatId;
 
@@ -722,7 +1074,7 @@ msg.payload.options = {
 
 If you want to abort updating the location then you can send the API command **stopMessageLiveLocation**.
 
-```
+```javascript
 var messageId = flow.get("messageId");
 var chatId = msg.payload.chatId;
 
@@ -737,7 +1089,9 @@ An example flow sending the live location is shown in the following figure:
 
 ![Alt text](images/TelegramBotLiveLocation.png?raw=true "Live Location Flow")  
 [**livelocation flow**](examples/livelocation.json)  
-**Fig. 42:** Sending live location example flow
+**Fig. 23:** Sending live location example flow
+
+
 
 ## Receiving live location updates
 When a user sends his location then it is received by the standard message receiver node.
@@ -749,7 +1103,7 @@ All types of  messages can be forwarded to another chat (see forwardMessage).
 Just send a message to the sender node and add forward property to the payload. The forward object must contain the **chatId** of the chat the message should be sent to.
 In the following example the received message will be forwarded to the chat 1:
 
-```
+```javascript
 msg.payload.forward = { chatId : 1 };
 return msg;
 ```
@@ -760,7 +1114,7 @@ The source **chatId** is taken from: `msg.payload.chatId`.
 Both properties are set by the receiver node, but you can also set those manually without having received anything.
 The following example sends message 2 from chat 1 to chat 3:
 
-```
+```javascript
 msg.payload.chatId = 1;
 msg.payload.messageId = 2;
 msg.payload.forward = { chatId : 3 };
@@ -769,28 +1123,44 @@ return msg;
 
 Remark: You need to have sufficient permissions to be able to do this message forwarding.
 
+
 ## Advanced options when sending messages
 Text messages can be formatted as markdown, e.g. to support bold and italic style. To enable markdown format
 set the *parse_mode* options property as follows:
-```
+```javascript
 msg.payload.options = {parse_mode : "Markdown"};
 ```
 An example function node may contain:
 
-![Alt text](images/TelegramBotSendToChatMarkdown.png?raw=true "Sending to a chat")  
+![Alt text](images/TelegramBotSendMessageToChat.png?raw=true "Sending to a chat")  
 [**sendmessagetochat flow**](examples/sendmessagetochat.json)  
-**Fig. 43:** Sending messages to a chat example flow  
+**Fig. 24:** Sending messages to a chat example flow  
+
+<details>
+  <summary>Click to expand code snippet for <em><b>send markdown</b></em> function</summary>
+
+```javascript
+var message = 'You can also send *markdown* formatted messages.';
+msg.payload = {chatId : 138708568, type : 'message', content : message};
+
+// activate markdown
+msg.payload.options = {disable_web_page_preview : true, parse_mode : "Markdown"};
+
+return msg;
+```
+</details>
+<br>
 
 
 Telegram always adds a preview when you send a web link. To suppress this behavior you can disable the preview
 by setting the *disable_web_page_preview* options property as follows:
-```
+```javascript
 msg.payload.options = {disable_web_page_preview : true};
 ```
 
 The callback query answer has a show_alert option to control the visibility of the answer on the client.
 It is directly mapped to the options property.
-```
+```javascript
 msg.payload.options = true;
 ```
 
@@ -800,11 +1170,12 @@ The configuration node contains two properties for applying security to your bot
 
 <img src="images/TelegramBotSecurity.png" title="Applying security" width="500" />
 
-**Fig. 44:** Security configuration in the bot configuration node
+**Fig. 25:** Security configuration in the bot configuration node
 
 
 **Note**: The chatIds are positive in chats where you talk to the bot in an 1:1 manner. A negative chatId indicates a group chat.
 Everybody in this group is allowed to use the bot if you enter the chatId of the group into the lower field of the configuration node.
+
 
 
 ## Detecting unauthorized access
@@ -813,14 +1184,28 @@ You can reply on that message or log it to a file to see who wanted to access yo
 
 ![Alt text](images/TelegramBotUnauthorizedAccess.png?raw=true "Logging unauthorized access")  
 [**unauthorizedaccess flow**](examples/unauthorizedaccess.json)  
-**Fig. 45:** Detecting unautorized access example flow
+**Fig. 26:** Detecting unautorized access example flow
 
 The message needs to be formatted before the log to file node can be triggered.
-A simple function may look like this:
 
-<img src="images/TelegramBotUnauthorizedAccess2.png" title="Create logging string with full information" width="600" />
+<details>
+  <summary>Click to expand code snippet for <em><b>create log string</b></em> function</summary>
 
-**Fig. 46:** Create log string function example
+```javascript
+var chatId = msg.payload.chatId;
+var username = msg.originalMessage.from.username;
+
+msg.originalMessage.timestamp = new Date();
+var message = JSON.stringify(msg.originalMessage);
+
+msg.topic = username + ' ' + chatId;
+msg.payload = [msg.topic, message];
+
+return msg;
+```
+</details>
+<br>
+
 
 
 ## Dynamic authorization
@@ -837,36 +1222,67 @@ For using a dynamic list stored in the context you must add a script into the co
 
 If the config starts with { and ends with } the expression is evaluated as a script.
 For example you can write something like
-```
+```javascript
 {context.global.username}
 {context.global.chatids}
 ```
 or
-```
+```javascript
 {global.get("usernames")}
 {global.get("chatids")}
 ```
 
 Usage of the latter notation is recommended.
 
+The following example flow shows the various options:
+
+<img src="images/TelegramBotDynamicAuthorization3.png" title="Granting access using a function node" width="550" />  
+
+[**dynamic authorization flow**](examples/dynamicauthorization.json)  
+**Fig. 27:** Dynamic granting access example flow
+
+The configuration dialog for scripting contents looks like this:
+
 <img src="images/TelegramBotDynamicAuthorization.png" title="Dynamic authorization" width="700" />
 
-**Fig. 47:** Dynamic authorization with scripting contents
+**Fig. 28:** Dynamic authorization with scripting contents
 
 The authorization can be modified using a change node:
 
 <img src="images/TelegramBotDynamicAuthorization2.png" title="Granting access using a change node" width="550" />
 
-**Fig. 48:** Granting access using a change node
+**Fig. 29:** Granting access using a change node
 
 As an alternative, the authorization can be modified using a function node:
 
-<img src="images/TelegramBotDynamicAuthorization3.png" title="Granting access using a function node" width="550" />  
-
-[**dynamic authorization flow**](examples/dynamicauthorization.json)  
-**Fig. 49:** Granting access using a function node
-
 Note that you can also use the function node with the new notation like gobal.set(key, value).
+
+
+<details>
+  <summary>Click to expand code snippet for <em><b>Grant access to User and chat 1</b></em> function</summary>
+
+```javascript
+// classic aproach for using context.
+context.global.usernames = [ "User" ];
+context.global.chatids = [ 1 ];
+
+return msg;
+```
+</details>
+
+<details>
+  <summary>Click to expand code snippet for <em><b>No Access</b></em> function</summary>
+
+```javascript
+// classic aproach for using context.
+context.global.usernames = [];
+context.global.chatids = [];
+
+return msg;
+```
+</details>
+<br>
+
 
 
 ## Payments
@@ -880,7 +1296,7 @@ Putting all pieces together you will have a simple bot implementing some useful 
 
 ![Alt text](images/TelegramBotExample.png?raw=true "Bot example")  
 [**simplebot flow**](examples/simplebot.json)  
-**Fig. 50:** Simple bot example flow
+**Fig. 30:** Simple bot example flow
 
 
 # License

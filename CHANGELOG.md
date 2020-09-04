@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [8.5.0] - 2020-09-03
+### Docu rework
+### Typo in .html
+- Ouput -> Output
+
+### Minor bugfix in .js
+- date field added at text message
+
 ## [8.4.0] - 2020-08-14
 ### Updated to node-telegram-bot-api 0.50.0 
 

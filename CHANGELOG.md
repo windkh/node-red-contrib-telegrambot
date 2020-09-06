@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [8.6.0] - 2020-09-06
+### Token can be read from env variable
+ - Change Token ID. - [#124](https://github.com/windkh/node-red-contrib-telegrambot/issues/124)
+ 
 ## [8.5.0] - 2020-09-03
 ### Docu rework
 ### Typo in .html

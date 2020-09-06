@@ -20,7 +20,7 @@ module.exports = function (RED) {
 
         var self = this;
 
-        // this sandbox is a lightweight copy of the sandbox in the function node to be as compatibe as possible to the syntax allowed there. 
+        // this sandbox is a lightweight copy of the sandbox in the function node to be as compatible as possible to the syntax allowed there. 
         var sandbox = {
             node : {},
 
@@ -136,9 +136,8 @@ module.exports = function (RED) {
         this.getTelegramBot = function () {
             if (!this.telegramBot) {
                 if (this.credentials) {
-                    this.token = this.credentials.token;
+                    this.token = this.getBotToken(this.credentials.token);
                     if (this.token) {
-                        this.token = this.token.trim();
                         if (!this.telegramBot) {
 
                             if (this.useWebhook) {
@@ -215,12 +214,7 @@ module.exports = function (RED) {
                                 this.telegramBot.on('polling_error', function (error) {
 
                                     self.setUsersStatus({ fill: "red", shape: "ring", text: "polling error" })
-                                    // We reset the polling status after the 80% of the timeout
-                                    setTimeout( function()
-                                    {
-                                        self.setUsersStatus({ fill: "green", shape: "ring", text: "polling" })
-                                    }, (self.pollInterval * 0.80));
-
+                                    
                                     if (self.verbose) {
                                         self.warn(error.message);
                                     }
@@ -265,6 +259,12 @@ module.exports = function (RED) {
                                         if (self.verbose) {
                                             self.warn(hint);
                                         }
+
+                                        // We reset the polling status after the 80% of the timeout
+                                        setTimeout( function()
+                                        {
+                                            self.setUsersStatus({ fill: "green", shape: "ring", text: "polling" })
+                                        }, (self.pollInterval * 0.80));
                                     }
                                 });
                             }
@@ -317,6 +317,27 @@ module.exports = function (RED) {
             }
         }
           
+        this.getBotToken = function (botToken) {
+            botToken = this.credentials.token;
+            if (botToken) {
+                if(botToken.startsWith("{") && botToken.endsWith("}")){          
+                    var expression = botToken.substr(1, botToken.length - 2);
+                    var code = `sandbox.${expression};`;
+                
+                    try {
+                        botToken = eval(code);
+                    } catch (e) {
+                        botToken = undefined;
+                    }
+                }
+            }
+            
+            if (botToken) {
+                botToken = botToken.trim();
+            }
+            return botToken;
+        }
+
         this.getUserNames = function(node){
             var usernames = [];
             if (self.config.usernames !== "") {

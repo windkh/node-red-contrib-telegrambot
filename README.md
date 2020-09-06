@@ -153,6 +153,20 @@ which you received from @botfather when creating a new bot.
 **Fig. 2:** Configuration node dialog
 
 
+### Reading token from external location
+Instead of entering the token from bot father directly into the token field, you can also instruct the node to read ot from on external location.
+
+#### Reading token from environment variable
+Environment variables are entered in the settings.js of node-red before startup.   
+```javascript
+process.env.BOT_TOKEN = "<your bot token here>";
+```
+The token field in the configuration node must then look like
+```javascript
+{env.get("BOT_TOKEN")}
+```
+
+
 ### Configuration properties *Users* and *ChatIds*
 The node contains the two optional properties: ***Users*** and ***ChatIds***. You may enter a list of names and/or chatIds that are authorized to use this bot. This is useful, if the bot should only accept incoming calls from dedicated persons resp. chat groups.
 The values in the property fields must be separated by a comma e.g.:

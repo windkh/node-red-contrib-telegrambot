@@ -413,6 +413,7 @@ msg.payload.content = helpMessage;
 return msg;
 ```
 </details>
+
 <br>
 
 **Note**: You can access the sender's data via the `msg.originalMessage` property.
@@ -1163,6 +1164,7 @@ msg.payload.options = {disable_web_page_preview : true, parse_mode : "Markdown"}
 return msg;
 ```
 </details>
+
 <br>
 
 
@@ -1218,6 +1220,7 @@ msg.payload = [msg.topic, message];
 return msg;
 ```
 </details>
+
 <br>
 
 
@@ -1295,6 +1298,7 @@ context.global.chatids = [];
 return msg;
 ```
 </details>
+
 <br>
 
 

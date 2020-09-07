@@ -1,10 +1,17 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [8.6.2] - 2020-09-07
+### README.md display problem
+ - Display problem fixed when using the <details> tags: Added additional blank line behind.
+
+## [8.6.1] - 2020-09-06
+### When bot is stopped it won't restore to "polling" state
+
 ## [8.6.0] - 2020-09-06
 ### Token can be read from env variable
  - Change Token ID. - [#124](https://github.com/windkh/node-red-contrib-telegrambot/issues/124)
- 
+
 ## [8.5.0] - 2020-09-03
 ### Docu rework
 ### Typo in .html
@@ -14,28 +21,28 @@ All notable changes to this project will be documented in this file.
 - date field added at text message
 
 ## [8.4.0] - 2020-08-14
-### Updated to node-telegram-bot-api 0.50.0 
+### Updated to node-telegram-bot-api 0.50.0
 
 ## [8.3.3] - 2020-07-26
 ### Polling Error status is reset after 80% poll interval
  - Reset error status after a period when polling. - [#97](https://github.com/windkh/node-red-contrib-telegrambot/issues/97)
- 
+
 ## [8.3.2] - 2020-07-26
 ### Alpha feature sendInvoice
  - Added sendInvoice, answerShippingQuery, answerPreCheckoutQuery for testing - [#119](https://github.com/windkh/node-red-contrib-telegrambot/issues/119)
- 
+
 ## [8.3.1] - 2020-07-26
 ### Fixed
  - Fixed has response behavior - [#115](https://github.com/windkh/node-red-contrib-telegrambot/issues/115)
- 
+
 ## [8.3.0] - 2020-07-26
 ### Fixed
  - Fixed typo in event node (callback_query) - [#114](https://github.com/windkh/node-red-contrib-telegrambot/issues/114)
- 
+
 ## [8.2.0] - 2020-06-14
 ### Fixed
  - Fixed wrong chat id when sending to many chats - [#111](https://github.com/windkh/node-red-contrib-telegrambot/issues/111)
- 
+
 ## [8.1.0] - 2020-05-02
 ### Added
  - Reordered html properties
@@ -98,7 +105,7 @@ All notable changes to this project will be documented in this file.
  - Support for custom and non custom certificates in webhook mode - [#66](https://github.com/windkh/node-red-contrib-telegrambot/issues/66)
 
 ### Changed
- - Improved configuration node: grouped properties. 
+ - Improved configuration node: grouped properties.
 
 ## [5.2.1] - 2019-02-02
 ### Added

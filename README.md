@@ -1148,6 +1148,22 @@ return msg;
 Remark: You need to have sufficient permissions to be able to do this message forwarding.
 
 
+## Creating polls
+You can create polls, listen to poll events and even receive polls.
+A poll can be created using the following pattern: 
+
+```javascript
+msg.payload.type = 'poll';
+msg.payload.content = "What do you think?";
+msg.payload.options = ["A", "B", "C" ];
+return msg;
+```
+
+See the example flow [**create poll**](examples/createpoll.json) in the examples folder.
+
+Use the event node 'Poll' for receiving the updated poll results.
+
+
 ## Advanced options when sending messages
 Text messages can be formatted as markdown, e.g. to support bold and italic style. To enable markdown format
 set the *parse_mode* options property as follows:

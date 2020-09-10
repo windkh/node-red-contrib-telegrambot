@@ -870,7 +870,10 @@ module.exports = function (RED) {
                         username = botMsg.from.username;
                         chatid = botMsg.from.id;
                     } else {
-                        node.error("username or chatid undefined");
+                        // polls can be anonymous, then we do not have a chatId.
+                        if(this.event != 'poll'){
+                            node.error("username or chatid undefined");
+                        }
                     }
                     if (node.config.isAuthorized(node, chatid, username)) {
                         var msg;
@@ -1069,7 +1072,6 @@ module.exports = function (RED) {
 
                             case 'poll':
                                 messageDetails = {
-                                    chatId: chatid,
                                     type: this.event,
                                     id: botMsg.id,
                                     question: botMsg.question,
@@ -1085,8 +1087,6 @@ module.exports = function (RED) {
                                     open_period: botMsg.open_period,
                                     close_date: botMsg.close_date,
                                     content: botMsg.question,
-                                    date: botMsg.date,
-                                    chat: botMsg.chat
                                 };
                                 break;
             
@@ -1315,6 +1315,19 @@ module.exports = function (RED) {
                         case 'document':
                             if (this.hasContent(msg)) {
                                 node.telegramBot.sendDocument(chatId, msg.payload.content, msg.payload.options).then(function (result) {
+                                    msg.payload.content = result;
+                                    msg.payload.sentMessageId = result.message_id;
+                                    nodeSend(msg);
+                                    if (nodeDone) {
+                                        nodeDone();
+                                    }
+                                });
+                            }
+                            break;
+
+                        case 'poll':
+                            if (this.hasContent(msg)) {
+                                node.telegramBot.sendPoll(chatId, msg.payload.content, msg.payload.options).then(function (result) {
                                     msg.payload.content = result;
                                     msg.payload.sentMessageId = result.message_id;
                                     nodeSend(msg);

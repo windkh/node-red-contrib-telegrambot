@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [8.6.4] - 2020-09-10
+### Added example flow for creating a poll.
+
 ## [8.6.3] - 2020-09-10
 ### Added pre_checkout_query for sendInvoice feature.
  - added events to event node: pre_checkout_query, shipping_query, chosen_inline_result, poll, poll_answer

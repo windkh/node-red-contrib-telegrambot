@@ -74,6 +74,7 @@ The following message contents can be sent and received (given in `msg.payload.t
 - **location** - content is an object with latitude and longitude
 - **venue** - content is the venue object
 - **contact** - content is the contact information object
+- **poll** - content is a poll object
 - **invoice** - content is an invoice for a payment
 - **successful_payment** - content is a service message about a successful payment
 
@@ -115,6 +116,7 @@ The following table shows the relationship between the message *type* and additi
 | **venue**| venue | - | - | - | - | - |
 | **contact**| contact | - | - | - | - | - |
 | **document**| document.file_id | - | optional | true | - | - |
+| **poll**| poll | - | - | - | - | - |
 | **invoice**| invoice | - | - | - | - | - |
 | **successful_payment**| successful_payment | - | - | - | - | - |
 | **new_chat_title**| new_chat_title | - | - | - | - | - |
@@ -284,14 +286,15 @@ The `msg.payload.type` needs to be set to one of the following values:
 - editMessageCaption, editMessageText, editMessageReplyMarkup
 - deleteMessage
 - editMessageLiveLocation, stopMessageLiveLocation
-- callback_query, inline_query
+- callback_query, answerCallbackQuery
+- inline_query, answerInlineQuery
 - action
 - leaveChat, exportChatInviteLink
 - kickChatMember, unbanChatMember, restrictChatMember, promoteChatMember
 - setChatPhoto, deleteChatPhoto, setChatTitle, setChatDescription
 - pinChatMessage, unpinChatMessage
 - getChatAdministrators, getChatMembersCount, getChat, getChatMember
-- sendInvoice, answerShippingQuery, answerPreCheckoutQuery
+- sendInvoice, answerShippingQuery, answerPreCheckoutQuery, pre_checkout_query, answerPreCheckoutQuery
 
 The content format of the command arguments (required and optional) depends on the api command.  
 See also ["available methods" in the api core description](https://core.telegram.org/bots/api#available-methods).
@@ -337,6 +340,12 @@ See example-flow [inline keyboard flow](examples/inlinekeyboard.json) in example
 - **Edited Channel Post** which is triggered when someone alters an already sent message in a public channel.
 - **Edited Channel Post Text** which is triggered when someone alters an already sent message text in a public channel.
 - **Edited Channel Post Caption** which is triggered when someone alters an already sent caption of e.g. a photo in a public channel.
+- **Pre Checkout Query** which is triggered when someone issues a payment (see send invoice).
+- **Shipping Query** which is triggered when someone issues a shipping.
+- **Chosen Inline Result** which is triggered when a user has chosen a result from an inline query.
+- **Poll** which is triggered when a poll is created.
+- **Poll Answer** which is triggered when a poll is answered.
+
 
 The Event to be received is configured via the node's configuration dialog:
 

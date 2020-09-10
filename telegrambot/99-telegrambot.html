@@ -10,12 +10,12 @@
             usernames: { value: "", required: false },
             chatids: { value: "", required: false },
             baseapiurl: { value: "", required: false },
-
+            
             updatemode: { value: "polling", required: true },
 
             // only for polling mode
             pollinterval: { value: 300, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
-
+            
             // only for socks5 proxy support
             usesocks: { value: false, required: false },
             sockshost: { value: "", required: false },
@@ -27,7 +27,7 @@
             bothost: { value: "", required: false },
             localbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
             publicbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
-
+            
             // only for webhook and certificate
             privatekey: { value: "", required: false },
             certificate: { value: "", required: false },
@@ -84,7 +84,7 @@
             };
             useSocks5();
             $("#node-config-input-usesocks").change(useSocks5);
-
+ 
         }
     });
 </script>
@@ -126,8 +126,8 @@
         <hr align="middle"/>
 
         <div class="form-row hidden" id="polling" style="background: #fbfbfb">
-            <label style="width: auto"><i class="fa fa-cogs"></i> Polling Options:</label>
-
+            <label style="width: auto"><i class="fa fa-cogs"></i> Polling Options:</label> 
+            
             <div class="form-row" style="margin-left: 20px">
                 <div class="form-row">
                         <label for="node-config-input-pollinterval"><i class="fa fa-clock-o"></i> Poll Interval</label>
@@ -139,7 +139,7 @@
 
         <div class="form-row hidden" id="webhook" style="background: #fbfbfb">
             <label style="width: auto"><i class="fa fa-cogs"></i> Webhook Options:</label>
-
+       
             <div class="form-row" style="margin-left: 20px">
                 <div class="form-row">
                     <label for="node-config-input-bothost"><i class="fa fa-desktop"></i> Bot Host</label>
@@ -183,8 +183,8 @@
         </div>
         <div class="form-row hidden" id="socks" style="background: #fbfbfb">
             <label style="width: auto"><i class="fa fa-cogs"></i> SOCKS5 Options:</label>
-
-            <div class="form-row" style="background: #fff; margin-left: 20px">
+          
+            <div class="form-row" style="background: #fff; margin-left: 20px">        
                 <div class="form-row">
                     <label for="node-config-input-sockshost"><i class="fa fa-desktop"></i> Host</label>
                     <input type="text" id="node-config-input-sockshost" placeholder="(Optional IP or hostname of the socks proxy when using polling mode.)">
@@ -212,7 +212,7 @@
             <label for="node-config-input-verboselogging"><i class="fa fa-search"></i> Verbose Logging</label>
             <input type="checkbox" id="node-config-input-verboselogging" style="display: inline-block; width: auto; vertical-align: top;">
         </div>
-
+        
         <div class="form-tips" style="width: auto"><b>Tip:</b> When verbose logging is turned on additional log messages will be printed to the node-red console.</div>
 
         <hr align="middle"/>
@@ -293,11 +293,11 @@
 <script type="text/x-red" data-help-name="telegram receiver">
     <p>A telegram node that triggers the output when some message is received from the chat.</p>
     <p>The node receives all messages polled from/sent by the telegram server.</p>
-
-    <h3>Outputs</h3>
-    <p>1. Standard Output: Message is sent to output 1 if it is from an authorized user.</p>
+    
+    <h3>Outputs</h3> 
+    <p>1. Standard Ouput: Message is sent to output 1 if it is from an authorized user.</p>
     <p>2. Unauthorized Output: Message is sent to output 2 if it is from a non-authorized user.</p>
-
+    
     <h3>Details</h3>
     <p><code>msg.payload</code> typically contains the parsed data as follows:</p>
     <ul>
@@ -384,8 +384,8 @@
     <p>The secondary output can be used for complex scenarios when you want to work with responses. By default it is disabled.</p>
 
     <h3>Outputs</h3>
-    <p>1. Standard Output: Message is sent to output 1 if it is from an authorized user and it contains the command at the beginning of the message.</p>
-    <p>2. Secondary Output: Message is sent to output 2 if it is from an authorized user but does not contain the specified command.</p>
+    <p>1. Standard Ouput: Message is sent to output 1 if it is from an authorized user and it contains the command at the beginning of the message.</p>
+    <p>2. Secondary Ouput: Message is sent to output 2 if it is from an authorized user but does not contain the specified command.</p>
 </script>
 
 
@@ -437,6 +437,11 @@
               <option value="edited_channel_post">Edited Channel Post</option>
               <option value="edited_channel_post_text">Edited Channel Post Text</option>
               <option value="edited_channel_post_caption">Edited Channel Post Caption</option>
+              <option value="pre_checkout_query">Pre Checkout Query</option>
+              <option value="shipping_query">Shipping Query</option>
+              <option value="chosen_inline_result">Chosen Inline Result</option>
+              <option value="poll">Poll</option>
+              <option value="poll_answer">Poll Answer</option>
           </select>
         </div>
         </div>
@@ -449,12 +454,12 @@
 
 <script type="text/x-red" data-help-name="telegram event">
       <p>A telegram node that triggers the output when a event is received from a chat.</p>
-
-      <h3>Outputs</h3>
+      
+      <h3>Outputs</h3> 
       <p>1. Standard Output: The output is triggered when the configured event was received.</p>
 
-      <h3>Details</h3>
-      <p>The event type can be selected.</p>
+      <h3>Details</h3> 
+      <p>The event type can be selected.</p> 
       <p><code>msg.payload</code> typically contains the parsed data as follows:</p>
       <ul>
       <li><code>chatId</code>Unique identifier for this chat.</li>
@@ -466,8 +471,8 @@
       <p>Other properties may be present depending on the type of message.</p>
       <code>msg.originalMessage</code> contains the raw data object from the underlying library,
       and contains many useful properties.</p>
-      <p>The autoanswer checkbox can be set for callback_query.</p>
-      <p>Then you won't have to send an explicit answer to the bot on your own.</p>
+      <p>The autoanswer checkbox can be set for callback_query.</p> 
+      <p>Then you won't have to send an explicit answer to the bot on your own.</p> 
 </script>
 
 
@@ -564,10 +569,10 @@
 
     <h3>Inputs</h3>
     <p>1. Standard Input: calls the onReplyToMessage of the bot.</p>
-
+    
     <h3>Outputs</h3>
     <p>1. Standard Output: contains the result from the onReplyToMessage call.</p>
-
+    
     <h3>Details</h3>
     <p>This can be useful, when the bot for example sent a message and you want to take some action</p>
     <p>when someone responded to this specified message.</p>

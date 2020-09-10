@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [8.6.3] - 2020-09-10
+### Added pre_checkout_query for sendInvoice feature.
+ - added events to event node: pre_checkout_query, shipping_query, chosen_inline_result, poll, poll_answer
+ - added poll support (preview)
+ - see SendInvoice - [#119](https://github.com/windkh/node-red-contrib-telegrambot/issues/119)
+
 ## [8.6.2] - 2020-09-07
 ### README.md display problem
  - Display problem fixed when using the <details> tags: Added additional blank line behind.

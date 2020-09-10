@@ -214,7 +214,12 @@ module.exports = function (RED) {
                                 this.telegramBot.on('polling_error', function (error) {
 
                                     self.setUsersStatus({ fill: "red", shape: "ring", text: "polling error" })
-                                    
+                                    // We reset the polling status after the 80% of the timeout
+                                    setTimeout( function()
+                                    {
+                                        self.setUsersStatus({ fill: "green", shape: "ring", text: "polling" })
+                                    }, (self.pollInterval * 0.80));
+
                                     if (self.verbose) {
                                         self.warn(error.message);
                                     }
@@ -259,12 +264,6 @@ module.exports = function (RED) {
                                         if (self.verbose) {
                                             self.warn(hint);
                                         }
-
-                                        // We reset the polling status after the 80% of the timeout
-                                        setTimeout( function()
-                                        {
-                                            self.setUsersStatus({ fill: "green", shape: "ring", text: "polling" })
-                                        }, (self.pollInterval * 0.80));
                                     }
                                 });
                             }
@@ -320,20 +319,19 @@ module.exports = function (RED) {
         this.getBotToken = function (botToken) {
             botToken = this.credentials.token;
             if (botToken) {
-                if(botToken.startsWith("{") && botToken.endsWith("}")){          
-                    var expression = botToken.substr(1, botToken.length - 2);
-                    var code = `sandbox.${expression};`;
-                
-                    try {
-                        botToken = eval(code);
-                    } catch (e) {
-                        botToken = undefined;
-                    }
-                }
-            }
-            
-            if (botToken) {
                 botToken = botToken.trim();
+            }
+
+            if(botToken.startsWith("{") && botToken.endsWith("}")){   
+                
+                var expression = botToken.substr(1, botToken.length - 2);
+                var code = `sandbox.${expression};`;
+             
+                try {
+                    botToken = eval(code);
+                } catch (e) {
+                    botToken = undefined;
+                }
             }
             return botToken;
         }
@@ -562,6 +560,8 @@ module.exports = function (RED) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'contact', content: botMsg.contact, date: botMsg.date };
         } else if (botMsg.document) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'document', content: botMsg.document.file_id, caption: botMsg.caption, date: botMsg.date, blob: true };
+        } else if (botMsg.poll) {
+            messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'poll', content: botMsg.poll, date: botMsg.date, blob: false };
         } else if (botMsg.invoice) {
             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'invoice', content: botMsg.invoice, date: botMsg.date };
         } else if (botMsg.successful_payment) {
@@ -823,7 +823,15 @@ module.exports = function (RED) {
     // - edited_message
     // - channel_post
     // - edited_channel_post
+    // - edited_channel_post_text
+    // - edited_channel_post_caption
     // - edited_message_text
+    // - edited_message_caption
+    // - pre_checkout_query
+    // - shipping_query
+    // - chosen_inline_result
+    // - poll
+    // - poll_answer
     // The message details are stored in the payload
     // chatId
     // messageId
@@ -874,7 +882,7 @@ module.exports = function (RED) {
                                 messageDetails = {
                                     chatId: chatid,
                                     messageId: botMsg.message_id,
-                                    type: 'callback_query',
+                                    type: this.event,
                                     content: botMsg.data,
                                     callbackQueryId: callbackQueryId,
                                     from: botMsg.from
@@ -892,7 +900,7 @@ module.exports = function (RED) {
                                 var inlineQueryId = botMsg.id;
                                 messageDetails = {
                                     chatId: chatid,
-                                    type: 'inline_query',
+                                    type: this.event,
                                     content: botMsg.query,
                                     inlineQueryId: inlineQueryId,
                                     offset: botMsg.offset,
@@ -913,7 +921,7 @@ module.exports = function (RED) {
                                 messageDetails = {
                                     chatId: chatid,
                                     messageId: botMsg.message_id,
-                                    type: "edited_message",
+                                    type: this.event,
                                     content: botMsg.text,
                                     editDate: botMsg.edit_date,
                                     date: botMsg.date,
@@ -927,7 +935,7 @@ module.exports = function (RED) {
                             case 'edited_message_text':
                                 messageDetails = {
                                     chatId: chatid,
-                                    type: "edited_message_text",
+                                    type: this.event,
                                     messageId: botMsg.message_id,
                                     content: botMsg.text,
                                     editDate: botMsg.edit_date,
@@ -940,7 +948,7 @@ module.exports = function (RED) {
                             case 'edited_message_caption':
                                 messageDetails = {
                                     chatId: chatid,
-                                    type: "edited_message_caption",
+                                    type: this.event,
                                     messageId: botMsg.message_id,
                                     content: botMsg.caption,
                                     editDate: botMsg.edit_date,
@@ -953,7 +961,7 @@ module.exports = function (RED) {
                                 messageDetails = {
                                     chatId: chatid,
                                     messageId: botMsg.message_id,
-                                    type: "channel_post",
+                                    type: this.event,
                                     content: botMsg.text,
                                     date: botMsg.date,
                                     chat: botMsg.chat
@@ -963,7 +971,7 @@ module.exports = function (RED) {
                             case 'edited_channel_post':
                                 messageDetails = {
                                     chatId: chatid,
-                                    type: "edited_channel_post",
+                                    type: this.event,
                                     messageId: botMsg.message_id,
                                     content: botMsg.text,
                                     editDate: botMsg.edit_date,
@@ -975,7 +983,7 @@ module.exports = function (RED) {
                             case 'edited_channel_post_text':
                                 messageDetails = {
                                     chatId: chatid,
-                                    type: "edited_channel_post_text",
+                                    type: this.event,
                                     messageId: botMsg.message_id,
                                     content: botMsg.text,
                                     editDate: botMsg.edit_date,
@@ -987,7 +995,7 @@ module.exports = function (RED) {
                             case 'edited_channel_post_caption':
                                 messageDetails = {
                                     chatId: chatid,
-                                    type: "edited_channel_post_caption",
+                                    type: this.event,
                                     messageId: botMsg.message_id,
                                     content: botMsg.caption,
                                     editDate: botMsg.edit_date,
@@ -996,11 +1004,92 @@ module.exports = function (RED) {
                                 };
                                 break;
 
+                            case 'pre_checkout_query':
+                                var preCheckOutQueryId = botMsg.id;
+                                messageDetails = {
+                                    preCheckOutQueryId : preCheckOutQueryId,
+                                    chatId: chatid,
+                                    type: this.event,
+                                    from: botMsg.from,
+                                    currency: botMsg.currency,
+                                    total_amount: botMsg.total_amount,
+                                    invoice_payload: botMsg.invoice_payload,
+                                    shipping_option_id: botMsg.shipping_option_id,
+                                    order_info: botMsg.order_info,
+                                    content: botMsg.invoice_payload,
+                                    date: botMsg.date,
+                                    chat: botMsg.chat
+                                };
+                                break;
 
-                            // TODO: implement those
-                            // chosen_inline_result, 
-                            // shippingQuery, preCheckoutQuery
+                            case 'shipping_query':
+                                var shippingQueryId = botMsg.Id;
+                                messageDetails = {
+                                    shippingQueryId: shippingQueryId,
+                                    chatId: chatid,
+                                    type: this.event,
+                                    from: botMsg.from,
+                                    invoice_payload: botMsg.invoice_payload,
+                                    content: botMsg.invoice_payload,
+                                    shipping_address : botMsg.shipping_address,
+                                    date: botMsg.date,
+                                    chat: botMsg.chat
+                                };
+                                break;
 
+                            case 'chosen_inline_result':
+                                var result_id = botMsg.result_id;
+                                messageDetails = {
+                                    result_id: result_id,
+                                    chatId: chatid,
+                                    type: this.event,
+                                    from: botMsg.from,
+                                    location: botMsg.location,
+                                    inline_message_id: botMsg.inline_message_id,
+                                    query: botMsg.query,
+                                    content: botMsg.result_id,
+                                    date: botMsg.date,
+                                    chat: botMsg.chat
+                                };
+                                break;
+
+                            case 'poll_answer':
+                                var poll_id = botMsg.poll_id;
+                                messageDetails = {
+                                    poll_id: poll_id,
+                                    chatId: chatid,
+                                    type: this.event,
+                                    user: botMsg.user,
+                                    option_ids: botMsg.option_ids,
+                                    content: botMsg.user,
+                                    date: botMsg.date,
+                                    chat: botMsg.chat
+                                };
+                                break;
+
+                            case 'poll':
+                                messageDetails = {
+                                    chatId: chatid,
+                                    type: this.event,
+                                    id: botMsg.id,
+                                    question: botMsg.question,
+                                    options: botMsg.options,
+                                    total_voter_count: botMsg.total_voter_count,
+                                    is_closed: botMsg.is_closed,
+                                    is_anonymous: botMsg.is_anonymous,
+                                    pollType: botMsg.type,
+                                    allows_multiple_answers: botMsg.allows_multiple_answers,
+                                    correct_option_id: botMsg.correct_option_id,
+                                    explanation: botMsg.explanation,
+                                    explanation_entities: botMsg.explanation_entities,
+                                    open_period: botMsg.open_period,
+                                    close_date: botMsg.close_date,
+                                    content: botMsg.question,
+                                    date: botMsg.date,
+                                    chat: botMsg.chat
+                                };
+                                break;
+            
                             default:
                         }
 
@@ -1390,6 +1479,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'callback_query':
+                        case 'answerCallbackQuery':
                             if (this.hasContent(msg)) {
                                 // The new signature expects one object instead of three arguments.
                                 var callbackQueryId = msg.payload.callbackQueryId;
@@ -1409,7 +1499,8 @@ module.exports = function (RED) {
                             break;
 
                         case 'inline_query':
-                            if (this.hasContent(msg)) {
+                        case 'answerInlineQuery':
+                            //if (this.hasContent(msg)) {
                                 var inlineQueryId = msg.payload.inlineQueryId;
                                 var results = msg.payload.results; // this type requires results to be set: see https://core.telegram.org/bots/api#inlinequeryresult
                                 node.telegramBot.answerInlineQuery(inlineQueryId, results).then(function (result) {
@@ -1419,7 +1510,7 @@ module.exports = function (RED) {
                                         nodeDone();
                                     }
                                 });
-                            }
+                            //}
                             break;
 
                         case 'action':
@@ -1502,7 +1593,7 @@ module.exports = function (RED) {
                         // See https://core.telegram.org/bots/payments
                         // See https://core.telegram.org/bots/api#sendinvoice
                         case "sendInvoice":
-                            if (this.hasContent(msg)) {
+                            //if (this.hasContent(msg)) {
                                 node.telegramBot[type](chatId,
                                     msg.payload.content.title, 
                                     msg.payload.content.description, 
@@ -1518,11 +1609,12 @@ module.exports = function (RED) {
                                         nodeDone();
                                     }
                                 });
-                            }
+                            //}
                             break;
 
+                            case "shipping_query":
                             case "answerShippingQuery":
-                                if (this.hasContent(msg)) {
+                                //if (this.hasContent(msg)) {
                                     var shippingQueryId = msg.payload.shippingQueryId;
                                     var ok = msg.payload.ok; // this type requires ok to be set: see https://core.telegram.org/bots/api#answershippingquery
                                     var shippingOptions = msg.payload.options; // the optional shipping options
@@ -1539,11 +1631,12 @@ module.exports = function (RED) {
                                             nodeDone();
                                         }
                                     });
-                                }
+                                //}
                                 break;
 
+                            case "pre_checkout_query":
                             case "answerPreCheckoutQuery":
-                                if (this.hasContent(msg)) {
+                                //if (this.hasContent(msg)) {
                                     var preCheckOutQueryId = msg.payload.preCheckOutQueryId;
                                     var ok = msg.payload.ok; // this type requires ok to be set: see https://core.telegram.org/bots/api#answerprecheckoutquery
                                     node.telegramBot.answerPreCheckoutQuery(
@@ -1556,7 +1649,7 @@ module.exports = function (RED) {
                                             nodeDone();
                                         }
                                     });
-                                }
+                                //}
                                 break;
 
                         // TODO:                            

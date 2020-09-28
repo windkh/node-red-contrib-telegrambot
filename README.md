@@ -623,15 +623,9 @@ Several options for the keyboard layout can be found there in the [Telegram Bot 
 The keyboard layout shown in Fig. 17 (given in the *inline keyboard message* node) is
  ```javascript
 "inline_keyboard": [[
-      {
-          "text": "Yes",
-          "callback_data": "FOO YES"
-      },
-      {
-          "text": "No",
-          "callback_data": "FOO NO"
-      }]
-]
+      {"text": "Yes","callback_data": "FOO YES"},
+      {"text": "No", "callback_data": "FOO NO"}
+]]
 ```
 
 Another example of a different key layout may be to arrange several keys in one line.
@@ -639,44 +633,19 @@ This may be like:
 
 ```javascript
 "inline_keyboard": [[
-      {
-          "text": "Yes",
-          "callback_data": "FOO YES"
-      },
-      {
-          "text": "No",
-          "callback_data": "FOO NO"
-      }],
+      {"text": "Yes","callback_data": "FOO YES"},
+      {"text": "No","callback_data": "FOO NO"}],
     [
-      {
-          "text": "#1",
-          "callback_data": "FOO ONE"
-      },
-      {
-          "text": "#2",
-          "callback_data": "FOO TWO"
-      },
-      {
-          "text": "#3",
-          "callback_data": "FOO THREE"
-      }],
-      [
-        {
-            "text": "dog",
-            "callback_data": "FOO DOG"
-        },
-        {
-            "text": "eel",
-            "callback_data": "FOO EEL"
-        },
-        {
-            "text": "cow",
-            "callback_data": "FOO COW"
-        },
-        {
-            "text": "cat",
-            "callback_data": "FOO CAT"
-      }]
+      {"text": "#1","callback_data": "FOO ONE"},
+      {"text": "#2","callback_data": "FOO TWO"},
+      {"text": "#3","callback_data": "FOO THREE"}
+    ],
+    [
+      {"text": "dog","callback_data": "FOO DOG"},
+      {"text": "eel","callback_data": "FOO EEL"},
+      {"text": "cow","callback_data": "FOO COW"},
+      {"text": "cat","callback_data": "FOO CAT"}
+    ]
 ]
 ```
 

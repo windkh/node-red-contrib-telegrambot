@@ -238,6 +238,17 @@ To be able to receive **telegram chat messages**, simply invite the bot to a cha
 
 You can control if the bot receives every message by calling **/setprivacy @botfather** (refer also to [**there**](https://core.telegram.org/bots#privacy-mode)).
 
+### Configuration
+
+#### Configuration property *Download Directory*
+When the receiver node receives data like videos, documents and so on, the file is downloaded automatically to the local harddisc when the node's property ***Download Directory*** is set in the configuration node. The directory may also be part of the message payload: `msg.payload.path`.
+In addition to that the message object may contain the direct download link in the payload: `msg.payload.weblink`.
+
+#### Configuration property *Filter*
+Normally, a receiver node receives all content that is sent to the bot. However if you have command nodes next to a receiver you can enable the *commands* flag in the configuration property ***Filter*** so that commands meant for a command node will not be handled by the receiver node.  
+I.e. the command message then only appears in the configured command node and not in this node.
+
+
 ### Outputs
 The original message from the underlying node library is stored in `msg.originalMessage`. The `msg.payload` contains the most important data like **chatId**, **type** and **content**. Additional elements are present in the `msg.payload` structure and depend on the message *type*. These additional elements are described in the table **Tab. 1** above.
 
@@ -247,13 +258,6 @@ The node has two outputs:
 1. The node's upper output (***Standard Output***) is used if the message is from an authorized user.  
 2. The node's lower output (***Unauthorized Output***) is used when security is applied (via configuration properties *Users* and *ChatIds*) and the user is not authorized to access the bot.
 
-
-### Configuration property *Download Directory*
-When the receiver node receives data like videos, documents and so on, the file is downloaded automatically to the local harddisc when the node's property ***Download Directory*** is set in the configuration node. The directory may also be part of the message payload: `msg.payload.path`.
-In addition to that the message object may contain the direct download link in the payload: `msg.payload.weblink`.
-
-### Configuration property *Filter*
-Normally, a receiver node receives all content that is sent to the bot. However if you have command nodes next to a receiver you can enable the *commands* flag in the configuration property ***Filter*** so that commands meant for a command node will not be handled by the receiver node.
 
 
 ## Sender Node
@@ -330,9 +334,8 @@ A telegram node that triggers the output when a event is received from a chat.
 **Fig. 7:** Event node appearance
 
 The node receives events from the bot like:
-- **Callback Query** of inline keyboards.
-See example-flow [inline keyboard flow](examples/inlinekeyboard.json) in examples folder.
-- **Inline Query**
+- **Callback Query** of inline keyboards. See example-flow [inline keyboard flow](examples/inlinekeyboard.json) in examples folder.
+- **Inline Query** of inline bots. See [Inline mode](https://core.telegram.org/bots/api#inline-mode) in the bot API.
 - **Edited Message** which is triggered when someone alters an already sent message.
 - **Edited Message Text** which is triggered when someone alters an already sent message text.
 - **Edited Message Caption** which is triggered when someone alters an already sent caption e.g. of a photo.
@@ -347,17 +350,35 @@ See example-flow [inline keyboard flow](examples/inlinekeyboard.json) in example
 - **Poll Answer** which is triggered when a poll is answered.
 
 
+### Configuration
 The Event to be received is configured via the node's configuration dialog:
 
-<img src="images/TelegramBotConfigurationDialogEvent.png" title="Keyboard create response function" width="400" />
+<img src="images/TelegramBotConfigurationDialogEvent.png" title="Event node configuration" width="400" />
 
-**Fig. 8:** Keyboard create response function example
+**Fig. 8:** Event node configuration dialog
+
+With the ***Event*** property the listening event is selcted.
+
+The ***Auto-Answer*** checkbox can be set for Callback_Query. If activated, you do not need to send an explicit answer to the bot on your own.
+
+
+### Outputs
+The output `msg.payload` typically contains the parsed data as follows:
+- ***chatId:*** Unique identifier for this chat
+- ***messageId:*** Telegram message identifier
+- ***type:*** Event type (see configurable events above)
+- ***date:*** Timestamp
+- ***content:*** The actual UTF-8 text of the message
+Other properties may be present depending on the type of message.
+
+The output `msg.originalMessage` contains the raw data object from the underlying library, and contains many useful properties.
+
 
 
 See also the following descriptions for the event handling:
-- callback_query, inline_query, edited_message, channel_post, edited_channel_post: [Getting updates](https://core.telegram.org/bots/api#update)
+- callback_query, edited_message, channel_post, edited_channel_post: [Getting updates](https://core.telegram.org/bots/api#update)
 - edited_message_text, edited_message_caption: [Updating messages](https://core.telegram.org/bots/api#updating-messages)
-
+- inline_query: [Inline mode](https://core.telegram.org/bots/api#inline-mode)
 
 
 ## Reply Node
@@ -382,6 +403,123 @@ The `msg.payload` contains:
 - **content** : The message content.
 
 
+
+# Keyboards
+
+## General
+Keyboards can be used to interact with the user by displaying a flexibly definable keyboard. The user then presses one of the keys to give his selection.   
+Two different keyboard types are available:
+- ***Custom Keyboards*** - These are keyboards which replace the standard keyboard. They are located below the message enter area.
+- ***Inline Keyboards*** - These are keyboards which are inline in the message area.
+
+A remarkable feature of *Inline Keyboards* is the ability to change them on the fly. See examples section for further details.
+
+With keyboards also complex keyboard procedures with several hierarchy levels  can be implemented to direct the user in a step by step button pressing procedure.
+
+
+## Custom keyboards
+Examples for *Custom keyboards* can be seen in the [Keyboards section](https://core.telegram.org/bots#keyboards) of the telegram bot description.
+
+Custom keyboards act with ***message nodes*** and ***telegram receiver nodes*** to handle the keyboard procedure, which is as follows:
+1. The appearance of the keyboard is initiated via a *message* sent to the bot. In the message the keyboard configuration is defined within the `msg.payload.options` property.
+2. The user presses a displayed key.
+3. The key text is sent back via a *message*. This message is received with a *receiver node* and can then be evaluated.
+
+
+The keyboard configuration contains the key description, layout and further options. A description of it can be found in the [ReplyKeyboardMarkup](https://core.telegram.org/bots/api#replykeyboardmarkup) section.   
+See also the custom keyboard example.
+
+A basic flow handling a custom keyboard with its reply shows the following figure.
+
+![Alt text](images/TelegramBotCustomKeyboardBasicFlow.png?raw=true "Custom keyboard basic flow")  
+[**custom keyboard basic flow**](examples/basiccustomkeyboard.json)  
+**Fig. 10:** Custom keyboard basic flow example
+
+<details>
+  <summary>Click to expand code snippet for <em><b>build keyboard</b></em> function</summary>
+
+```javascript
+var opts = {
+  reply_to_message_id: msg.payload.messageId,
+  reply_markup: JSON.stringify({
+    keyboard: [
+      ['A1'],
+      ['A2']],
+      'resize_keyboard' : true,
+      'one_time_keyboard' : true
+  })
+};
+
+
+msg.error = false;
+// Dialogaufbau
+msg.payload.content = 'Selection?';
+msg.payload.options = opts;
+
+
+msg.payload.chatId = 123445;
+msg.payload.messageId = 99;
+msg.payload.sentMessageId = 99;
+msg.payload.type = "message";
+
+return [ msg ];
+```
+</details>
+
+
+
+## Inline keyboards
+Examples for *Inline keyboards* can be seen in the [Inline keyboards section](https://core.telegram.org/bots#inline-keyboards-and-on-the-fly-updating) of the telegram bot description.
+
+Inline keyboards act with ***message nodes*** and ***event nodes*** (event *Callback Query*) to handle the keyboard procedure, which is as follows:
+1. The appearance of the keyboard is initiated via a *message* sent to the bot. In the message the keyboard configuration is defined within the `msg.payload.options` property.
+2. The user presses a displayed key.
+3. The key text is sent back via an *Callback Query* event. This message is received with an *event node* and can then be evaluated.
+
+
+The keyboard configuration contains the key description, layout and further options. A description of it can be found in the [InlineKeyboardMarkup](https://core.telegram.org/bots/api#inlinekeyboardmarkup) section.   
+See also the inline keyboard example.
+
+A basic flow handling an inline keyboard with its reply shows the following figure.
+
+![Alt text](images/TelegramBotInlineKeyboardBasicFlow.png?raw=true "Inline keyboard basic flow")  
+[**inline keyboard basic flow**](examples/inlinecustomkeyboard.json)  
+**Fig. 11:** Custom keyboard basic flow example
+
+<details>
+  <summary>Click to expand code snippet for <em><b>build keyboard</b></em> function</summary>
+
+```javascript
+var opts = {
+//  reply_to_message_id: msg.payload.messageId,
+  reply_markup: JSON.stringify({
+    "inline_keyboard": [[
+                {
+                    "text": "A1",
+                    "callback_data": "1"            
+                },
+                {
+                    "text": "A2",
+                    "callback_data": "2"            
+                }]
+            ]
+  })
+};
+
+msg.payload.content = "Selection?";
+msg.payload.options = opts;
+msg.payload.chatId = 12345;
+msg.payload.messageId = 99;
+msg.payload.sentMessageId = 99;
+msg.payload.type = "message";
+
+return [ msg ];
+```
+</details>
+
+
+
+
 # Examples
 ***
 **Remark**: Example flows are present in the examples subdirectory. In Node-RED they can be imported via the import function and then selecting *Examples* in the vertical tab menue.  
@@ -393,7 +531,7 @@ This example is self-explaining. The received message is returned to the sender.
 
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo flow")  
 [**echo flow**](examples/echo.json)  
-**Fig. 10:** Simple echo flow
+**Fig. 12:** Simple echo flow
 
 
 ## Implementing a /help command
@@ -401,7 +539,7 @@ This flow returns the help message of your bot. It receives the command and crea
 
 ![Alt text](images/TelegramBotHelp.png?raw=true "Help command flow")  
 [**help message flow**](examples/sendhelpmessage.json)  
-**Fig. 11:** Help command flow example
+**Fig. 13:** Help command flow example
 
 
 <details>
@@ -428,19 +566,19 @@ return msg;
 The output looks on a mobile device like the following figure:
 
 ![Alt text](images/TelegramBotHelp3.png?raw=true "Help command in telegram")  
-**Fig. 12:** Help command screenshot
+**Fig. 14:** Help command screenshot
 
 
 **Note**: You can access the sender's data via the `msg.originalMessage` property.
 
 
-## Implementing a keyboard
-Keyboards are very useful for getting additional data from the sender.
+## Implementing a custom keyboard
+Custom keyboards are very useful for getting additional data from the sender.
 When the command is received the first output is triggered and a dialog is opened:
 
 ![Alt text](images/TelegramBotConfirmationMessage.png?raw=true "Keyboard flow")  
 [**keyboard flow**](examples/keyboard.json)  
-**Fig. 13:** Keyboard example
+**Fig. 15:** Keyboard example
 
 The answer is send to the second output triggering the lower flow. Data is passed via global properties here.  
 
@@ -492,12 +630,12 @@ The look&feel at a mobile device could look like the following figure:
 
 <img src="images/TelegramBotConfirmationMessage4.png" title="Keyboard look@feel" width="300" />  
 
-**Fig. 14:** Keyboard example screenshot
+**Fig. 16:** Keyboard example screenshot
 
 The answering options are located below the user text input field.  
 
 Several options for the keyboard layout can be found there in the [Telegram Bot API SDK description](https://irazasyed.github.io/telegram-bot-sdk/usage/keyboards/).   
-The keyboard layout shown in Fig. 13 (given in the *create response* node) is
+The keyboard layout shown in Fig. 16 (given in the *create response* node) is
  ```javascript
 keyboard: [
    ['Yes'],
@@ -516,7 +654,7 @@ This leads to a layout like:
 
 <img src="images/TelegramBotConfirmationMessage5.png" title="Keyboard look@feel" width="300" />  
 
-**Fig. 15:** Keyboard example screenshot with different layout
+**Fig. 17:** Keyboard example screenshot with different layout
 
 
 
@@ -528,7 +666,7 @@ When the user responds to a specified message the telegram reply node can be use
 
 ![Alt text](images/TelegramBotOnReplyMessage.png?raw=true "OnReply Flow")
 [**onreplymessage flow**](examples/onreplymessage.json)  
-**Fig. 16:** On reply example flow
+**Fig. 18:** On reply example flow
 
 The question is sent to the chat. This node triggers the on reply node waiting for the answer.
 
@@ -570,7 +708,7 @@ When the command is received the first output is triggered and a inline keyboard
 
 ![Alt text](images/TelegramBotInlineKeyboard1.png?raw=true "Inline Keyboard Flow")  
 [**inlinekeyboard flow**](examples/inlinekeyboard.json)  
-**Fig. 17:** Inline keyboard example flow
+**Fig. 19:** Inline keyboard example flow
 
 The callback query is received by the event node. It must be answered like shown as follows.
 There you can add your code to trigger the desired bot command. The answer contains the callback query data in `msg.payload.content`.
@@ -621,12 +759,12 @@ The look&feel at a mobile device could look like the following figure:
 
 <img src="images/TelegramBotInlineKeyboard4.png" title="Inline keyboard look@feel" width="300" />  
 
-**Fig. 18:** Inline keyboard example screenshot
+**Fig. 20:** Inline keyboard example screenshot
 
 The answering options are located within the dialog field.  
 
 Several options for the keyboard layout can be found there in the [Telegram Bot API SDK description](https://irazasyed.github.io/telegram-bot-sdk/usage/keyboards/).   
-The keyboard layout shown in Fig. 17 (given in the *inline keyboard message* node) is
+The keyboard layout shown in Fig. 20 (given in the *inline keyboard message* node) is
  ```javascript
 "inline_keyboard": [[
       {"text": "Yes","callback_data": "FOO YES"},
@@ -659,7 +797,7 @@ This leads to a layout like:
 
 <img src="images/TelegramBotInlineKeyboard5.png" title="Inline keyboard look@feel" width="200" />   
 
-**Fig. 19:** Inline Keyboard example screenshot with different layout
+**Fig. 21:** Inline Keyboard example screenshot with different layout
 
 
 ## Edit an inline keyboard
@@ -668,7 +806,7 @@ A sample flow is provided in the examples folder and could look like this:
 
 ![Alt text](images/TelegramBotEditInlineKeyboard1.png?raw=true "Edit Inline Keyboard Flow")  
 [**editinlinekeyboard flow**](examples/editinlinekeyboard.json)  
-**Fig. 20:** Edit an inline keyboard example flow
+**Fig. 22:** Edit an inline keyboard example flow
 
 The message id needs to be saved in the flow or global context (via node *save messageId*). This is just a demo assuming that there is only one single chat.  
 
@@ -821,7 +959,7 @@ return [ msg ];
 The following figure shows the behaviour on a mobile device (e.g. cell phone). The example given above replaces the button description within the node *edit inline keyboard message*:
 
 ![Alt text](images/TelegramBotEditInlineKeyboard7.png?raw=true "Edit Inline Keyboard screenshot")  
-**Fig. 21:** Edit an inline keyboard example screenshot
+**Fig. 23:** Edit an inline keyboard example screenshot
 
 
 
@@ -831,7 +969,7 @@ A sample flow is provided in the examples folder and could look like this:
 
 ![Alt text](images/TelegramBotInlineQuery1.png?raw=true "Answer Inline Query Flow")  
 [**inlinequery flow**](examples/inlinequery.json)  
-**Fig. 22:** inline_query example flow  
+**Fig. 24:** inline_query example flow  
 
 The inline_query must be answered by sending a results array.
 See https://core.telegram.org/bots/api#inlinequeryresult.  
@@ -888,7 +1026,7 @@ Locations can be send to the chat. The bot can receive the longitude and latitud
 
 ![Alt text](images/TelegramBotLocation.png?raw=true "Receive location")  
 [**receivinglocation flow**](examples/receivinglocation.json)  
-**Fig. 23:** Receiving a location example  
+**Fig. 25:** Receiving a location example  
 
 <details>
   <summary>Click to expand code snippet for <em><b>create location message</b></em> function</summary>
@@ -917,7 +1055,7 @@ If you have the chatId, you can send any message without the need of having rece
 
 ![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending to a chat")  
 [**sendmessagetochat flow**](examples/sendmessagetochat.json)  
-**Fig. 24:** Sending messages to a chat example flow  
+**Fig. 26:** Sending messages to a chat example flow  
 
 Sending markdown contents in messages is described below.
 
@@ -971,7 +1109,7 @@ The following types require a special content format to be used. See the underly
 An example flow to send a photo is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")  
-**Fig. 25:** Photo sending example flow
+**Fig. 27:** Photo sending example flow
 
 <details>
   <summary>Click to expand code snippet for <em><b>send picture</b></em> function</summary>
@@ -1003,7 +1141,7 @@ An example flow sending a media group is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendMediaGroup.png?raw=true "Sending a photo")  
 [**sendmediagroup flow**](examples/sendmediagroup.json)  
-**Fig. 26:** Sending media group example flow
+**Fig. 28:** Sending media group example flow
 
 
 <details>
@@ -1048,7 +1186,7 @@ An example flow sending a contact is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendContact.png?raw=true "Send Contact Flow")  
 [**sendcontacttochat flow**](examples/sendcontacttochat.json)  
-**Fig. 27:** Sending contact example flow
+**Fig. 29:** Sending contact example flow
 
 <details>
   <summary>Click to expand code snippet for <em><b>contact</b></em> function</summary>
@@ -1077,7 +1215,7 @@ return msg;
 The display within the telegram app of a sent contact may look like this:
 
 ![Alt text](images/TelegramBotSendContact3.png?raw=true "Send Contact screenshot")  
-**Fig. 28:** Sending contact example screenshot
+**Fig. 30:** Sending contact example screenshot
 
 
 
@@ -1105,7 +1243,7 @@ An example flow sending a chat action is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendChatAction.png?raw=true "Sending a chat action")  
 [**sendchataction flow**](examples/sendchataction.json)  
-**Fig. 29:** Sending chat actions example flow
+**Fig. 31:** Sending chat actions example flow
 
 <details>
   <summary>Click to expand code snippet for <em><b>send chat action</b></em> function</summary>
@@ -1213,7 +1351,7 @@ An example flow sending the live location is shown in the following figure:
 
 ![Alt text](images/TelegramBotLiveLocation.png?raw=true "Live Location Flow")  
 [**livelocation flow**](examples/livelocation.json)  
-**Fig. 30:** Sending live location example flow
+**Fig. 32:** Sending live location example flow
 
 
 
@@ -1274,7 +1412,7 @@ An example function node may contain:
 
 ![Alt text](images/TelegramBotSendMessageToChat.png?raw=true "Sending to a chat")  
 [**sendmessagetochat flow**](examples/sendmessagetochat.json)  
-**Fig. 31:** Sending messages to a chat example flow  
+**Fig. 33:** Sending messages to a chat example flow  
 
 <details>
   <summary>Click to expand code snippet for <em><b>send markdown</b></em> function</summary>
@@ -1311,7 +1449,7 @@ The configuration node contains two properties for applying security to your bot
 
 <img src="images/TelegramBotSecurity.png" title="Applying security" width="500" />
 
-**Fig. 32:** Security configuration in the bot configuration node
+**Fig. 34:** Security configuration in the bot configuration node
 
 **Note**: The *Users* in the security configuration are define via their usernames. These usernames are configured in the telegram app via the settings dialog. Configured usernames typically begin with a '@' in the app. In the *Users* field, no '@' is used.
 
@@ -1326,7 +1464,7 @@ You can reply on that message or log it to a file to see who wanted to access yo
 
 ![Alt text](images/TelegramBotUnauthorizedAccess.png?raw=true "Logging unauthorized access")  
 [**unauthorizedaccess flow**](examples/unauthorizedaccess.json)  
-**Fig. 33:** Detecting unautorized access example flow
+**Fig. 35:** Detecting unautorized access example flow
 
 The message needs to be formatted before the log to file node can be triggered.
 
@@ -1382,19 +1520,19 @@ The following example flow shows the various options:
 <img src="images/TelegramBotDynamicAuthorization3.png" title="Granting access using a function node" width="550" />  
 
 [**dynamic authorization flow**](examples/dynamicauthorization.json)  
-**Fig. 34:** Dynamic granting access example flow
+**Fig. 36:** Dynamic granting access example flow
 
 The configuration dialog for scripting contents looks like this:
 
 <img src="images/TelegramBotDynamicAuthorization.png" title="Dynamic authorization" width="700" />
 
-**Fig. 35:** Dynamic authorization with scripting contents
+**Fig. 37:** Dynamic authorization with scripting contents
 
 The authorization can be modified using a change node:
 
 <img src="images/TelegramBotDynamicAuthorization2.png" title="Granting access using a change node" width="550" />
 
-**Fig. 36:** Granting access using a change node
+**Fig. 38:** Granting access using a change node
 
 As an alternative, the authorization can be modified using a function node:
 
@@ -1440,7 +1578,7 @@ Putting all pieces together you will have a simple bot implementing some useful 
 
 ![Alt text](images/TelegramBotExample.png?raw=true "Bot example")  
 [**simplebot flow**](examples/simplebot.json)  
-**Fig. 37:** Simple bot example flow
+**Fig. 39:** Simple bot example flow
 
 
 # License

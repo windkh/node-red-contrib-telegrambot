@@ -816,6 +816,14 @@ return [ msg ];
 ```
 </details>
 
+<br>
+
+The following figure shows the behaviour on a mobile device (e.g. cell phone). The example given above replaces the button description within the node *edit inline keyboard message*:
+
+![Alt text](images/TelegramBotEditInlineKeyboard7.png?raw=true "Edit Inline Keyboard screenshot")  
+**Fig. 21:** Edit an inline keyboard example screenshot
+
+
 
 ## Implementing an inline_query
 Bots can be called from any chat via inline_query when the bot is set to inline mode in botfather via /setinline (see https://core.telegram.org/bots/api#inline-mode).  
@@ -823,7 +831,7 @@ A sample flow is provided in the examples folder and could look like this:
 
 ![Alt text](images/TelegramBotInlineQuery1.png?raw=true "Answer Inline Query Flow")  
 [**inlinequery flow**](examples/inlinequery.json)  
-**Fig. 21:** inline_query example flow  
+**Fig. 22:** inline_query example flow  
 
 The inline_query must be answered by sending a results array.
 See https://core.telegram.org/bots/api#inlinequeryresult.  
@@ -880,7 +888,7 @@ Locations can be send to the chat. The bot can receive the longitude and latitud
 
 ![Alt text](images/TelegramBotLocation.png?raw=true "Receive location")  
 [**receivinglocation flow**](examples/receivinglocation.json)  
-**Fig. 22:** Receiving a location example  
+**Fig. 23:** Receiving a location example  
 
 <details>
   <summary>Click to expand code snippet for <em><b>create location message</b></em> function</summary>
@@ -909,7 +917,7 @@ If you have the chatId, you can send any message without the need of having rece
 
 ![Alt text](images/TelegramBotSendToChat.png?raw=true "Sending to a chat")  
 [**sendmessagetochat flow**](examples/sendmessagetochat.json)  
-**Fig. 23:** Sending messages to a chat example flow  
+**Fig. 24:** Sending messages to a chat example flow  
 
 Sending markdown contents in messages is described below.
 
@@ -963,7 +971,7 @@ The following types require a special content format to be used. See the underly
 An example flow to send a photo is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendPhoto.png?raw=true "Sending a photo")  
-**Fig. 24:** Photo sending example flow
+**Fig. 25:** Photo sending example flow
 
 <details>
   <summary>Click to expand code snippet for <em><b>send picture</b></em> function</summary>
@@ -995,7 +1003,7 @@ An example flow sending a media group is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendMediaGroup.png?raw=true "Sending a photo")  
 [**sendmediagroup flow**](examples/sendmediagroup.json)  
-**Fig. 25:** Sending media group example flow
+**Fig. 26:** Sending media group example flow
 
 
 <details>
@@ -1040,7 +1048,7 @@ An example flow sending a contact is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendContact.png?raw=true "Send Contact Flow")  
 [**sendcontacttochat flow**](examples/sendcontacttochat.json)  
-**Fig. 26:** Sending contact example flow
+**Fig. 27:** Sending contact example flow
 
 <details>
   <summary>Click to expand code snippet for <em><b>contact</b></em> function</summary>
@@ -1069,7 +1077,7 @@ return msg;
 The display within the telegram app of a sent contact may look like this:
 
 ![Alt text](images/TelegramBotSendContact3.png?raw=true "Send Contact screenshot")  
-**Fig. 27:** Sending contact example screenshot
+**Fig. 28:** Sending contact example screenshot
 
 
 
@@ -1097,7 +1105,7 @@ An example flow sending a chat action is shown in the following figure:
 
 ![Alt text](images/TelegramBotSendChatAction.png?raw=true "Sending a chat action")  
 [**sendchataction flow**](examples/sendchataction.json)  
-**Fig. 28:** Sending chat actions example flow
+**Fig. 29:** Sending chat actions example flow
 
 <details>
   <summary>Click to expand code snippet for <em><b>send chat action</b></em> function</summary>
@@ -1205,7 +1213,7 @@ An example flow sending the live location is shown in the following figure:
 
 ![Alt text](images/TelegramBotLiveLocation.png?raw=true "Live Location Flow")  
 [**livelocation flow**](examples/livelocation.json)  
-**Fig. 29:** Sending live location example flow
+**Fig. 30:** Sending live location example flow
 
 
 
@@ -1266,7 +1274,7 @@ An example function node may contain:
 
 ![Alt text](images/TelegramBotSendMessageToChat.png?raw=true "Sending to a chat")  
 [**sendmessagetochat flow**](examples/sendmessagetochat.json)  
-**Fig. 30:** Sending messages to a chat example flow  
+**Fig. 31:** Sending messages to a chat example flow  
 
 <details>
   <summary>Click to expand code snippet for <em><b>send markdown</b></em> function</summary>
@@ -1303,7 +1311,7 @@ The configuration node contains two properties for applying security to your bot
 
 <img src="images/TelegramBotSecurity.png" title="Applying security" width="500" />
 
-**Fig. 31:** Security configuration in the bot configuration node
+**Fig. 32:** Security configuration in the bot configuration node
 
 **Note**: The *Users* in the security configuration are define via their usernames. These usernames are configured in the telegram app via the settings dialog. Configured usernames typically begin with a '@' in the app. In the *Users* field, no '@' is used.
 
@@ -1318,7 +1326,7 @@ You can reply on that message or log it to a file to see who wanted to access yo
 
 ![Alt text](images/TelegramBotUnauthorizedAccess.png?raw=true "Logging unauthorized access")  
 [**unauthorizedaccess flow**](examples/unauthorizedaccess.json)  
-**Fig. 32:** Detecting unautorized access example flow
+**Fig. 33:** Detecting unautorized access example flow
 
 The message needs to be formatted before the log to file node can be triggered.
 
@@ -1374,19 +1382,19 @@ The following example flow shows the various options:
 <img src="images/TelegramBotDynamicAuthorization3.png" title="Granting access using a function node" width="550" />  
 
 [**dynamic authorization flow**](examples/dynamicauthorization.json)  
-**Fig. 33:** Dynamic granting access example flow
+**Fig. 34:** Dynamic granting access example flow
 
 The configuration dialog for scripting contents looks like this:
 
 <img src="images/TelegramBotDynamicAuthorization.png" title="Dynamic authorization" width="700" />
 
-**Fig. 34:** Dynamic authorization with scripting contents
+**Fig. 35:** Dynamic authorization with scripting contents
 
 The authorization can be modified using a change node:
 
 <img src="images/TelegramBotDynamicAuthorization2.png" title="Granting access using a change node" width="550" />
 
-**Fig. 35:** Granting access using a change node
+**Fig. 36:** Granting access using a change node
 
 As an alternative, the authorization can be modified using a function node:
 
@@ -1432,7 +1440,7 @@ Putting all pieces together you will have a simple bot implementing some useful 
 
 ![Alt text](images/TelegramBotExample.png?raw=true "Bot example")  
 [**simplebot flow**](examples/simplebot.json)  
-**Fig. 36:** Simple bot example flow
+**Fig. 37:** Simple bot example flow
 
 
 # License

@@ -440,7 +440,6 @@ A basic flow handling a custom keyboard with its reply shows the following figur
 
 ```javascript
 var opts = {
-  reply_to_message_id: msg.payload.messageId,
   reply_markup: JSON.stringify({
     keyboard: [
       ['A1'],
@@ -466,6 +465,38 @@ return [ msg ];
 ```
 </details>
 
+<br>
+
+The look&feel at a mobile device could look like the following figure:
+
+<img src="images/TelegramBotConfirmationMessage4.png" title="Keyboard look@feel" width="300" />  
+
+**Fig. 11:** Custom keyboard example screenshot
+
+The answering options are located below the user text input field.  
+
+Several options for the keyboard layout can be found there in the [Telegram Bot API SDK description](https://irazasyed.github.io/telegram-bot-sdk/usage/keyboards/).   
+The keyboard layout shown in Fig. 11 (given in the *create response* node) is
+ ```javascript
+keyboard: [
+   ['Yes'],
+   ['No']],
+```
+
+Another example of a different key layout may be to arrange several keys in one line.
+This may be like:
+```javascript
+keyboard: [
+  ['Yes','No','Maybe'],
+  ['Conditional']],
+```
+
+This leads to a layout like:
+
+<img src="images/TelegramBotConfirmationMessage5.png" title="Keyboard look@feel" width="300" />  
+
+**Fig. 12:** Custom keyboard example screenshot with different layout
+
 
 
 ## Inline keyboards
@@ -483,15 +514,14 @@ See also the inline keyboard example.
 A basic flow handling an inline keyboard with its reply shows the following figure.
 
 ![Alt text](images/TelegramBotInlineKeyboardBasicFlow.png?raw=true "Inline keyboard basic flow")  
-[**inline keyboard basic flow**](examples/inlinecustomkeyboard.json)  
-**Fig. 11:** Custom keyboard basic flow example
+[**inline keyboard basic flow**](examples/basicinlinekeyboard.json)  
+**Fig. 13:** Inline keyboard basic flow example
 
 <details>
   <summary>Click to expand code snippet for <em><b>build keyboard</b></em> function</summary>
 
 ```javascript
 var opts = {
-//  reply_to_message_id: msg.payload.messageId,
   reply_markup: JSON.stringify({
     "inline_keyboard": [[
                 {
@@ -517,6 +547,51 @@ return [ msg ];
 ```
 </details>
 
+<br>
+
+The look&feel at a mobile device could look like the following figure:
+
+<img src="images/TelegramBotInlineKeyboard4.png" title="Inline keyboard look@feel" width="300" />  
+
+**Fig. 14:** Inline keyboard example screenshot
+
+The answering options are located within the dialog field.  
+
+Several options for the keyboard layout can be found there in the [Telegram Bot API SDK description](https://irazasyed.github.io/telegram-bot-sdk/usage/keyboards/).   
+The keyboard layout shown in Fig. 14 (given in the *inline keyboard message* node) is
+ ```javascript
+"inline_keyboard": [[
+      {"text": "Yes","callback_data": "FOO YES"},
+      {"text": "No", "callback_data": "FOO NO"}
+]]
+```
+
+Another example of a different key layout may be to arrange several keys in one line.
+This may be like:
+
+```javascript
+"inline_keyboard": [[
+      {"text": "Yes","callback_data": "FOO YES"},
+      {"text": "No","callback_data": "FOO NO"}],
+    [
+      {"text": "#1","callback_data": "FOO ONE"},
+      {"text": "#2","callback_data": "FOO TWO"},
+      {"text": "#3","callback_data": "FOO THREE"}
+    ],
+    [
+      {"text": "dog","callback_data": "FOO DOG"},
+      {"text": "eel","callback_data": "FOO EEL"},
+      {"text": "cow","callback_data": "FOO COW"},
+      {"text": "cat","callback_data": "FOO CAT"}
+    ]
+]
+```
+
+This leads to a layout like:
+
+<img src="images/TelegramBotInlineKeyboard5.png" title="Inline keyboard look@feel" width="200" />   
+
+**Fig. 15:** Inline Keyboard example screenshot with different layout
 
 
 
@@ -531,7 +606,7 @@ This example is self-explaining. The received message is returned to the sender.
 
 ![Alt text](images/TelegramBotEcho.png?raw=true "Echo flow")  
 [**echo flow**](examples/echo.json)  
-**Fig. 12:** Simple echo flow
+**Fig. 16:** Simple echo flow
 
 
 ## Implementing a /help command
@@ -539,7 +614,7 @@ This flow returns the help message of your bot. It receives the command and crea
 
 ![Alt text](images/TelegramBotHelp.png?raw=true "Help command flow")  
 [**help message flow**](examples/sendhelpmessage.json)  
-**Fig. 13:** Help command flow example
+**Fig. 17:** Help command flow example
 
 
 <details>
@@ -566,7 +641,7 @@ return msg;
 The output looks on a mobile device like the following figure:
 
 ![Alt text](images/TelegramBotHelp3.png?raw=true "Help command in telegram")  
-**Fig. 14:** Help command screenshot
+**Fig. 18:** Help command screenshot
 
 
 **Note**: You can access the sender's data via the `msg.originalMessage` property.
@@ -578,7 +653,7 @@ When the command is received the first output is triggered and a dialog is opene
 
 ![Alt text](images/TelegramBotConfirmationMessage.png?raw=true "Keyboard flow")  
 [**keyboard flow**](examples/keyboard.json)  
-**Fig. 15:** Keyboard example
+**Fig. 19:** Keyboard example
 
 The answer is send to the second output triggering the lower flow. Data is passed via global properties here.  
 
@@ -625,38 +700,6 @@ if (context.global.keyboard.pending) {
 ```
 </details>
 
-<br>
-The look&feel at a mobile device could look like the following figure:
-
-<img src="images/TelegramBotConfirmationMessage4.png" title="Keyboard look@feel" width="300" />  
-
-**Fig. 16:** Keyboard example screenshot
-
-The answering options are located below the user text input field.  
-
-Several options for the keyboard layout can be found there in the [Telegram Bot API SDK description](https://irazasyed.github.io/telegram-bot-sdk/usage/keyboards/).   
-The keyboard layout shown in Fig. 16 (given in the *create response* node) is
- ```javascript
-keyboard: [
-   ['Yes'],
-   ['No']],
-```
-
-Another example of a different key layout may be to arrange several keys in one line.
-This may be like:
-```javascript
-keyboard: [
-  ['Yes','No','Maybe'],
-  ['Conditional']],
-```
-
-This leads to a layout like:
-
-<img src="images/TelegramBotConfirmationMessage5.png" title="Keyboard look@feel" width="300" />  
-
-**Fig. 17:** Keyboard example screenshot with different layout
-
-
 
 
 
@@ -666,7 +709,7 @@ When the user responds to a specified message the telegram reply node can be use
 
 ![Alt text](images/TelegramBotOnReplyMessage.png?raw=true "OnReply Flow")
 [**onreplymessage flow**](examples/onreplymessage.json)  
-**Fig. 18:** On reply example flow
+**Fig. 20:** On reply example flow
 
 The question is sent to the chat. This node triggers the on reply node waiting for the answer.
 
@@ -708,7 +751,7 @@ When the command is received the first output is triggered and a inline keyboard
 
 ![Alt text](images/TelegramBotInlineKeyboard1.png?raw=true "Inline Keyboard Flow")  
 [**inlinekeyboard flow**](examples/inlinekeyboard.json)  
-**Fig. 19:** Inline keyboard example flow
+**Fig. 21:** Inline keyboard example flow
 
 The callback query is received by the event node. It must be answered like shown as follows.
 There you can add your code to trigger the desired bot command. The answer contains the callback query data in `msg.payload.content`.
@@ -754,50 +797,6 @@ return [ msg ];
 ```
 </details>
 
-<br>
-The look&feel at a mobile device could look like the following figure:
-
-<img src="images/TelegramBotInlineKeyboard4.png" title="Inline keyboard look@feel" width="300" />  
-
-**Fig. 20:** Inline keyboard example screenshot
-
-The answering options are located within the dialog field.  
-
-Several options for the keyboard layout can be found there in the [Telegram Bot API SDK description](https://irazasyed.github.io/telegram-bot-sdk/usage/keyboards/).   
-The keyboard layout shown in Fig. 20 (given in the *inline keyboard message* node) is
- ```javascript
-"inline_keyboard": [[
-      {"text": "Yes","callback_data": "FOO YES"},
-      {"text": "No", "callback_data": "FOO NO"}
-]]
-```
-
-Another example of a different key layout may be to arrange several keys in one line.
-This may be like:
-
-```javascript
-"inline_keyboard": [[
-      {"text": "Yes","callback_data": "FOO YES"},
-      {"text": "No","callback_data": "FOO NO"}],
-    [
-      {"text": "#1","callback_data": "FOO ONE"},
-      {"text": "#2","callback_data": "FOO TWO"},
-      {"text": "#3","callback_data": "FOO THREE"}
-    ],
-    [
-      {"text": "dog","callback_data": "FOO DOG"},
-      {"text": "eel","callback_data": "FOO EEL"},
-      {"text": "cow","callback_data": "FOO COW"},
-      {"text": "cat","callback_data": "FOO CAT"}
-    ]
-]
-```
-
-This leads to a layout like:
-
-<img src="images/TelegramBotInlineKeyboard5.png" title="Inline keyboard look@feel" width="200" />   
-
-**Fig. 21:** Inline Keyboard example screenshot with different layout
 
 
 ## Edit an inline keyboard

@@ -1450,7 +1450,7 @@ The configuration node contains two properties for applying security to your bot
 
 **Fig. 34:** Security configuration in the bot configuration node
 
-**Note**: The *Users* in the security configuration are define via their usernames. These usernames are configured in the telegram app via the settings dialog. Configured usernames typically begin with a '@' in the app. In the *Users* field, no '@' is used.
+**Note**: The *Users* in the security configuration are defined via their usernames. These usernames are configured in the telegram app via the settings dialog. Configured usernames typically begin with a '@' in the app. In the *Users* field, no '@' is used.
 
 **Note**: The chatIds are positive in chats where you talk to the bot in an 1:1 manner. A negative chatId indicates a group chat.
 Everybody in this group is allowed to use the bot if you enter the chatId of the group into the lower field of the configuration node.

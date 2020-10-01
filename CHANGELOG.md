@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [8.6.5] - 2020-09-30
+### Keyboard types (custom keyboard and inline keyboard) description added.
+
 ## [8.6.4] - 2020-09-10
 ### Added example flow for creating a poll.
 

@@ -717,6 +717,7 @@ module.exports = function (RED) {
                 regEx = new RegExp(command);
             } catch(ex) {
                 node.status({ fill: "red", shape: "ring", text: ex.message });
+                node.warn(ex.message);
                 return;
             }
         }

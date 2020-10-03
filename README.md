@@ -317,6 +317,7 @@ The node's configuration contains the following special properties:
   Commands usually start with a / like for example /foo. According to the telegram api documentation the command should be issued following the bot name like /foo@YourBot. This is important when you add several different bots to one single group chat.
 - **Strict in group chats** flag: To avoid that the bot handles commands that are not directly sent to it using the long notation (e.g. /foo@YourBot) you can set the "strict" mode in the options of the command node. In this case the bot only accepts the full command notation in group chats.
 - **Has response output** flag: This enables the second output (*Unathorized Output*). Otherwise the node only has one single output.
+- **Use Regex** flag: Allows the usage of regular expressions as command. E.g. ^/toggle_ allows all commands starting with /toggle_.  
 
 ### Outputs
 The node has up to two outputs (selectable via the *Has response output* flag):

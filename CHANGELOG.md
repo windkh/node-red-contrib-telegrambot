@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [8.7.0] - 2020-10-03
+### Added regular expression support to command node. 
+ - see Allow command regex - [#122](https://github.com/windkh/node-red-contrib-telegrambot/issues/122)
+ - added copyright limitation for commercial products
+ 
 ## [8.6.5] - 2020-09-30
 ### Keyboard types (custom keyboard and inline keyboard) description added.
 

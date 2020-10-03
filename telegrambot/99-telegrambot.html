@@ -84,7 +84,6 @@
             };
             useSocks5();
             $("#node-config-input-usesocks").change(useSocks5);
- 
         }
     });
 </script>
@@ -256,7 +255,7 @@
             name: { value: "" },
             bot: { value:"", type: "telegram bot", required: true },
             saveDataDir: { value: "" },
-            filterCommands: { value: false },
+            filterCommands: { value: false }
         },
         inputs: 0,
         outputs: 2,
@@ -267,6 +266,8 @@
         },
         labelStyle: function() {
             return this.name?"node_label_italic":"";
+        },
+        oneditprepare: function() {
         }
     });
 </script>
@@ -324,6 +325,7 @@
             bot: { value: "", type: "telegram bot", required: true },
             strict : { value: false },
             hasresponse: { value: true, required: false },
+            useRegex: { value: false },
           },
         inputs: 0,
         outputs: 2,
@@ -348,7 +350,6 @@
             };
             hasresponse();
             $("#node-input-hasresponse").change(hasresponse);
-
         }
     });
 </script>
@@ -376,6 +377,10 @@
     <div class="form-row">
         <label for="node-input-hasresponse"><i class="fa fa-lock"></i> Has response output</label>
         <input type="checkbox" id="node-input-hasresponse" style="display: inline-block; width: auto; vertical-align: top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-useRegex"><i class="fa fa-asterisk"></i> Use Regex</label>
+        <input type="checkbox" id="node-input-useRegex" style="display: inline-block; width: auto; vertical-align: top;"> allow usage of regular expressions
     </div>
 </script>
 

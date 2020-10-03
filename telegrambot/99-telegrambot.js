@@ -626,7 +626,7 @@ module.exports = function (RED) {
         var node = this;
         this.bot = config.bot;
         node.filterCommands = config.filterCommands || false;
-
+        
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             this.config.register(node);
@@ -709,6 +709,18 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         var node = this;
         var command = config.command;
+        var useRegex = config.useRegex || false;
+
+        var regEx;
+        if(useRegex){
+            try {
+                regEx = new RegExp(command);
+            } catch(ex) {
+                node.status({ fill: "red", shape: "ring", text: ex.message });
+                return;
+            }
+        }
+
         var strict = config.strict;
         var hasresponse = config.hasresponse;
         if(hasresponse === undefined){
@@ -716,7 +728,7 @@ module.exports = function (RED) {
         }
 
         this.bot = config.bot;
-
+        
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             this.config.register(node);
@@ -749,10 +761,15 @@ module.exports = function (RED) {
                             var command2 = command + "@" + node.botname;
                             var isDirectCommand = tokens[0] === command2;
                             var isGroupChat = chatid < 0;
+                            var isRegExMatch = false;
+                            if(useRegex){
+                                isRegExMatch = regEx.test(tokens[0]);
+                            }
 
-                            if (isDirectCommand ||
+                            if ( isDirectCommand ||
                                 (isChatCommand && !isGroupChat) ||
-                                (isChatCommand && isGroupChat && !strict)) {
+                                (isChatCommand && isGroupChat && !strict) ||
+                                (useRegex && isRegExMatch)) {
 
                                 var remainingText;
                                 if (isDirectCommand) {

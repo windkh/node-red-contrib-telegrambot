@@ -908,7 +908,7 @@ module.exports = function (RED) {
                                     callbackQueryId: callbackQueryId,
                                     from: botMsg.from
                                 };
-                                if (node.autoAnswer) {
+                                if (node.autoAnswerCallback) {
                                     node.telegramBot.answerCallbackQuery(callbackQueryId).then(function (result) {
                                         // Nothing to do here
                                         ;
@@ -929,7 +929,7 @@ module.exports = function (RED) {
                                     location: botMsg.location // location is only available when /setinlinegeo is set in botfather
                                 };
                                 // Right now this is not supported as a result is required!
-                                //if (node.autoAnswer) {
+                                //if (node.autoAnswerCallback) {
                                 //    // result = https://core.telegram.org/bots/api#inlinequeryresult
                                 //    node.telegramBot.answerInlineQuery(inlineQueryId, results).then(function (result) {
                                 //        // Nothing to do here

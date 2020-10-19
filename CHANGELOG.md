@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [8.7.1] - 2020-10-03
+### Fixed bug in callback_query auto answer. 
+ - see Callback Query Trigger does not work - [#134](https://github.com/windkh/node-red-contrib-telegrambot/issues/134)
+ 
 ## [8.7.0] - 2020-10-03
 ### Added regular expression support to command node. 
  - see Allow command regex - [#122](https://github.com/windkh/node-red-contrib-telegrambot/issues/122)

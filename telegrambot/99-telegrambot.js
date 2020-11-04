@@ -902,7 +902,7 @@ module.exports = function (RED) {
                                 var callbackQueryId = botMsg.id;
                                 messageDetails = {
                                     chatId: chatid,
-                                    messageId: botMsg.message_id,
+                                    messageId: botMsg.message.message_id,
                                     type: this.event,
                                     content: botMsg.data,
                                     callbackQueryId: callbackQueryId,

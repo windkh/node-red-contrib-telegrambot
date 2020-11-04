@@ -1,7 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# [8.7.1] - 2020-10-03
+# [8.7.2] - 2020-11-04
+### Fixed bug in callback_query message id. 
+ - see Payload.messageId information when using -Event node- with -Callback Query- parameter  - [#136](https://github.com/windkh/node-red-contrib-telegrambot/issues/136)
+ 
+ # [8.7.1] - 2020-10-03
 ### Fixed bug in callback_query auto answer. 
  - see Callback Query Trigger does not work - [#134](https://github.com/windkh/node-red-contrib-telegrambot/issues/134)
  

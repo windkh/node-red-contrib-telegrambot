@@ -1565,7 +1565,47 @@ return msg;
 
 <br>
 
+## Restricting permissions in super groups
+If you make your bot administrator of a super group then you can use it to restrict permissions of users.
+See code below for the different options and the documentation here:
+https://core.telegram.org/bots/api#restrictchatmember
 
+
+<details>
+  <summary>Click to expand code snippet for <em><b>Restrict permission of User in super group</b></em> function</summary>
+
+```javascript
+var userId = <add your id here>;
+var superGroupId = <add your id here>;
+var seconds = 60 
+var options = {
+	// set your permissions here:
+	can_send_messages : false,
+	can_send_media_messages : false,
+	can_send_polls : false,
+	can_send_other_messages : false,
+	can_add_web_page_previews : false,
+	can_change_info : false,
+	can_pin_messages : false,
+	can_invite_users: true,
+	
+    until_date: Math.round(((new Date()).getTime() + seconds * 1000) / 1000),
+}
+
+var payload = {
+    type: "restrictChatMember",
+    chatId: superGroupId,
+    content: userId,
+    options: options
+}
+
+msg.payload = payload;
+
+return msg;
+```
+</details>
+
+<br>
 
 ## Payments
 This feature is under construction. See  

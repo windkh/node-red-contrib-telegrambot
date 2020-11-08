@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [8.8.0] - 2020-11-08
+### Adapted to new bot api V5: unpinAllChatMessages, pinChatMessage,...
+ - fixed  - [#141](https://github.com/windkh/node-red-contrib-telegrambot/issues/141)
+ - fixed  - [#140](https://github.com/windkh/node-red-contrib-telegrambot/issues/140)
+ - fixed  - [#138](https://github.com/windkh/node-red-contrib-telegrambot/issues/138)
+ 
 # [8.7.2] - 2020-11-04
 ### Fixed bug in callback_query message id. 
  - see Payload.messageId information when using -Event node- with -Callback Query- parameter  - [#136](https://github.com/windkh/node-red-contrib-telegrambot/issues/136)

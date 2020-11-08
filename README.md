@@ -1618,17 +1618,25 @@ https://core.telegram.org/bots/api#pinchatmessage
   <summary>Click to expand code snippet for <em><b>Pin a sent message to a group</b></em> function</summary>
 
 ```javascript
+```
 var chatId = <your chatId here>;
 var message = msg.payload.sentMessageId;
+
+var options = {
+    disable_notification: true
+}
 
 var payload = {
     type: "pinChatMessage",
     chatId: chatId,
-    content: message
+    content: message,
+    options : options
 }
 
 msg.payload = payload;
+
 return msg;
+```
 ```
 </details>
 

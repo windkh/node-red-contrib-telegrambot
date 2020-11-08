@@ -1607,6 +1607,34 @@ return msg;
 
 <br>
 
+
+## Pin a sent message to a group
+If your bot sends a message and you want to pin that sent message, then take the message id of the sent message as content and pin it using the following code.
+See documentation here:
+https://core.telegram.org/bots/api#pinchatmessage
+
+
+<details>
+  <summary>Click to expand code snippet for <em><b>Pin a sent message to a group</b></em> function</summary>
+
+```javascript
+var chatId = <your chatId here>;
+var message = msg.payload.sentMessageId;
+
+var payload = {
+    type: "pinChatMessage",
+    chatId: chatId,
+    content: message
+}
+
+msg.payload = payload;
+return msg;
+```
+</details>
+
+<br>
+
+
 ## Payments
 This feature is under construction. See  
 https://core.telegram.org/bots/payments  

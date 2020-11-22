@@ -1,10 +1,12 @@
 # Telegram bot nodes for Node-RED
 [![Platform](https://img.shields.io/badge/platform-Node--RED-red)](https://nodered.org)
 ![License](https://img.shields.io/github/license/windkh/node-red-contrib-telegrambot.svg)
+[![Downloads](https://img.shields.io/npm/dm/node-red-contrib-telegrambot.svg)](https://www.npmjs.com/package/node-red-contrib-telegrambot)
 [![NPM](https://img.shields.io/npm/v/node-red-contrib-telegrambot?logo=npm)](https://www.npmjs.org/package/node-red-contrib-telegrambot)
 [![Known Vulnerabilities](https://snyk.io/test/npm/node-red-contrib-telegrambot/badge.svg)](https://snyk.io/test/npm/node-red-contrib-telegrambot)
 [![Telegram](https://img.shields.io/badge/Join-Telegram%20Chat-blue.svg?logo=telegram)](https://t.me/nodered_telegrambot)
-...
+
+[![NPM](https://nodei.co/npm/node-red-contrib-telegrambot.png?downloads=true)](https://nodei.co/npm/node-red-contrib-telegrambot/)
 
 This package contains a receiver and a sender node which act as a Telegram Bot.
 The only thing required is the `token` that can be retrieved by the `@botfather` [Telegram Bot](https://core.telegram.org/bots).
@@ -13,6 +15,9 @@ The only thing required is the `token` that can be retrieved by the `@botfather`
 If you want to support this free project. Any help is welcome. You can donate by clicking one of the following links:
 <a target="blank" href="https://blockchain.com/btc/payment_request?address=1PBi7BoZ1mBLQx4ePbwh1MVoK2RaoiDsp5"><img src="https://img.shields.io/badge/Donate-Bitcoin-green.svg"/></a>
 <a target="blank" href="https://www.paypal.me/windkh"><img src="https://img.shields.io/badge/Donate-PayPal-blue.svg"/></a>
+
+<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="windka" data-color="#5F7FFF" data-emoji="" data-font="Cookie" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#ffffff" data-coffee-color="#FFDD00" ></script>
+
 
 # Credits
  - dvv (Vladimir Dronnikov): for providing the saveDataDir configuration option
@@ -27,6 +32,13 @@ If you want to support this free project. Any help is welcome. You can donate by
  - JokerQyou: for adding the support for using webhook without certificate
  - bonastreyair: for providing ideas for improving the command node
  - StephanStS: for extension/clearification/beautification of Readme.md and finding minor bugs
+
+
+# Installation
+Run the following command in the root directory of your Node-RED install
+
+    npm install node-red-contrib-telegrambot --save
+
 
 # Dependencies
 The nodes are tested with `Node.js v8.11.1` and `Node-RED v0.20.3`. It also supports `Node-RED v1.0+`.

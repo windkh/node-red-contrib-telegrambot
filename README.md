@@ -321,7 +321,10 @@ See also ["available methods" in the api core description](https://core.telegram
 
 
 ## Command Node
-The command node can be used for triggering a message when a specified command is received: e.g. help. See examples below.
+The command node can be used for triggering a message when a specified command is received: e.g. /help. See examples below.
+Note that commands always start with a / like /help, /start, /stop. if you have several bots in one group chat implementing the
+same command e.g. /help you should send commands directly to a dedicated bot using the full notation /help@YourBot to avoid
+that different bots would get triggered at once. It it recommended to turn on the strict mode in this case.
 
 ![node-appearance-command](images/TelegramBotNodeCommand.png "Command node appearance")  
 **Fig. 6:** Command node appearance

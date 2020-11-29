@@ -1529,7 +1529,19 @@ module.exports = function (RED) {
                             //}
                             break;
 
-
+                        case 'sendChatAction':
+                        case 'action':
+                            if (this.hasContent(msg)) {
+                                node.telegramBot.sendChatAction(chatId, msg.payload.content).then(function (result) {
+                                    msg.payload.content = result;
+                                    nodeSend(msg);
+                                    if (nodeDone) {
+                                        nodeDone();
+                                    }
+                                });
+                            }
+                            break;
+                            
                         // --------------------------------------------------------------------
                         // Some of the following functions require the bot to be administrator of the chat/channel
 
@@ -1567,7 +1579,6 @@ module.exports = function (RED) {
                             break;
 
                         // 2 arguments: chatId , content
-                        case 'action':
                         case 'setChatTitle':
                         case 'setChatDescription':
                         case 'unpinChatMessage':

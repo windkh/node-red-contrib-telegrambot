@@ -1,10 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [8.8.2] - 2020-11-29
+### Fixed bug for action or sendChatAction
+ - fixed  - [#144](https://github.com/windkh/node-red-contrib-telegrambot/issues/144)
+ 
 # [8.8.1] - 2020-11-22
 ### Minor changes in readme and help
  
-
 # [8.8.0] - 2020-11-08
 ### Adapted to new bot api V5: unpinAllChatMessages, pinChatMessage,...
  - fixed  - [#141](https://github.com/windkh/node-red-contrib-telegrambot/issues/141)

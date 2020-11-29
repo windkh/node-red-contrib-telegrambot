@@ -1239,7 +1239,8 @@ The display within the telegram app of a sent contact may look like this:
 
 ## Sending chat actions
 When the bot needs some time for further processing but you want to give a hint to the user what is going on, then you can send a chat action which will appear at the top of the channel of the receiver.
-
+You can either use "sction" or "sendChatAction" as type:
+ 
 ```javascript
 msg.payload.type = 'action';
 msg.payload.content = "typing";

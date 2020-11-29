@@ -158,6 +158,15 @@ Legend:
 For more details of the content types listed above also refer to the [**telegram api description**](https://core.telegram.org/bots/api#available-types) and the [**telegram bot api description**](https://core.telegram.org/bots/api).
 
 
+### Error handling
+There are two ways of how to handle errors in the sender node:
+1. Default: all errors can be handled in a catch-all node. 
+2. Enable second output: errors are sent to this additional output. The msg contains an additional `msg.error` property. 
+
+![Alt text](images/TelegramBotConfigurationNodeDialog.png?raw=true "Error handling in sender node.")  
+[**custom keyboard basic flow**](examples/errorhandling.json)  
+
+
 ## Configuration Node
 The mandatory configuration entries are
 - the *Bot-Name* and

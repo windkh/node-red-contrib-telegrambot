@@ -1183,6 +1183,11 @@ module.exports = function (RED) {
         var node = this;
         this.bot = config.bot;
 
+        var haserroroutput = config.haserroroutput;
+        if(haserroroutput === undefined){
+            haserroroutput = false;
+        }
+
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             this.config.register(node);
@@ -1214,22 +1219,31 @@ module.exports = function (RED) {
             return hasContent;
         }
 
-        this.processError = function (exception, msg, nodeDone) {
+        this.processError = function (exception, msg, nodeSend, nodeDone) {
             var errorMessage = "Caught exception in sender node:\r\n'" + exception + "'\r\nwhen processing message: \r\n" + JSON.stringify(msg);
 
-            if (nodeDone) {
-                nodeDone(errorMessage);
-            } else {
-                node.error(errorMessage, msg);
+            if(haserroroutput){
+                var sendMessage = RED.util.cloneMessage(msg);
+                sendMessage.error = errorMessage;
+                nodeSend([null, sendMessage]);
             }
-
-            throw exception;
+            else{
+                if (nodeDone) {
+                    nodeDone(errorMessage);
+                } else {
+                    node.error(errorMessage, msg);
+                }
+                
+                throw exception;
+            }
         }
 
         this.processResult = function (result, msg, nodeSend, nodeDone) {
-            msg.payload.content = result;
-            msg.payload.sentMessageId = result.message_id;
-            nodeSend(msg);
+            if(result !== undefined){
+                msg.payload.content = result;
+                msg.payload.sentMessageId = result.message_id;
+                nodeSend(msg);    
+            }
             if (nodeDone) {
                 nodeDone();
             }
@@ -1246,7 +1260,7 @@ module.exports = function (RED) {
                     var messageId = msg.payload.messageId;
                     node.telegramBot.forwardMessage(toChatId, chatId, messageId)
                     .catch(function (ex) {
-                        node.processError(ex, msg, nodeDone);
+                        node.processError(ex, msg, nodeSend, nodeDone);
                     })
                     .then(function (result) {
                         node.processResult(result, msg, nodeSend, nodeDone);
@@ -1293,7 +1307,7 @@ module.exports = function (RED) {
                                                 messageToSend,
                                                 msg.payload.options)
                                             .catch(function (ex) {
-                                                node.processError(ex, msg, nodeDone);
+                                                node.processError(ex, msg, nodeSend, nodeDone);
                                             })
                                             .then(function (result) {
                                                 node.processResult(result, msg, nodeSend, nodeDone);
@@ -1313,7 +1327,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1336,7 +1350,7 @@ module.exports = function (RED) {
                                     }
                                     node.telegramBot.sendMediaGroup(chatId, msg.payload.content, msg.payload.options)
                                     .catch(function (ex) {
-                                        node.processError(ex, msg, nodeDone);
+                                        node.processError(ex, msg, nodeSend, nodeDone);
                                     })
                                     .then(function (result) {
                                         node.processResult(result, msg, nodeSend, nodeDone);
@@ -1350,7 +1364,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot.sendAudio(chatId, msg.payload.content, msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     msg.payload.content = result;
@@ -1367,7 +1381,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot.sendDocument(chatId, msg.payload.content, msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1379,7 +1393,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot.sendPoll(chatId, msg.payload.content, msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1391,7 +1405,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot.sendSticker(chatId, msg.payload.content, msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1403,7 +1417,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot.sendAnimation(chatId, msg.payload.content, msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1415,7 +1429,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot.sendVideo(chatId, msg.payload.content, msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1427,7 +1441,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot.sendVideoNote(chatId, msg.payload.content, msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1439,7 +1453,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot.sendVoice(chatId, msg.payload.content, msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1455,7 +1469,7 @@ module.exports = function (RED) {
                                     msg.payload.content.longitude,
                                     msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1473,7 +1487,7 @@ module.exports = function (RED) {
                                     msg.payload.content.address,
                                     msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1495,7 +1509,7 @@ module.exports = function (RED) {
                                     msg.payload.content.first_name,
                                     msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1511,7 +1525,7 @@ module.exports = function (RED) {
                                     msg.payload.content.longitude,
                                     msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1524,7 +1538,7 @@ module.exports = function (RED) {
                             //if (this.hasContent(msg)) {
                             node.telegramBot.stopMessageLiveLocation(msg.payload.options)
                             .catch(function (ex) {
-                                node.processError(ex, msg, nodeDone);
+                                node.processError(ex, msg, nodeSend, nodeDone);
                             })
                             .then(function (result) {
                                 node.processResult(result, msg, nodeSend, nodeDone);
@@ -1544,7 +1558,7 @@ module.exports = function (RED) {
                                 };
                                 node.telegramBot.answerCallbackQuery(callbackQueryId, options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1559,7 +1573,7 @@ module.exports = function (RED) {
                                 var results = msg.payload.results; // this type requires results to be set: see https://core.telegram.org/bots/api#inlinequeryresult
                                 node.telegramBot.answerInlineQuery(inlineQueryId, results)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1572,7 +1586,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot.sendChatAction(chatId, msg.payload.content)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1593,7 +1607,7 @@ module.exports = function (RED) {
                         case 'deleteChatPhoto':
                             node.telegramBot[type](chatId)
                             .catch(function (ex) {
-                                node.processError(ex, msg, nodeDone);
+                                node.processError(ex, msg, nodeSend, nodeDone);
                             })
                             .then(function (result) {
                                 node.processResult(result, msg, nodeSend, nodeDone);
@@ -1607,7 +1621,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot[type](msg.payload.content, msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1623,7 +1637,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot[type](chatId, msg.payload.content)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1644,7 +1658,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot[type](chatId, msg.payload.content, msg.payload.options)
                                 .catch(function (ex) {
-                                    node.processError(ex, msg, nodeDone);
+                                    node.processError(ex, msg, nodeSend, nodeDone);
                                 })
                                 .then(function (result) {
                                     node.processResult(result, msg, nodeSend, nodeDone);
@@ -1668,7 +1682,7 @@ module.exports = function (RED) {
                                     msg.payload.content.prices, 
                                     msg.payload.options)
                                     .catch(function (ex) {
-                                        node.processError(ex, msg, nodeDone);
+                                        node.processError(ex, msg, nodeSend, nodeDone);
                                     })
                                     .then(function (result) {
                                         node.processResult(result, msg, nodeSend, nodeDone);
@@ -1689,7 +1703,7 @@ module.exports = function (RED) {
                                         shippingOptions,
                                         errorMeessage)
                                         .catch(function (ex) {
-                                            node.processError(ex, msg, nodeDone);
+                                            node.processError(ex, msg, nodeSend, nodeDone);
                                         })
                                         .then(function (result) {
                                             node.processResult(result, msg, nodeSend, nodeDone);
@@ -1706,7 +1720,7 @@ module.exports = function (RED) {
                                         preCheckOutQueryId,
                                         ok)
                                         .catch(function (ex) {
-                                            node.processError(ex, msg, nodeDone);
+                                            node.processError(ex, msg, nodeSend, nodeDone);
                                         })
                                         .then(function (result) {
                                             node.processResult(result, msg, nodeSend, nodeDone);

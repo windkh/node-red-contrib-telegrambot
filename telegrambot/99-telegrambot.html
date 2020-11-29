@@ -329,6 +329,7 @@
             strict : { value: false },
             hasresponse: { value: true, required: false },
             useRegex: { value: false },
+            outputs: {value: 2}
           },
         inputs: 0,
         outputs: 2,
@@ -492,7 +493,9 @@
         color: '#3BABDD',
         defaults: {
             name: { value: "" },
-            bot: { value: "", type: "telegram bot", required: true }
+            bot: { value: "", type: "telegram bot", required: true },
+            haserroroutput: { value: false, required: false },
+            outputs: {value: 1}
         },
         inputs: 1,
         outputs: 1,
@@ -504,6 +507,20 @@
         },
         labelStyle: function() {
             return this.name?"node_label_italic":"";
+        },
+        oneditprepare: function() {
+            var that = this;
+            // haserroroutput on / off
+            var haserroroutput = function() {
+                var mode = $("#node-input-haserroroutput").prop('checked');
+                if (mode === true) {
+                    that.outputs = 2;
+                } else {
+                    that.outputs = 1;
+                }
+            };
+            haserroroutput();
+            $("#node-input-haserroroutput").change(haserroroutput);
         }
     });
 </script>
@@ -517,6 +534,13 @@
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
+
+    <hr align="middle"/>
+
+    <div class="form-row">
+        <label for="node-input-haserroroutput"><i class="fa fa-lock"></i> Send errors to second output</label>
+        <input type="checkbox" id="node-input-haserroroutput" style="display: inline-block; width: auto; vertical-align: top;">
+    </div>
 </script>
 
 <script type="text/x-red" data-help-name="telegram sender">
@@ -524,7 +548,11 @@
 
     <h3>Inputs</h3>
     <p>1. Standard Input: receives a message object containing the chatId. It can be directly connected to the receiver node's output 1.</p>
-
+    
+    <h3>Outputs</h3>
+    <p>1. On success the first output contains the result.</p>
+    <p>2. On error the second output contains the message with an error property <code>msg.error</code>. You must enable the second output as it is disabled by default.</p>
+    <p>If the checkbox is not enabled, then all errors can be handled in an optional global "catch all" node.</p> 
     <h3>Details</h3>
     <p>The <code>msg.payload</code> must be an object that contains a complete set of telegram message properties,
      at a minimum these should contain:
@@ -533,7 +561,7 @@
      <li><code>type</code> the type of message contents</li>
      <li><code>chatId</code> the chatId number or an array of chatIds</li>
      </ul>
-    <p>The output message contains an error property if an exception occured.</p>
+
 </script>
 <!-- ------------------------------------------------------------------------------------------ -->
 

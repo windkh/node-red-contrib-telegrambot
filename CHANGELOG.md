@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [8.9.1] - 2020-11-29
+### Added second output to sender node for handling errors.
+ - fixed  - [#142](https://github.com/windkh/node-red-contrib-telegrambot/issues/142)
+ 
 # [8.9.0] - 2020-11-29
 ### Refactored error handling for sender and event node.
  - fixed  - [#142](https://github.com/windkh/node-red-contrib-telegrambot/issues/142)

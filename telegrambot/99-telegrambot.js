@@ -2,11 +2,16 @@
 * Created by Karl-Heinz Wind
 **/
 
-// Temporary fix for 0.30.0 api
+// Avoid that node-telegram-bot-api will enable automatci promise cancellation (fix for 0.30.0 api)
 process.env["NTBA_FIX_319"] = 1;
 
 module.exports = function (RED) {
     "use strict";
+    let Promise = require('bluebird');
+    Promise.config({
+        cancellation: true,
+      });
+    
     var telegramBot = require('node-telegram-bot-api');
     const Agent = require('socks5-https-client/lib/Agent')
 
@@ -909,9 +914,13 @@ module.exports = function (RED) {
                                     from: botMsg.from
                                 };
                                 if (node.autoAnswerCallback) {
-                                    node.telegramBot.answerCallbackQuery(callbackQueryId).then(function (result) {
-                                        // Nothing to do here
-                                        ;
+                                    node.telegramBot.answerCallbackQuery(callbackQueryId)
+                                    .catch(function (ex) {
+                                        node.processError(ex, msg);
+                                    })
+                                    .then(function (result) {
+                                        // nothing to do here
+                                        // node.processResult(result);
                                     });
                                 }
                                 break;
@@ -1138,6 +1147,12 @@ module.exports = function (RED) {
             node.telegramBot.off(this.event);
             node.status({});
         });
+
+        this.processError = function (exception, msg) {
+            var errorMessage = "Caught exception in event node:\r\n'" + exception + "'\r\nwhen processing message: \r\n" + JSON.stringify(msg);
+            node.error(errorMessage, msg);
+            throw exception;
+        }
     }
     RED.nodes.registerType("telegram event", TelegramEventNode);
 
@@ -1199,6 +1214,27 @@ module.exports = function (RED) {
             return hasContent;
         }
 
+        this.processError = function (exception, msg, nodeDone) {
+            var errorMessage = "Caught exception in sender node:\r\n'" + exception + "'\r\nwhen processing message: \r\n" + JSON.stringify(msg);
+
+            if (nodeDone) {
+                nodeDone(errorMessage);
+            } else {
+                node.error(errorMessage, msg);
+            }
+
+            throw exception;
+        }
+
+        this.processResult = function (result, msg, nodeSend, nodeDone) {
+            msg.payload.content = result;
+            msg.payload.sentMessageId = result.message_id;
+            nodeSend(msg);
+            if (nodeDone) {
+                nodeDone();
+            }
+        }
+
         this.processMessage = function (chatId, msg, nodeSend, nodeDone) {
 
             if (msg.payload.forward) {
@@ -1208,13 +1244,12 @@ module.exports = function (RED) {
                 // avoid forwarding the message to the chat where it comes from.
                 if(toChatId != chatId){
                     var messageId = msg.payload.messageId;
-                    node.telegramBot.forwardMessage(toChatId, chatId, messageId).then(function (result) {
-                        msg.payload.content = result;
-                        msg.payload.sentMessageId = result.message_id;
-                        nodeSend(msg);
-                        if (nodeDone) {
-                            nodeDone();
-                        }
+                    node.telegramBot.forwardMessage(toChatId, chatId, messageId)
+                    .catch(function (ex) {
+                        node.processError(ex, msg, nodeDone);
+                    })
+                    .then(function (result) {
+                        node.processResult(result, msg, nodeSend, nodeDone);
                     });
                 }
             }
@@ -1243,13 +1278,9 @@ module.exports = function (RED) {
                                         done = true;
                                     }
 
-                                    node.telegramBot.sendMessage(chatId, messageToSend, msg.payload.options).then(function (result) {
-                                        msg.payload.content = result;
-                                        msg.payload.sentMessageId = result.message_id;
-                                        nodeSend(msg);
-                                        if (nodeDone) {
-                                            nodeDone();
-                                        }
+                                    node.telegramBot.sendMessage(chatId, messageToSend, msg.payload.options)
+                                    .then(function (result) {
+                                        node.processResult(result, msg, nodeSend, nodeDone);
                                     }).catch(function (err) {
                                         // markdown error? try plain mode
                                         if (
@@ -1257,20 +1288,20 @@ module.exports = function (RED) {
                                             msg.payload.options && msg.payload.options.parse_mode === 'Markdown'
                                         ) {
                                             delete msg.payload.options.parse_mode;
-                                            node.telegramBot.sendMessage(chatId, messageToSend, msg.payload.options).then(function (result) {
-                                                msg.payload.content = result;
-                                                msg.payload.sentMessageId = result.message_id;
-                                                nodeSend(msg);
-                                                if (nodeDone) {
-                                                    nodeDone();
-                                                }
+                                            node.telegramBot.sendMessage(
+                                                chatId,
+                                                messageToSend,
+                                                msg.payload.options)
+                                            .catch(function (ex) {
+                                                node.processError(ex, msg, nodeDone);
+                                            })
+                                            .then(function (result) {
+                                                node.processResult(result, msg, nodeSend, nodeDone);
                                             });
                                             return;
                                         }
-                                        if (nodeDone) {
-                                            nodeDone(err);
-                                        } else {
-                                            throw err;
+                                        else{
+                                            node.processError(err, msg);
                                         }
                                     });
 
@@ -1280,13 +1311,12 @@ module.exports = function (RED) {
 
                         case 'photo':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
@@ -1304,13 +1334,12 @@ module.exports = function (RED) {
                                             break;
                                         }
                                     }
-                                    node.telegramBot.sendMediaGroup(chatId, msg.payload.content, msg.payload.options).then(function (result) {
-                                        msg.payload.content = result;
-                                        msg.payload.sentMessageId = result.message_id;
-                                        nodeSend(msg);
-                                        if (nodeDone) {
-                                            nodeDone();
-                                        }
+                                    node.telegramBot.sendMediaGroup(chatId, msg.payload.content, msg.payload.options)
+                                    .catch(function (ex) {
+                                        node.processError(ex, msg, nodeDone);
+                                    })
+                                    .then(function (result) {
+                                        node.processResult(result, msg, nodeSend, nodeDone);
                                     });
                                 } else {
                                     node.warn("msg.payload.content for mediaGroup is not an array of mediaItem");
@@ -1319,7 +1348,11 @@ module.exports = function (RED) {
                             break;
                         case 'audio':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendAudio(chatId, msg.payload.content, msg.payload.options).then(function (result) {
+                                node.telegramBot.sendAudio(chatId, msg.payload.content, msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
                                     msg.payload.content = result;
                                     msg.payload.sentMessageId = result.message_id;
                                     nodeSend(msg);
@@ -1332,117 +1365,118 @@ module.exports = function (RED) {
 
                         case 'document':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendDocument(chatId, msg.payload.content, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.sendDocument(chatId, msg.payload.content, msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
 
                         case 'poll':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendPoll(chatId, msg.payload.content, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.sendPoll(chatId, msg.payload.content, msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
 
                         case 'sticker':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendSticker(chatId, msg.payload.content, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.sendSticker(chatId, msg.payload.content, msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
 
                         case 'animation':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendAnimation(chatId, msg.payload.content, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.sendAnimation(chatId, msg.payload.content, msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
 
                         case 'video':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendVideo(chatId, msg.payload.content, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.sendVideo(chatId, msg.payload.content, msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
 
                         case 'video_note':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendVideoNote(chatId, msg.payload.content, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.sendVideoNote(chatId, msg.payload.content, msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
 
                         case 'voice':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendVoice(chatId, msg.payload.content, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.sendVoice(chatId, msg.payload.content, msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
 
                         case 'location':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendLocation(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.sendLocation(
+                                    chatId,
+                                    msg.payload.content.latitude,
+                                    msg.payload.content.longitude,
+                                    msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
 
                         case 'venue':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendVenue(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.content.title, msg.payload.content.address, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.sendVenue(
+                                    chatId,
+                                    msg.payload.content.latitude,
+                                    msg.payload.content.longitude,
+                                    msg.payload.content.title,
+                                    msg.payload.content.address,
+                                    msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
@@ -1455,13 +1489,16 @@ module.exports = function (RED) {
                                     }
                                     msg.payload.options.last_name = msg.payload.content.last_name;
                                 }
-                                node.telegramBot.sendContact(chatId, msg.payload.content.phone_number, msg.payload.content.first_name, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.sendContact(
+                                    chatId,
+                                    msg.payload.content.phone_number,
+                                    msg.payload.content.first_name,
+                                    msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
@@ -1469,13 +1506,15 @@ module.exports = function (RED) {
 
                         case 'editMessageLiveLocation':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.editMessageLiveLocation(msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.editMessageLiveLocation(
+                                    msg.payload.content.latitude, 
+                                    msg.payload.content.longitude,
+                                    msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
@@ -1483,13 +1522,12 @@ module.exports = function (RED) {
                         case 'stopMessageLiveLocation':
                             // This message requires the options to be set!
                             //if (this.hasContent(msg)) {
-                            node.telegramBot.stopMessageLiveLocation(msg.payload.options).then(function (result) {
-                                msg.payload.content = result;
-                                msg.payload.sentMessageId = result.message_id;
-                                nodeSend(msg);
-                                if (nodeDone) {
-                                    nodeDone();
-                                }
+                            node.telegramBot.stopMessageLiveLocation(msg.payload.options)
+                            .catch(function (ex) {
+                                node.processError(ex, msg, nodeDone);
+                            })
+                            .then(function (result) {
+                                node.processResult(result, msg, nodeSend, nodeDone);
                             });
                             //}
                             break;
@@ -1504,12 +1542,12 @@ module.exports = function (RED) {
                                     text: msg.payload.content,
                                     show_alert: msg.payload.options
                                 };
-                                node.telegramBot.answerCallbackQuery(callbackQueryId, options).then(function (result) {
-                                    msg.payload.content = result; // true if succeeded
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.answerCallbackQuery(callbackQueryId, options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
@@ -1519,12 +1557,12 @@ module.exports = function (RED) {
                             //if (this.hasContent(msg)) {
                                 var inlineQueryId = msg.payload.inlineQueryId;
                                 var results = msg.payload.results; // this type requires results to be set: see https://core.telegram.org/bots/api#inlinequeryresult
-                                node.telegramBot.answerInlineQuery(inlineQueryId, results).then(function (result) {
-                                    msg.payload.content = result;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.answerInlineQuery(inlineQueryId, results)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             //}
                             break;
@@ -1532,12 +1570,12 @@ module.exports = function (RED) {
                         case 'sendChatAction':
                         case 'action':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendChatAction(chatId, msg.payload.content).then(function (result) {
-                                    msg.payload.content = result;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot.sendChatAction(chatId, msg.payload.content)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
@@ -1553,12 +1591,12 @@ module.exports = function (RED) {
                         case 'exportChatInviteLink':
                         case 'unpinAllChatMessages':
                         case 'deleteChatPhoto':
-                            node.telegramBot[type](chatId).then(function (result) {
-                                msg.payload.content = result;
-                                nodeSend(msg);
-                                if (nodeDone) {
-                                    nodeDone();
-                                }
+                            node.telegramBot[type](chatId)
+                            .catch(function (ex) {
+                                node.processError(ex, msg, nodeDone);
+                            })
+                            .then(function (result) {
+                                node.processResult(result, msg, nodeSend, nodeDone);
                             });
                             break;
 
@@ -1567,13 +1605,12 @@ module.exports = function (RED) {
                         case 'editMessageText':
                         case 'editMessageReplyMarkup':
                             if (this.hasContent(msg)) {
-                                node.telegramBot[type](msg.payload.content, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    msg.payload.sentMessageId = result.message_id;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot[type](msg.payload.content, msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
@@ -1584,12 +1621,12 @@ module.exports = function (RED) {
                         case 'unpinChatMessage':
                         case 'deleteMessage':
                             if (this.hasContent(msg)) {
-                                node.telegramBot[type](chatId, msg.payload.content).then(function (result) {
-                                    msg.payload.content = result;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot[type](chatId, msg.payload.content)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
@@ -1605,12 +1642,12 @@ module.exports = function (RED) {
                             // The userId must be passed in msg.payload.content: note that this is is a number not the username.
                             // Right now there is no way for resolving the user_id by username in the official API.
                             if (this.hasContent(msg)) {
-                                node.telegramBot[type](chatId, msg.payload.content, msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                node.telegramBot[type](chatId, msg.payload.content, msg.payload.options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             }
                             break;
@@ -1629,12 +1666,12 @@ module.exports = function (RED) {
                                     msg.payload.content.startParameter, 
                                     msg.payload.content.currency, 
                                     msg.payload.content.prices, 
-                                    msg.payload.options).then(function (result) {
-                                    msg.payload.content = result;
-                                    nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                    msg.payload.options)
+                                    .catch(function (ex) {
+                                        node.processError(ex, msg, nodeDone);
+                                    })
+                                    .then(function (result) {
+                                        node.processResult(result, msg, nodeSend, nodeDone);
                                 });
                             //}
                             break;
@@ -1650,13 +1687,12 @@ module.exports = function (RED) {
                                         shippingQueryId,
                                         ok, 
                                         shippingOptions,
-                                        errorMeessage 
-                                        ).then(function (result) {
-                                        msg.payload.content = result;
-                                        nodeSend(msg);
-                                        if (nodeDone) {
-                                            nodeDone();
-                                        }
+                                        errorMeessage)
+                                        .catch(function (ex) {
+                                            node.processError(ex, msg, nodeDone);
+                                        })
+                                        .then(function (result) {
+                                            node.processResult(result, msg, nodeSend, nodeDone);
                                     });
                                 //}
                                 break;
@@ -1668,13 +1704,12 @@ module.exports = function (RED) {
                                     var ok = msg.payload.ok; // this type requires ok to be set: see https://core.telegram.org/bots/api#answerprecheckoutquery
                                     node.telegramBot.answerPreCheckoutQuery(
                                         preCheckOutQueryId,
-                                        ok
-                                        ).then(function (result) {
-                                        msg.payload.content = result;
-                                        nodeSend(msg);
-                                        if (nodeDone) {
-                                            nodeDone();
-                                        }
+                                        ok)
+                                        .catch(function (ex) {
+                                            node.processError(ex, msg, nodeDone);
+                                        })
+                                        .then(function (result) {
+                                            node.processResult(result, msg, nodeSend, nodeDone);
                                     });
                                 //}
                                 break;

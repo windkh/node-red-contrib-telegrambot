@@ -163,8 +163,9 @@ There are two ways of how to handle errors in the sender node:
 1. Default: all errors can be handled in a catch-all node. 
 2. Enable second output: errors are sent to this additional output. The msg contains an additional `msg.error` property. 
 
-![Alt text](images/TelegramBotConfigurationNodeDialog.png?raw=true "Error handling in sender node.")  
-[**custom keyboard basic flow**](examples/errorhandling.json)  
+![Alt text](images/TelegramBotErrorHandling.png?raw=true "Error handling in sender node.")  
+[**error handling example flow**](examples/errorhandling.json)  
+
 
 
 ## Configuration Node

@@ -44,7 +44,7 @@ Or run the following command in the root directory of your Node-RED installation
 
 
 # Dependencies
-The nodes are tested with `Node.js v8.11.1` and `Node-RED v0.20.3`. It also supports `Node-RED v1.0+`.
+The nodes are tested with `Node.js v14.15.1` and `Node-RED v1.2.5`.
  - [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
  - [socks5-https-client](https://github.com/mattcg/socks5-https-client)
 
@@ -307,7 +307,12 @@ The content format depends on the message type. E.g. if you send a text message 
 
 
 ### Outputs
-Basically the input `msg` object is forwarded unchanged to the node's output. In case of an exception within the node the output `msg` object is extended by `msg.error`.
+Basically the input `msg` object is forwarded unchanged to the node's output. 
+
+The node has up to two outputs (selectable via the *Send errors to second output* flag):
+1. The node's first/upper output (***Standard Output***) is used if the message was successfully transmitted.
+2. The node's second/lower output (***Error Output***) is used when an exception occured. The output `msg` object contains a string property `msg.error`.
+
 
 ### Issueing API commands
 Additionally to sending content, the sender node can be used to issue commands direct to the API. In this case the `msg.payload` elements contain (see examples for further details):
@@ -322,13 +327,13 @@ The `msg.payload.type` needs to be set to one of the following values:
 - editMessageLiveLocation, stopMessageLiveLocation
 - callback_query, answerCallbackQuery
 - inline_query, answerInlineQuery
-- action
+- action, sendChatAction
 - leaveChat, exportChatInviteLink
 - kickChatMember, unbanChatMember, restrictChatMember, promoteChatMember
 - setChatPhoto, deleteChatPhoto, setChatTitle, setChatDescription
-- pinChatMessage, unpinChatMessage
+- pinChatMessage, unpinChatMessage, unpinAllChatMessages
 - getChatAdministrators, getChatMembersCount, getChat, getChatMember
-- sendInvoice, answerShippingQuery, answerPreCheckoutQuery, pre_checkout_query, answerPreCheckoutQuery
+- sendInvoice, answerShippingQuery, answerPreCheckoutQuery, pre_checkout_query, answerPreCheckoutQuery, shipping_query
 
 The content format of the command arguments (required and optional) depends on the api command.  
 See also ["available methods" in the api core description](https://core.telegram.org/bots/api#available-methods).

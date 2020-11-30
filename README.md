@@ -356,6 +356,8 @@ The node's configuration contains the following special properties:
 - **Strict in group chats** flag: To avoid that the bot handles commands that are not directly sent to it using the long notation (e.g. /foo@YourBot) you can set the "strict" mode in the options of the command node. In this case the bot only accepts the full command notation in group chats.
 - **Has response output** flag: This enables the second output (*Unathorized Output*). Otherwise the node only has one single output.
 - **Use Regex** flag: Allows the usage of regular expressions as command. E.g. ^/toggle_ allows all commands starting with /toggle_.  
+- **Remove Command** flag: This optional flag is used when **Use Regex** is checked. If checked it removed the matched command from the beginning of the message. If your command contains addressinformation you should uncheck this flag to be able to parse this information on your own.  
+
 
 ### Outputs
 The node has up to two outputs (selectable via the *Has response output* flag):

@@ -328,7 +328,8 @@
             bot: { value: "", type: "telegram bot", required: true },
             strict : { value: false },
             hasresponse: { value: true, required: false },
-            useRegex: { value: false },
+            useregex: { value: false },
+            removeregexcommand:  { value: false },
             outputs: {value: 2}
           },
         inputs: 0,
@@ -354,6 +355,18 @@
             };
             hasresponse();
             $("#node-input-hasresponse").change(hasresponse);
+
+            // useregex on / off
+            var useRegex = function() {
+                var mode = $("#node-input-useregex").prop('checked');
+                if (mode === false) {
+                    $("#regex").hide();
+                } else {
+                    $("#regex").show();
+                }
+            };
+            useRegex();
+            $("#node-input-useregex").change(useRegex);
         }
     });
 </script>
@@ -379,12 +392,24 @@
     <hr align="middle"/>
 
     <div class="form-row">
-        <label for="node-input-hasresponse"><i class="fa fa-lock"></i> Has response output</label>
+        <label for="node-input-hasresponse"><i class="fa fa-reply"></i> Has response output</label>
         <input type="checkbox" id="node-input-hasresponse" style="display: inline-block; width: auto; vertical-align: top;">
     </div>
     <div class="form-row">
-        <label for="node-input-useRegex"><i class="fa fa-asterisk"></i> Use Regex</label>
-        <input type="checkbox" id="node-input-useRegex" style="display: inline-block; width: auto; vertical-align: top;"> allow usage of regular expressions
+        <label for="node-input-useregex"><i class="fa fa-asterisk"></i> Use Regex</label>
+        <input type="checkbox" id="node-input-useregex" style="display: inline-block; width: auto; vertical-align: top;"> allows usage of regular expressions
+    </div>
+
+    <div class="form-row hidden" id="regex" style="background: #fbfbfb">
+        <label style="width: auto"><i class="fa fa-asterisk"></i> RegEx Options:</label>
+      
+        <div class="form-row" style="background: #fff; margin-left: 20px">   
+            
+            <div class="form-row">
+                <label for="node-input-removeregexcommand"><i class="fa fa-trash"></i> Remove command</label>
+                <input type="checkbox" id="node-input-removeregexcommand" style="display: inline-block; width: auto; vertical-align: top;"> strips the matching command from the message
+            </div>
+        </div>
     </div>
 </script>
 
@@ -538,7 +563,7 @@
     <hr align="middle"/>
 
     <div class="form-row">
-        <label for="node-input-haserroroutput"><i class="fa fa-lock"></i> Send errors to second output</label>
+        <label for="node-input-haserroroutput"><i class="fa fa-bug"></i> Send errors to second output</label>
         <input type="checkbox" id="node-input-haserroroutput" style="display: inline-block; width: auto; vertical-align: top;">
     </div>
 </script>

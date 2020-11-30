@@ -714,7 +714,8 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         var node = this;
         var command = config.command;
-        var useRegex = config.useRegex || false;
+        var useRegex = config.useregex || false;
+        var removeRegexCommand = config.removeregexcommand || false;
 
         var regEx;
         if(useRegex){
@@ -760,18 +761,47 @@ module.exports = function (RED) {
                             var tokens = message.split(" ");
 
                             // check if this is a command at all first
-                            var isCommandMessage = tokens[0].startsWith("/");
-
-                            // then if this command is meant for this node
-                            var isChatCommand = tokens[0] === command;
-                            var command2 = command + "@" + node.botname;
-                            var isDirectCommand = tokens[0] === command2;
+                            var commandToken = tokens[0];
+                            var isCommandMessage = commandToken.startsWith("/");
                             var isGroupChat = chatid < 0;
-                            var isRegExMatch = false;
+                            var toBot = "@" + node.botname;
+
+                            // preprocess regex 
+                            var command1 = command;
+                            var command2;
+
+                            var isRegExMatch;
+                            var isChatCommand = false;
+                            var isDirectCommand = false;
                             if(useRegex){
-                                isRegExMatch = regEx.test(tokens[0]);
+                                var match = regEx.exec(commandToken);
+                                if (match !== null)
+                                {
+                                    isRegExMatch = true;
+                                    isChatCommand = true;
+                                    isDirectCommand = commandToken.endsWith(toBot);
+                                    
+                                    if (removeRegexCommand){
+                                        command1 = match[0];
+                                    }
+
+                                    if(!command1.endsWith(toBot)){
+                                        command2 = command1 + toBot;
+                                    }else{
+                                        command2 = command1;
+                                    }
+                                }
+                            }
+                            else{
+                                isRegExMatch = false;
+                            
+                                isChatCommand = commandToken === command1;
+                                command2 = command1 + toBot;
+                                isDirectCommand = commandToken === command2;        
                             }
 
+                            // then if this command is meant for this node
+                            
                             if ( isDirectCommand ||
                                 (isChatCommand && !isGroupChat) ||
                                 (isChatCommand && isGroupChat && !strict) ||
@@ -782,7 +812,7 @@ module.exports = function (RED) {
                                     remainingText = message.replace(command2, "");
                                 }
                                 else {
-                                    remainingText = message.replace(command, "");
+                                    remainingText = message.replace(command1, "");
                                 }
 
                                 messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: remainingText };
@@ -790,7 +820,7 @@ module.exports = function (RED) {
 
                                 if (hasresponse) {
                                     node.send([msg, null]);
-                                    node.config.setCommandPending(command, username, chatid);
+                                    node.config.setCommandPending(command1, username, chatid);
                                 } else {
                                     node.send(msg);
                                 }
@@ -798,12 +828,12 @@ module.exports = function (RED) {
                                 // Here we check if the received message is probably a resonse to a pending command.
                                 if (!isCommandMessage) {
                                     if (hasresponse) {
-                                        var isPending = node.config.isCommandPending(command, username, chatid);
+                                        var isPending = node.config.isCommandPending(command1, username, chatid);
                                         if (isPending) {
                                             messageDetails = { chatId: botMsg.chat.id, messageId: botMsg.message_id, type: 'message', content: botMsg.text };
                                             msg = { payload: messageDetails, originalMessage: botMsg };
                                             node.send([null, msg]);
-                                            node.config.resetCommandPending(command, username, chatid);
+                                            node.config.resetCommandPending(command1, username, chatid);
                                         }
                                     }
                                 } else {

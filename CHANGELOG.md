@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [8.9.4] - 2020-12-01
+### Added bluebird dependency
+ - fixed  - [#145](https://github.com/windkh/node-red-contrib-telegrambot/issues/145)
+ 
 # [8.9.3] - 2020-11-30
 ### Added flag in command node to remove the first match when using regular expressions.
  - extended  - [#122](https://github.com/windkh/node-red-contrib-telegrambot/issues/122)

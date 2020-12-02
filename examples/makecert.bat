@@ -10,6 +10,6 @@ set OPENSSL="%ProgramFiles%\Git\usr\bin\openssl.exe"
 
 del PRIVATE.key
 del PUBLIC.pem
-%OPENSSL% req -newkey rsa:2048 -sha256 -nodes -keyout PRIVATE.key -x509 -days 365 -out PUBLIC.pem -subj "/C=DE/ST=Bavaria/L=Munich/O=HeinzBot/CN=ihive.spdns.de"
+%OPENSSL% req -newkey rsa:2048 -sha256 -nodes -keyout PRIVATE.key -x509 -days 365 -out PUBLIC.pem -subj "/C=DE/ST=Bavaria/L=Munich/O=FooBot/CN=foo.spdns.de"
 
 pause

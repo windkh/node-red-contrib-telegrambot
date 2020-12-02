@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 # [8.9.4] - 2020-12-01
+### Added help for setting up webhook mode
+ - fixed  - [#146](https://github.com/windkh/node-red-contrib-telegrambot/issues/146)
+ 
+# [8.9.4] - 2020-12-01
 ### Added bluebird dependency
  - fixed  - [#145](https://github.com/windkh/node-red-contrib-telegrambot/issues/145)
  

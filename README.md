@@ -248,7 +248,14 @@ You should also replace *YOUR_NAME_OR_COMPANY_NAME* with some value.
 
 Note that the certificate will expire after 365 days and needs to be renewed (e.g. see [there](https://securitywing.com/how-renew-self-signed-ssl-certificate-openssl-tool-linux/)).
 
+[**example bat file for creating a certificate can be found here**](examples/makecert.bat)  
+
+<img src="images/TelegramBotWebHookConfiguration.png" title="Webhook configuration with self signed sertificate" width="350" />
+
+**Fig. 4:** Example configuration for webhook mode
+
 Webhook can also be used without certificate but then the bot host must be behind a tunnel see https://github.com/windkh/node-red-contrib-telegrambot/pull/93.
+
 
 ### Configuration property flag *Use SOCKS5*
 SOCKS5 proxy support is optional when running behind a SOCKS5 proxy that requires authentication. In this case, additional configuration properties have to be set in the configuration node.

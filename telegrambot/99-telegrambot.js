@@ -97,6 +97,7 @@ module.exports = function (RED) {
 
         // 2. optional when webhook is used.
         this.botHost = n.bothost;
+		this.botPath = n.botpath;
 
         this.publicBotPort = parseInt(n.publicbotport);
         if (isNaN(this.publicBotPort)) {
@@ -177,7 +178,13 @@ module.exports = function (RED) {
                                     // });
                                 });
 
-                                var botUrl = "https://" + this.botHost + ":" + this.publicBotPort + "/" + this.token;
+                                var botUrl = "https://" + this.botHost + ":" + this.publicBotPort + "/";
+									if(this.botPath !== "")
+									{
+										botUrl += this.botPath + "/";
+									}
+								botUrl += this.token;
+								
                                 var setWebHookOptions;
                                 if (!this.sslTerminated && this.useSelfSignedCertificate) {
                                     setWebHookOptions = {

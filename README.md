@@ -31,7 +31,8 @@ If you want to support this free project. Any help is welcome. You can donate by
  - JokerQyou: for adding the support for using webhook without certificate
  - bonastreyair: for providing ideas for improving the command node
  - StephanStS: for extension/clearification/beautification of Readme.md and finding minor bugs
-
+ - Diddlik: for extending webhook options
+ 
 
 # Installation
 [![NPM](https://nodei.co/npm/node-red-contrib-telegrambot.png?downloads=true)](https://nodei.co/npm/node-red-contrib-telegrambot/)

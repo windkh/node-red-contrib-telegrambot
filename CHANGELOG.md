@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [8.9.7] - 2021-02-07
+### Fixed bug in error handling of sender node.
+ 
 # [8.9.6] - 2020-12-03
 ### Extended webhook mode (options and help)
  - merged  - [#147](https://github.com/windkh/node-red-contrib-telegrambot/issues/147)

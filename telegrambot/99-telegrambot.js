@@ -1352,7 +1352,7 @@ module.exports = function (RED) {
                                             return;
                                         }
                                         else{
-                                            node.processError(err, msg);
+                                            node.processError(err, msg, nodeSend, nodeDone);
                                         }
                                     });
 

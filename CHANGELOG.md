@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [8.10.0] - 2021-03-08
+### Added argument fileOptions in sendDocument, sendVoice, sendAudio, sendSticker, sendAnimation, sendVideo, ...
+- fixed - [#161](https://github.com/windkh/node-red-contrib-telegrambot/issues/161)
+ 
 # [8.9.7] - 2021-02-07
 ### Fixed bug in error handling of sender node.
  

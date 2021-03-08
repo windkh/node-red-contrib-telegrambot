@@ -1362,7 +1362,7 @@ module.exports = function (RED) {
 
                         case 'photo':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options)
+                                node.telegramBot.sendPhoto(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })
@@ -1399,7 +1399,7 @@ module.exports = function (RED) {
                             break;
                         case 'audio':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendAudio(chatId, msg.payload.content, msg.payload.options)
+                                node.telegramBot.sendAudio(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })
@@ -1416,7 +1416,7 @@ module.exports = function (RED) {
 
                         case 'document':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendDocument(chatId, msg.payload.content, msg.payload.options)
+                                node.telegramBot.sendDocument(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })
@@ -1440,7 +1440,7 @@ module.exports = function (RED) {
 
                         case 'sticker':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendSticker(chatId, msg.payload.content, msg.payload.options)
+                                node.telegramBot.sendSticker(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })
@@ -1452,7 +1452,7 @@ module.exports = function (RED) {
 
                         case 'animation':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendAnimation(chatId, msg.payload.content, msg.payload.options)
+                                node.telegramBot.sendAnimation(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })
@@ -1464,7 +1464,7 @@ module.exports = function (RED) {
 
                         case 'video':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendVideo(chatId, msg.payload.content, msg.payload.options)
+                                node.telegramBot.sendVideo(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })
@@ -1476,7 +1476,7 @@ module.exports = function (RED) {
 
                         case 'video_note':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendVideoNote(chatId, msg.payload.content, msg.payload.options)
+                                node.telegramBot.sendVideoNote(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })
@@ -1488,7 +1488,7 @@ module.exports = function (RED) {
 
                         case 'voice':
                             if (this.hasContent(msg)) {
-                                node.telegramBot.sendVoice(chatId, msg.payload.content, msg.payload.options)
+                                node.telegramBot.sendVoice(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })

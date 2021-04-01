@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [8.11.0] - 2021-04-01
+### callback_query authorization adapted so that only group chat id needs to be configured.
+- fixed - [#165](https://github.com/windkh/node-red-contrib-telegrambot/issues/165)
+ 
 # [8.10.0] - 2021-03-08
 ### Added argument fileOptions in sendDocument, sendVoice, sendAudio, sendSticker, sendAnimation, sendVideo, ...
 - fixed - [#161](https://github.com/windkh/node-red-contrib-telegrambot/issues/161)

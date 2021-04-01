@@ -432,16 +432,17 @@ module.exports = function (RED) {
             return isAuthorized;
         }
 
-        this.isAuthorized = function (node, chatid, user) {
-            var isAuthorizedUser = self.isAuthorizedUser(node, user);
-            var isAuthorizedChatId = self.isAuthorizedChat(node, chatid);
-
+        this.isAuthorized = function (node, chatid, userid, user) {
             var isAuthorized = false;
-
-            if (isAuthorizedUser || isAuthorizedChatId) {
+            if (self.config.chatids === "" && self.config.usernames === "") {
                 isAuthorized = true;
-            } else {
-                if (self.config.chatids === "" && self.config.usernames === "") {
+            }
+            else {
+                var isAuthorizedUser = self.isAuthorizedUser(node, user);
+                var isAuthorizedChatId = self.isAuthorizedChat(node, chatid);
+                var isAuthorizedUserId = self.isAuthorizedChat(node, userid);
+
+                if (isAuthorizedUser || isAuthorizedChatId || isAuthorizedUserId) {
                     isAuthorized = true;
                 }
             }
@@ -653,12 +654,13 @@ module.exports = function (RED) {
                     node.status({ fill: "green", shape: "ring", text: "connected" });
 
                     var username = botMsg.from.username;
+                    var userid = botMsg.from.id;
                     var chatid = botMsg.chat.id;
                     var messageDetails = getMessageDetails(botMsg);
                     if (messageDetails) {
                         var msg = { payload: messageDetails, originalMessage: botMsg };
 
-                        if (node.config.isAuthorized(node, chatid, username)) {
+                        if (node.config.isAuthorized(node, chatid, userid, username)) {
                             // downloadable "blob" message?
                             if (messageDetails.blob) {
                                 var fileId = msg.payload.content;
@@ -760,7 +762,8 @@ module.exports = function (RED) {
 
                     var username = botMsg.from.username;
                     var chatid = botMsg.chat.id;
-                    if (node.config.isAuthorized(node, chatid, username)) {
+                    var userid = botMsg.from.id;
+                    if (node.config.isAuthorized(node, chatid, userid, username)) {
                         var msg;
                         var messageDetails;
                         if (botMsg.text) {
@@ -923,19 +926,23 @@ module.exports = function (RED) {
 
                     var username;
                     var chatid;
+                    var userid;
                     if (botMsg.chat) { //channel
                         username = botMsg.chat.username;
                         chatid = botMsg.chat.id;
+                        userid = botMsg.from.id;
                     } else if (botMsg.from) {       //private, group, supergroup
+                        chatid = botMsg.message.chat.id;
                         username = botMsg.from.username;
-                        chatid = botMsg.from.id;
+                        userid = botMsg.from.id;
                     } else {
                         // polls can be anonymous, then we do not have a chatId.
                         if(this.event != 'poll'){
                             node.error("username or chatid undefined");
                         }
                     }
-                    if (node.config.isAuthorized(node, chatid, username)) {
+
+                    if (node.config.isAuthorized(node, chatid, userid, username)) {
                         var msg;
                         var messageDetails;
 

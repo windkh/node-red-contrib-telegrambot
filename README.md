@@ -1457,6 +1457,11 @@ set the *parse_mode* options property as follows:
 ```javascript
 msg.payload.options = {parse_mode : "Markdown"};
 ```
+or 
+```javascript
+msg.payload.options = {parse_mode : "MarkdownV2"};
+```
+
 An example function node may contain:
 
 ![Alt text](images/TelegramBotSendMessageToChat.png?raw=true "Sending to a chat")  

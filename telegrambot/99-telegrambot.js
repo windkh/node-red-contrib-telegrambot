@@ -1341,6 +1341,9 @@ module.exports = function (RED) {
                                         node.processResult(result, msg, nodeSend, nodeDone);
                                     }).catch(function (err) {
                                         // markdown error? try plain mode
+                                        
+                                        // TODO: MarkdownV2 issues error "Error: ETELEGRAM: 400 Bad Request: can't parse entities:"
+                                        // adapt the following if so that MarkdownV2 also works.
                                         if (
                                             String(err).includes("can't parse entities in message text:") &&
                                             msg.payload.options && msg.payload.options.parse_mode === 'Markdown'

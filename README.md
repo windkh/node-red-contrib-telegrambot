@@ -7,7 +7,6 @@
 [![Known Vulnerabilities](https://snyk.io/test/npm/node-red-contrib-telegrambot/badge.svg)](https://snyk.io/test/npm/node-red-contrib-telegrambot)
 [![Telegram](https://img.shields.io/badge/Join-Telegram%20Chat-blue.svg?logo=telegram)](https://t.me/nodered_telegrambot)
 [![Package Quality](http://npm.packagequality.com/shield/node-red-contrib-telegrambot.png)](http://packagequality.com/#?package=node-red-contrib-telegrambot)
-[![Dependencies](https://img.shields.io/david/windkh/node-red-contrib-telegrambot.svg)](https://github.com/windkh/node-red-contrib-telegrambot)
 [![Open Issues](https://img.shields.io/github/issues-raw/windkh/node-red-contrib-telegrambot.svg)](https://github.com/windkh/node-red-contrib-telegrambot/issues)
 [![Closed Issues](https://img.shields.io/github/issues-closed-raw/windkh/node-red-contrib-telegrambot.svg)](https://github.com/windkh/node-red-contrib-telegrambot/issues?q=is%3Aissue+is%3Aclosed)
 ...

@@ -2,10 +2,16 @@
 [![Platform](https://img.shields.io/badge/platform-Node--RED-red)](https://nodered.org)
 ![License](https://img.shields.io/github/license/windkh/node-red-contrib-telegrambot.svg)
 [![Downloads](https://img.shields.io/npm/dm/node-red-contrib-telegrambot.svg)](https://www.npmjs.com/package/node-red-contrib-telegrambot)
+[![Total Downloads](https://img.shields.io/npm/dt/node-red-contrib-telegrambot.svg)](https://www.npmjs.com/package/node-red-contrib-telegrambot)
 [![NPM](https://img.shields.io/npm/v/node-red-contrib-telegrambot?logo=npm)](https://www.npmjs.org/package/node-red-contrib-telegrambot)
 [![Known Vulnerabilities](https://snyk.io/test/npm/node-red-contrib-telegrambot/badge.svg)](https://snyk.io/test/npm/node-red-contrib-telegrambot)
 [![Telegram](https://img.shields.io/badge/Join-Telegram%20Chat-blue.svg?logo=telegram)](https://t.me/nodered_telegrambot)
+[![Package Quality](http://npm.packagequality.com/shield/node-red-contrib-telegrambot.png)](http://packagequality.com/#?package=node-red-contrib-telegrambot)
+[![Dependencies](https://img.shields.io/david/windkh/node-red-contrib-telegrambot.svg)](https://github.com/windkh/node-red-contrib-telegrambot)
+[![Open Issues](https://img.shields.io/github/issues-raw/windkh/node-red-contrib-telegrambot.svg)](https://github.com/windkh/node-red-contrib-telegrambot/issues)
+[![Closed Issues](https://img.shields.io/github/issues-closed-raw/windkh/node-red-contrib-telegrambot.svg)](https://github.com/windkh/node-red-contrib-telegrambot/issues?q=is%3Aissue+is%3Aclosed)
 ...
+
 
 This package contains a receiver and a sender node which act as a Telegram Bot.
 The only thing required is the `token` that can be retrieved by the `@botfather` [Telegram Bot](https://core.telegram.org/bots).

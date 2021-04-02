@@ -1,0 +1,13 @@
+plugins:
+  - prettier
+extends:
+  - eslint:recommended
+  - plugin:prettier/recommended
+env:
+  es6: true
+  node: true
+  browser: true
+rules:
+  prettier/prettier:  [error, {endOfLine: auto}]
+  quotes: [warn, single]
+  no-var: error

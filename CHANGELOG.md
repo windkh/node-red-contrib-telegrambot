@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [8.12.0] - 2021-04-02
+### added ESLint, Prettier for maintinaing consistency in code style
+- fixed - [#158](https://github.com/windkh/node-red-contrib-telegrambot/issues/158)
+
 # [8.11.1] - 2021-04-01
 ### Readme updated for MarkdownV2
  

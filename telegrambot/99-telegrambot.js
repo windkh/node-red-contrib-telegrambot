@@ -1538,8 +1538,7 @@ module.exports = function (RED) {
                     .then(function (result) {
                         node.processResult(result, msg, nodeSend, nodeDone);
                     });
-            
-            } else  if (msg.payload.copy) {
+            } else if (msg.payload.copy) {
                 // the message should be copied
                 let toChatId = msg.payload.copy.chatId;
 
@@ -1552,7 +1551,6 @@ module.exports = function (RED) {
                     .then(function (result) {
                         node.processResult(result, msg, nodeSend, nodeDone);
                     });
-            
             } else {
                 if (msg.payload.type) {
                     let type = msg.payload.type;

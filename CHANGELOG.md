@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [9.0.0] - 2021-04-03
+### upgrade underlying library to version 0.52.0 
+- fixed - [#166](https://github.com/windkh/node-red-contrib-telegrambot/issues/166)
+
 # [8.12.0] - 2021-04-02
 ### added ESLint, Prettier for maintinaing consistency in code style
 - fixed - [#158](https://github.com/windkh/node-red-contrib-telegrambot/issues/158)

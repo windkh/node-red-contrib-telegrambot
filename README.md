@@ -1424,6 +1424,7 @@ In the following example the received message will be forwarded to the chat 1:
 msg.payload.forward = { chatId : 1 };
 return msg;
 ```
+You can pass the optional paramaters via mag.payload.forward.options.
 See the example flow [**forward message**](examples/forwardmessage.json) in the examples folder.
 
 The **messageId** to forward is taken from: `msg.payload.messageId`.
@@ -1437,6 +1438,21 @@ msg.payload.messageId = 2;
 msg.payload.forward = { chatId : 3 };
 return msg;
 ```
+
+Remark: You need to have sufficient permissions to be able to do this message forwarding.
+
+
+## Copying messages
+All types of  messages can be copied to another chat (see copyMessage).
+Just send a message to the sender node and add copy property to the payload. The copy object must contain the **chatId** of the chat the message should be sent to.
+In the following example the received message will be copied to the chat 1:
+
+```javascript
+msg.payload.copy = { chatId : 1 };
+return msg;
+```
+You can pass the optional paramaters via mag.payload.copy.options.
+See the example flow [**copy message**](examples/copymessage.json) in the examples folder.
 
 Remark: You need to have sufficient permissions to be able to do this message forwarding.
 

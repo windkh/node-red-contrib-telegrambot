@@ -1529,18 +1529,30 @@ module.exports = function (RED) {
                 // the message should be forwarded
                 let toChatId = msg.payload.forward.chatId;
 
-                // avoid forwarding the message to the chat where it comes from.
-                if (toChatId != chatId) {
-                    let messageId = msg.payload.messageId;
-                    node.telegramBot
-                        .forwardMessage(toChatId, chatId, messageId)
-                        .catch(function (ex) {
-                            node.processError(ex, msg, nodeSend, nodeDone);
-                        })
-                        .then(function (result) {
-                            node.processResult(result, msg, nodeSend, nodeDone);
-                        });
-                }
+                let messageId = msg.payload.messageId;
+                node.telegramBot
+                    .forwardMessage(toChatId, chatId, messageId, msg.payload.forward.options)
+                    .catch(function (ex) {
+                        node.processError(ex, msg, nodeSend, nodeDone);
+                    })
+                    .then(function (result) {
+                        node.processResult(result, msg, nodeSend, nodeDone);
+                    });
+            
+            } else  if (msg.payload.copy) {
+                // the message should be copied
+                let toChatId = msg.payload.copy.chatId;
+
+                let messageId = msg.payload.messageId;
+                node.telegramBot
+                    .copyMessage(toChatId, chatId, messageId, msg.payload.copy.options)
+                    .catch(function (ex) {
+                        node.processError(ex, msg, nodeSend, nodeDone);
+                    })
+                    .then(function (result) {
+                        node.processResult(result, msg, nodeSend, nodeDone);
+                    });
+            
             } else {
                 if (msg.payload.type) {
                     let type = msg.payload.type;

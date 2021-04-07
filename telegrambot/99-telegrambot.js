@@ -429,9 +429,20 @@ module.exports = function (RED) {
             if (self.config.chatids === '' && self.config.usernames === '') {
                 isAuthorized = true;
             } else {
-                let isAuthorizedUser = self.isAuthorizedUser(node, user);
-                let isAuthorizedChatId = self.isAuthorizedChat(node, chatid);
-                let isAuthorizedUserId = self.isAuthorizedChat(node, userid);
+                let isAuthorizedUser = false;
+                if (user !== undefined) {
+                    isAuthorizedUser = self.isAuthorizedUser(node, user);
+                }
+
+                let isAuthorizedChatId = false;
+                if (chatid !== undefined) {
+                    isAuthorizedChatId = self.isAuthorizedChat(node, chatid);
+                }
+
+                let isAuthorizedUserId = false;
+                if (userid !== undefined) {
+                    isAuthorizedUserId = self.isAuthorizedChat(node, userid);
+                }
 
                 if (isAuthorizedUser || isAuthorizedChatId || isAuthorizedUserId) {
                     isAuthorized = true;
@@ -1140,7 +1151,9 @@ module.exports = function (RED) {
                         //channel
                         username = botMsg.chat.username;
                         chatid = botMsg.chat.id;
-                        userid = botMsg.from.id;
+                        if (botMsg.from !== undefined) {
+                            userid = botMsg.from.id;
+                        }
                     } else if (botMsg.from) {
                         //private, group, supergroup
                         chatid = botMsg.message.chat.id;

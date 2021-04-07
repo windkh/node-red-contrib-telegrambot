@@ -1,7 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# [9.1.1] - 2021-04-07
+# [9.2.1] - 2021-04-07
+### exception in event node.
+- fixed - [#168](https://github.com/windkh/node-red-contrib-telegrambot/issues/168)
+
+# [9.1.2] - 2021-04-07
 ### refactored status events
 
 # [9.0.0] - 2021-04-03

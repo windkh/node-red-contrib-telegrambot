@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [9.1.1] - 2021-04-07
+### refactored status events
+
 # [9.0.0] - 2021-04-03
 ### upgrade underlying library to version 0.52.0 
 - fixed - [#166](https://github.com/windkh/node-red-contrib-telegrambot/issues/166)

@@ -1330,7 +1330,7 @@ module.exports = function (RED) {
 
                             case 'shipping_query':
                                 messageDetails = {
-                                    shippingQueryId: botMsg.Id,
+                                    shippingQueryId: botMsg.id,
                                     chatId: chatid,
                                     type: this.event,
                                     from: botMsg.from,

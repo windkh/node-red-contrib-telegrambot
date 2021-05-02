@@ -1156,19 +1156,8 @@ module.exports = function (RED) {
                         }
                     } else if (botMsg.from) {
                         //sender, group, supergroup
-                        switch (botMsg.chat_type) {
-                            case 'sender':
-                                if (botMsg.message !== undefined) {
-                                    chatid = botMsg.message.chat.id;
-                                }
-                                break;
-                            case 'group':
-                            case 'supergroup':
-                            case 'channel':
-                                if (botMsg.message !== undefined) {
-                                    chatid = botMsg.message.chat.id;
-                                }
-                                break;
+                        if (botMsg.message !== undefined) {
+                            chatid = botMsg.message.chat.id;
                         }
                         username = botMsg.from.username;
                         userid = botMsg.from.id;

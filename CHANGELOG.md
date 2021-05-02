@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [9.4.0] - 2021-05-02
+### fix of last changes: chat is is taken from message in events if available.
+- fixed - [#175](https://github.com/windkh/node-red-contrib-telegrambot/issues/175)
+
+# [9.3.1] - 2021-05-02
+### rebuild
+
 # [9.3.0] - 2021-05-02
 ### fixed chat id exceptions in event nodes.
 - fixed - [#175](https://github.com/windkh/node-red-contrib-telegrambot/issues/175)

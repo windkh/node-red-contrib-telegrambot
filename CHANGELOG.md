@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [9.3.0] - 2021-05-02
+### fixed chat id exceptions in event nodes.
+- fixed - [#175](https://github.com/windkh/node-red-contrib-telegrambot/issues/175)
+
 # [9.2.1] - 2021-04-07
 ### exception in event node.
 - fixed - [#168](https://github.com/windkh/node-red-contrib-telegrambot/issues/168)

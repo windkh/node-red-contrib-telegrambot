@@ -1155,15 +1155,30 @@ module.exports = function (RED) {
                             userid = botMsg.from.id;
                         }
                     } else if (botMsg.from) {
-                        //private, group, supergroup
-                        chatid = botMsg.message.chat.id;
+                        //sender, group, supergroup
+                        
+                        switch (botMsg.chat_type) {
+                            case 'sender':
+                                if (botMsg.message !== undefined) {
+                                    chatid = botMsg.message.chat.id;
+                                }
+                                break;
+                            case 'group':
+                            case 'supergroup':
+                            case 'channel':
+                                if (botMsg.message !== undefined) {
+                                    chatid = botMsg.message.chat.id;
+                                }
+                                break;
+                            default:
+                                ;
+                                break;
+                        }
+
                         username = botMsg.from.username;
                         userid = botMsg.from.id;
                     } else {
-                        // polls can be anonymous, then we do not have a chatId.
-                        if (this.event != 'poll') {
-                            node.error('username or chatid undefined');
-                        }
+                        // chatid can be null in case of polls, inline_queries,...
                     }
 
                     if (node.config.isAuthorized(node, chatid, userid, username)) {
@@ -2054,22 +2069,18 @@ module.exports = function (RED) {
             node.status({ fill: 'green', shape: 'ring', text: 'connected' });
 
             if (msg.payload) {
-                if (msg.payload.chatId) {
-                    if (!Array.isArray(msg.payload.chatId)) {
-                        this.processMessage(msg.payload.chatId, msg, nodeSend, nodeDone);
-                    } else {
-                        let chatIds = msg.payload.chatId;
-                        let length = chatIds.length;
-                        for (let i = 0; i < length; i++) {
-                            let chatId = chatIds[i];
-
-                            let clonedMsg = RED.util.cloneMessage(msg);
-                            clonedMsg.payload.chatId = chatId;
-                            this.processMessage(chatId, clonedMsg, nodeSend, nodeDone);
-                        }
-                    }
+                if (!Array.isArray(msg.payload.chatId)) {
+                    this.processMessage(msg.payload.chatId, msg, nodeSend, nodeDone);
                 } else {
-                    node.warn('msg.payload.chatId is empty');
+                    let chatIds = msg.payload.chatId;
+                    let length = chatIds.length;
+                    for (let i = 0; i < length; i++) {
+                        let chatId = chatIds[i];
+
+                        let clonedMsg = RED.util.cloneMessage(msg);
+                        clonedMsg.payload.chatId = chatId;
+                        this.processMessage(chatId, clonedMsg, nodeSend, nodeDone);
+                    }
                 }
             } else {
                 node.warn('msg.payload is empty');

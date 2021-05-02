@@ -1170,7 +1170,6 @@ module.exports = function (RED) {
                                 }
                                 break;
                         }
-
                         username = botMsg.from.username;
                         userid = botMsg.from.id;
                     } else {

@@ -1156,7 +1156,6 @@ module.exports = function (RED) {
                         }
                     } else if (botMsg.from) {
                         //sender, group, supergroup
-                        
                         switch (botMsg.chat_type) {
                             case 'sender':
                                 if (botMsg.message !== undefined) {
@@ -1169,9 +1168,6 @@ module.exports = function (RED) {
                                 if (botMsg.message !== undefined) {
                                     chatid = botMsg.message.chat.id;
                                 }
-                                break;
-                            default:
-                                ;
                                 break;
                         }
 

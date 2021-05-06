@@ -1918,6 +1918,7 @@ module.exports = function (RED) {
                         // 2 arguments: content, options
                         case 'editMessageCaption':
                         case 'editMessageText':
+                        case 'editMessageMedia':
                         case 'editMessageReplyMarkup':
                             if (this.hasContent(msg)) {
                                 node.telegramBot[type](msg.payload.content, msg.payload.options)

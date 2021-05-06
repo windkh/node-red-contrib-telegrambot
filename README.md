@@ -336,7 +336,7 @@ Additionally to sending content, the sender node can be used to issue commands d
 
 
 The `msg.payload.type` needs to be set to one of the following values:
-- editMessageCaption, editMessageText, editMessageReplyMarkup
+- editMessageCaption, editMessageText, editMessageMedia, editMessageReplyMarkup
 - deleteMessage
 - editMessageLiveLocation, stopMessageLiveLocation
 - callback_query, answerCallbackQuery

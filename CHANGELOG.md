@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [9.4.2] - 2021-05-13
+### added workaround for editMessageMedia support as sending local files does not work
+- workaround for - [#178](https://github.com/windkh/node-red-contrib-telegrambot/issues/178)
+- created issue - https://github.com/yagop/node-telegram-bot-api/issues/876
+
 # [9.4.1] - 2021-05-06
 ### added editMessageMedia support
 

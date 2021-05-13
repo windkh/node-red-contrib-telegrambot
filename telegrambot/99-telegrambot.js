@@ -1918,10 +1918,23 @@ module.exports = function (RED) {
                         // 2 arguments: content, options
                         case 'editMessageCaption':
                         case 'editMessageText':
-                        case 'editMessageMedia':
                         case 'editMessageReplyMarkup':
                             if (this.hasContent(msg)) {
                                 node.telegramBot[type](msg.payload.content, msg.payload.options)
+                                    .catch(function (ex) {
+                                        node.processError(ex, msg, nodeSend, nodeDone);
+                                    })
+                                    .then(function (result) {
+                                        node.processResult(result, msg, nodeSend, nodeDone);
+                                    });
+                            }
+                            break;
+                        
+                        // TODO: https://github.com/windkh/node-red-contrib-telegrambot/issues/178
+                        // https://github.com/yagop/node-telegram-bot-api/issues/876
+                        case 'editMessageMedia':
+                            if (this.hasContent(msg)) {
+                                node.editMessageMedia(msg.payload.content, msg.payload.options)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2044,6 +2057,36 @@ module.exports = function (RED) {
             } // forward
         };
 
+        // TODO: https://github.com/windkh/node-red-contrib-telegrambot/issues/178
+        // TODO: https://github.com/yagop/node-telegram-bot-api/issues/876
+        this.editMessageMedia = function (media, form = {}){
+            
+            const opts = {
+                qs: form,
+              };
+              opts.formData = {};
+
+            const payload = Object.assign({}, media);
+            delete payload.media;
+            delete payload.fileOptions;
+
+            try {
+                const attachName = String(0);
+                const [formData, fileId] = node.telegramBot._formatSendData(attachName, media.media, media.fileOptions);
+                if (formData) {
+                    opts.formData[attachName] = formData[attachName];
+                    payload.media = `attach://${attachName}`;
+                  } else {
+                    payload.media = fileId;
+                  }
+            } catch (ex) {
+                return Promise.reject(ex);
+            }
+
+            opts.qs.media = JSON.stringify(payload);
+            return node.telegramBot._request('editMessageMedia', opts);
+        }
+        
         this.on('input', function (msg, nodeSend, nodeDone) {
             nodeSend =
                 nodeSend ||

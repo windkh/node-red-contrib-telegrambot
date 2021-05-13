@@ -1929,7 +1929,7 @@ module.exports = function (RED) {
                                     });
                             }
                             break;
-                        
+
                         // TODO: https://github.com/windkh/node-red-contrib-telegrambot/issues/178
                         // https://github.com/yagop/node-telegram-bot-api/issues/876
                         case 'editMessageMedia':
@@ -2059,12 +2059,11 @@ module.exports = function (RED) {
 
         // TODO: https://github.com/windkh/node-red-contrib-telegrambot/issues/178
         // TODO: https://github.com/yagop/node-telegram-bot-api/issues/876
-        this.editMessageMedia = function (media, form = {}){
-            
+        this.editMessageMedia = function (media, form = {}) {
             const opts = {
                 qs: form,
-              };
-              opts.formData = {};
+            };
+            opts.formData = {};
 
             const payload = Object.assign({}, media);
             delete payload.media;
@@ -2076,17 +2075,17 @@ module.exports = function (RED) {
                 if (formData) {
                     opts.formData[attachName] = formData[attachName];
                     payload.media = `attach://${attachName}`;
-                  } else {
+                } else {
                     payload.media = fileId;
-                  }
+                }
             } catch (ex) {
                 return Promise.reject(ex);
             }
 
             opts.qs.media = JSON.stringify(payload);
             return node.telegramBot._request('editMessageMedia', opts);
-        }
-        
+        };
+
         this.on('input', function (msg, nodeSend, nodeDone) {
             nodeSend =
                 nodeSend ||

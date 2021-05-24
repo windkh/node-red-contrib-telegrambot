@@ -1690,7 +1690,7 @@ module.exports = function (RED) {
                         case 'poll':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .sendPoll(chatId, msg.payload.content, msg.payload.options)
+                                    .sendPoll(chatId, msg.payload.content, msg.payload.options, msg.payload.optional)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })

@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [9.4.3] - 2021-05-24
+### added optional argument for creating polls.
+- fixed - [#181](https://github.com/windkh/node-red-contrib-telegrambot/issues/181)
+
 # [9.4.2] - 2021-05-13
 ### added workaround for editMessageMedia support as sending local files does not work
 - workaround for - [#178](https://github.com/windkh/node-red-contrib-telegrambot/issues/178)

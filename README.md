@@ -1465,6 +1465,8 @@ A poll can be created using the following pattern:
 msg.payload.type = 'poll';
 msg.payload.content = "What do you think?";
 msg.payload.options = ["A", "B", "C" ];
+// you can add optional parameters see https://core.telegram.org/bots/api#sendpoll
+msg.payload.optional = { allows_multiple_answers : true };
 return msg;
 ```
 

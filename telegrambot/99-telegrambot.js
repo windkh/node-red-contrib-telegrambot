@@ -284,16 +284,15 @@ module.exports = function (RED) {
         };
 
         // registers the bot commands at the telegram server.
-        this.setMyCommands = function() {
+        this.setMyCommands = function () {
             let botCommands = self.getBotCommands();
-            if(botCommands && botCommands.length > 0)
-            {
+            if (botCommands && botCommands.length > 0) {
                 let telegramBot = self.getTelegramBot();
                 if (telegramBot) {
                     telegramBot
                         .setMyCommands(botCommands)
                         .then(function (result) {
-                            if(!result){
+                            if (!result) {
                                 self.warn('Failed to call /setMyCommands');
                             }
                         })
@@ -302,16 +301,16 @@ module.exports = function (RED) {
                         });
                 }
             }
-        }
+        };
 
-        this.onStarted = function() {
+        this.onStarted = function () {
             self.setMyCommands();
         };
 
-        RED.events.on("flows:started", this.onStarted)
+        RED.events.on('flows:started', this.onStarted);
 
         this.on('close', function (done) {
-            RED.events.removeListener("flows:started", this.onStarted);
+            RED.events.removeListener('flows:started', this.onStarted);
             self.abortBot('closing', done);
         });
 
@@ -512,26 +511,25 @@ module.exports = function (RED) {
         };
 
         this.registerCommand = function (command, description, registerCommand) {
-
             let commandInfo = {
-                command : command,
-                description : description,
-                registerCommand : registerCommand
+                command: command,
+                description: description,
+                registerCommand: registerCommand,
             };
             self.commands.push(commandInfo);
         };
 
         this.isCommandRegistered = function (command) {
-            return self.commands.some(e => e.command === command);
+            return self.commands.some((e) => e.command === command);
         };
 
-        this.getBotCommands = function() {
+        this.getBotCommands = function () {
             let botCommands = [];
-            self.commands.forEach((commandInfo, i) => {
-                if(commandInfo.registerCommand){
+            self.commands.forEach((commandInfo) => {
+                if (commandInfo.registerCommand) {
                     let botCommand = {
-                        command : commandInfo.command,
-                        description : commandInfo.description
+                        command: commandInfo.command,
+                        description: commandInfo.description,
                     };
                     botCommands.push(botCommand);
                 }

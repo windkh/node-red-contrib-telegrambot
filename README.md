@@ -367,6 +367,9 @@ that different bots would get triggered at once. It it recommended to turn on th
 The node's configuration contains the following special properties:
 - **Command**: The command which shall be implemented.   
   Commands usually start with a / like for example /foo. According to the telegram api documentation the command should be issued following the bot name like /foo@YourBot. This is important when you add several different bots to one single group chat.
+- **Description**: The description is used when the command should be published via /setMyCommands at the telegram server.  /
+  It is optional if the **Register at telegram server** flag is not checked.
+- **Register at telegram server** flag: To automatically register the command and the description at the telegram server.  
 - **Strict in group chats** flag: To avoid that the bot handles commands that are not directly sent to it using the long notation (e.g. /foo@YourBot) you can set the "strict" mode in the options of the command node. In this case the bot only accepts the full command notation in group chats.
 - **Has response output** flag: This enables the second output (*Unathorized Output*). Otherwise the node only has one single output.
 - **Use Regex** flag: Allows the usage of regular expressions as command. E.g. ^/toggle_ allows all commands starting with /toggle_.  

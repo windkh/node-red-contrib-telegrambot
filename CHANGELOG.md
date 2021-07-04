@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [9.5.0] - 2021-07-04
+### commands can be registered automatically at the server (see /secommands or /setMyCommands).
+- new - [#187](https://github.com/windkh/node-red-contrib-telegrambot/issues/187)
+
 # [9.4.3] - 2021-05-24
 ### added optional argument for creating polls.
 - fixed - [#181](https://github.com/windkh/node-red-contrib-telegrambot/issues/181)

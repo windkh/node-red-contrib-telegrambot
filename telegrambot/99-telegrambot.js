@@ -69,7 +69,7 @@ module.exports = function (RED) {
         sandbox.node = this;
 
         this.pendingCommands = {}; // dictionary that contains all pending comands.
-        this.commands = []; // contains all configured command nodes
+        this.commands = []; // contains all configured command infos (command, description)
 
         this.config = n;
 
@@ -283,7 +283,35 @@ module.exports = function (RED) {
             return this.telegramBot;
         };
 
+        // registers the bot commands at the telegram server.
+        this.setMyCommands = function() {
+            let botCommands = self.getBotCommands();
+            if(botCommands && botCommands.length > 0)
+            {
+                let telegramBot = self.getTelegramBot();
+                if (telegramBot) {
+                    telegramBot
+                        .setMyCommands(botCommands)
+                        .then(function (result) {
+                            if(!result){
+                                self.warn('Failed to call /setMyCommands');
+                            }
+                        })
+                        .catch(function (err) {
+                            self.warn('Failed to call /setMyCommands ' + err);
+                        });
+                }
+            }
+        }
+
+        this.onStarted = function() {
+            self.setMyCommands();
+        };
+
+        RED.events.on("flows:started", this.onStarted)
+
         this.on('close', function (done) {
+            RED.events.removeListener("flows:started", this.onStarted);
             self.abortBot('closing', done);
         });
 
@@ -483,8 +511,33 @@ module.exports = function (RED) {
             return isPending;
         };
 
-        this.registerCommand = function (command) {
-            self.commands.push(command);
+        this.registerCommand = function (command, description, registerCommand) {
+
+            let commandInfo = {
+                command : command,
+                description : description,
+                registerCommand : registerCommand
+            };
+            self.commands.push(commandInfo);
+        };
+
+        this.isCommandRegistered = function (command) {
+            return self.commands.some(e => e.command === command);
+        };
+
+        this.getBotCommands = function() {
+            let botCommands = [];
+            self.commands.forEach((commandInfo, i) => {
+                if(commandInfo.registerCommand){
+                    let botCommand = {
+                        command : commandInfo.command,
+                        description : commandInfo.description
+                    };
+                    botCommands.push(botCommand);
+                }
+            });
+
+            return botCommands;
         };
     }
     RED.nodes.registerType('telegram bot', TelegramBotNode, {
@@ -854,7 +907,7 @@ module.exports = function (RED) {
                                     }
                                 });
                                 // vanilla message
-                            } else if (node.filterCommands && node.config.commands.includes(messageDetails.content)) {
+                            } else if (node.filterCommands && node.config.isCommandRegistered(messageDetails.content)) {
                                 // Do nothing
                             } else {
                                 node.send([msg, null]);
@@ -906,6 +959,8 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         let node = this;
         let command = config.command;
+        let description = config.description;
+        let registerCommand = config.registercommand;
         let useRegex = config.useregex || false;
         let removeRegexCommand = config.removeregexcommand || false;
 
@@ -930,7 +985,7 @@ module.exports = function (RED) {
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
-            this.config.registerCommand(command);
+            this.config.registerCommand(command, description, registerCommand);
 
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 

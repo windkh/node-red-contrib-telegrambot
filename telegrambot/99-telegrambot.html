@@ -330,6 +330,8 @@
         defaults: {
             name: { value: "" },
             command: { value: ""},
+            description: { value: ""},
+            registercommand: { value: false, required: false },
             bot: { value: "", type: "telegram bot", required: true },
             strict : { value: false },
             hasresponse: { value: true, required: false },
@@ -383,11 +385,19 @@
     </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-        <input type="text" id="node-input-name" placeholder="Name">
+        <input type="text" id="node-input-name" placeholder="Optional name for node">
     </div>
     <div class="form-row">
         <label for="node-input-command"><i class="fa fa-envelope"></i> Command</label>
-        <input type="text" id="node-input-command" placeholder="Command">
+        <input type="text" id="node-input-command" placeholder="Command e.g. /foo">
+    </div>
+    <div class="form-row">
+        <label for="node-input-description"><i class="fa fa-info"></i> Description</label>
+        <input type="text" id="node-input-description" placeholder="Description">
+    </div>
+    <div class="form-row">
+        <label for="node-input-registercommand"><i class="fa fa-bars"></i> Register at telegram server.</label>
+        <input type="checkbox" id="node-input-registercommand" style="display: inline-block; width: auto; vertical-align: top;">
     </div>
     <div class="form-row">
         <label for="node-input-strict"><i class="fa fa-tag"></i> Strict in group chats</label>

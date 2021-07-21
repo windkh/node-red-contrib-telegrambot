@@ -292,7 +292,7 @@ module.exports = function (RED) {
 
             for (let language in botCommandsByLanguage) {
                 let botCommands = botCommandsByLanguage[language];
-            
+
                 if (botCommands && botCommands.length > 0) {
                     let telegramBot = self.getTelegramBot();
                     if (telegramBot) {
@@ -300,8 +300,7 @@ module.exports = function (RED) {
                             // scope : { type : 'default' }, // TODO: in future we should support scopes.
                         };
 
-                        if (language !== '')
-                        {
+                        if (language !== '') {
                             options.language_code = language;
                         }
 
@@ -309,7 +308,7 @@ module.exports = function (RED) {
                             .setMyCommands(botCommands, options)
                             .then(function (result) {
                                 if (!result) {
-                                    self.warn('Failed to call /setMyCommands for language' + language );
+                                    self.warn('Failed to call /setMyCommands for language' + language);
                                 }
                             })
                             .catch(function (err) {
@@ -533,7 +532,7 @@ module.exports = function (RED) {
                 description: description,
                 registerCommand: registerCommand,
                 language: language,
-                scope: scope
+                scope: scope,
             };
             self.commands.push(commandInfo);
 
@@ -971,14 +970,14 @@ module.exports = function (RED) {
         let node = this;
         let command = config.command;
         let description = config.description;
-        
+
         let registerCommand = config.registercommand;
-        let language = config.language || "";
-        let scope = config.scope || "default";
-        
+        let language = config.language || '';
+        let scope = config.scope || 'default';
+
         let useRegex = config.useregex || false;
         let removeRegexCommand = config.removeregexcommand || false;
-        
+
         let regEx;
         if (useRegex) {
             try {

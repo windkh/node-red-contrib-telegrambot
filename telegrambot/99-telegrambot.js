@@ -69,7 +69,8 @@ module.exports = function (RED) {
         sandbox.node = this;
 
         this.pendingCommands = {}; // dictionary that contains all pending comands.
-        this.commands = []; // contains all configured command infos (command, description)
+        this.commands = []; // contains all configured command infos (command, description).
+        this.commandsByLanguage = {}; // contains all command sorted by language.
 
         this.config = n;
 
@@ -283,22 +284,38 @@ module.exports = function (RED) {
             return this.telegramBot;
         };
 
+        // TODO: implement deleteMyCommands as soon as it is available.
+
         // registers the bot commands at the telegram server.
         this.setMyCommands = function () {
-            let botCommands = self.getBotCommands();
-            if (botCommands && botCommands.length > 0) {
-                let telegramBot = self.getTelegramBot();
-                if (telegramBot) {
-                    telegramBot
-                        .setMyCommands(botCommands)
-                        .then(function (result) {
-                            if (!result) {
-                                self.warn('Failed to call /setMyCommands');
-                            }
-                        })
-                        .catch(function (err) {
-                            self.warn('Failed to call /setMyCommands ' + err);
-                        });
+            let botCommandsByLanguage = self.getBotCommands();
+
+            for (let language in botCommandsByLanguage) {
+                let botCommands = botCommandsByLanguage[language];
+            
+                if (botCommands && botCommands.length > 0) {
+                    let telegramBot = self.getTelegramBot();
+                    if (telegramBot) {
+                        let options = {
+                            // scope : { type : 'default' }, // TODO: in future we should support scopes.
+                        };
+
+                        if (language !== '')
+                        {
+                            options.language_code = language;
+                        }
+
+                        telegramBot
+                            .setMyCommands(botCommands, options)
+                            .then(function (result) {
+                                if (!result) {
+                                    self.warn('Failed to call /setMyCommands for language' + language );
+                                }
+                            })
+                            .catch(function (err) {
+                                self.warn('Failed to call /setMyCommands for language ' + language + ': ' + err);
+                            });
+                    }
                 }
             }
         };
@@ -510,13 +527,20 @@ module.exports = function (RED) {
             return isPending;
         };
 
-        this.registerCommand = function (command, description, registerCommand) {
+        this.registerCommand = function (command, description, language, scope, registerCommand) {
             let commandInfo = {
                 command: command,
                 description: description,
                 registerCommand: registerCommand,
+                language: language,
+                scope: scope
             };
             self.commands.push(commandInfo);
+
+            if (!self.commandsByLanguage[language]) {
+                self.commandsByLanguage[language] = [];
+            }
+            self.commandsByLanguage[language].push(commandInfo);
         };
 
         this.isCommandRegistered = function (command) {
@@ -524,18 +548,7 @@ module.exports = function (RED) {
         };
 
         this.getBotCommands = function () {
-            let botCommands = [];
-            self.commands.forEach((commandInfo) => {
-                if (commandInfo.registerCommand) {
-                    let botCommand = {
-                        command: commandInfo.command,
-                        description: commandInfo.description,
-                    };
-                    botCommands.push(botCommand);
-                }
-            });
-
-            return botCommands;
+            return self.commandsByLanguage;
         };
     }
     RED.nodes.registerType('telegram bot', TelegramBotNode, {
@@ -958,10 +971,14 @@ module.exports = function (RED) {
         let node = this;
         let command = config.command;
         let description = config.description;
+        
         let registerCommand = config.registercommand;
+        let language = config.language || "";
+        let scope = config.scope || "default";
+        
         let useRegex = config.useregex || false;
         let removeRegexCommand = config.removeregexcommand || false;
-
+        
         let regEx;
         if (useRegex) {
             try {
@@ -983,7 +1000,7 @@ module.exports = function (RED) {
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
-            this.config.registerCommand(command, description, registerCommand);
+            this.config.registerCommand(command, description, language, scope, registerCommand);
 
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 

@@ -34,7 +34,7 @@
             certificate: { value: "", required: false },
             useselfsignedcertificate: { value: false, required: false },
             sslterminated: { value: false, required: false },
-            verboselogging: { value: false, required: false }
+            verboselogging: { value: false, required: false },
         },
         credentials: {
             token: { type: "text" }
@@ -222,7 +222,7 @@
         
         <div class="form-tips" style="width: auto"><b>Tip:</b> When verbose logging is turned on additional log messages will be printed to the node-red console.</div>
 
-        <hr align="middle"/>
+        <hr align="middle"/> 
     </div>
 </script>
 
@@ -331,7 +331,11 @@
             name: { value: "" },
             command: { value: ""},
             description: { value: ""},
+            
             registercommand: { value: false, required: false },
+            language: { value: "", required: false }, // iso-639-1
+            scope: { value: "default", required: false },
+
             bot: { value: "", type: "telegram bot", required: true },
             strict : { value: false },
             hasresponse: { value: true, required: false },
@@ -374,6 +378,19 @@
             };
             useRegex();
             $("#node-input-useregex").change(useRegex);
+
+            // registercommand on / off
+            var registercommand = function() {
+                var mode = $("#node-input-registercommand").prop('checked');
+                if (mode === false) {
+                    $("#registration").hide();
+                } else {
+                    $("#registration").show();
+                }
+            };
+            registercommand();
+            $("#node-input-registercommand").change(registercommand);
+
         }
     });
 </script>
@@ -391,20 +408,44 @@
         <label for="node-input-command"><i class="fa fa-envelope"></i> Command</label>
         <input type="text" id="node-input-command" placeholder="Command e.g. /foo">
     </div>
+
+    <hr align="middle"/>
+
     <div class="form-row">
-        <label for="node-input-description"><i class="fa fa-info"></i> Description</label>
-        <input type="text" id="node-input-description" placeholder="Description">
-    </div>
-    <div class="form-row">
-        <label for="node-input-registercommand"><i class="fa fa-bars"></i> Register at telegram server.</label>
+        <label for="node-input-registercommand"><i class="fa fa-bars"></i> Register at telegram server</label>
         <input type="checkbox" id="node-input-registercommand" style="display: inline-block; width: auto; vertical-align: top;">
     </div>
+    
+    <div class="form-row hidden" id="registration" style="background: #fbfbfb">
+        <div class="form-row">
+            <label for="node-input-description"><i class="fa fa-info"></i> Description</label>
+            <input type="text" id="node-input-description" placeholder="Description">
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-language"><i class="fa fa-language"></i> Language</label>
+            <input type="text" id="node-input-language" placeholder="(Optional language (see ISO-639-1). e.g.: de)">
+        </div>
+
+        <!-- TODO: enable this in future
+        <div class="form-row">
+            <label for="node-config-input-scope"><i class="fa fa-object-group"></i> Scope</label>
+            <select id="node-config-input-scope" style="width:70%">
+                <option value="default">Default</option>
+                <option value="all_private_chats">All Private Chats</option>
+                <option value="all_group_chats">All Group Chats</option>
+                <option value="all_chat_administrators">All Chat Administrators</option>
+            </select>
+        </div>
+        -->
+    </div>
+
+    <hr align="middle"/>
+
     <div class="form-row">
         <label for="node-input-strict"><i class="fa fa-tag"></i> Strict in group chats</label>
         <input type="checkbox" id="node-input-strict" style="display: inline-block; width: auto; vertical-align: top;">
     </div>
-
-    <hr align="middle"/>
 
     <div class="form-row">
         <label for="node-input-hasresponse"><i class="fa fa-reply"></i> Has response output</label>
@@ -426,6 +467,9 @@
             </div>
         </div>
     </div>
+
+    <hr align="middle"/>
+
 </script>
 
 <script type="text/x-red" data-help-name="telegram command">

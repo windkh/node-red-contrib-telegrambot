@@ -1954,7 +1954,7 @@ module.exports = function (RED) {
                             //if (this.hasContent(msg)) {
                             // this type requires results to be set: see https://core.telegram.org/bots/api#inlinequeryresult
                             node.telegramBot
-                                .answerInlineQuery(msg.payload.inlineQueryId, msg.payload.results)
+                                .answerInlineQuery(msg.payload.inlineQueryId, msg.payload.results, msg.payload.options || {})
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })

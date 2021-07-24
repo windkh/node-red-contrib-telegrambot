@@ -1,9 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.0.0] - 2021-07-24
+### upgrade to node-telegram-bot-api 0.54.0
+- update - [#190](https://github.com/windkh/node-red-contrib-telegrambot/issues/190)
+
 # [9.6.2] - 2021-07-24
 ### fixed callback_query bug
-- fix - [#192](https://github.com/windkh/node-red-contrib-telegrambot/issues/191)
+- fix - [#191](https://github.com/windkh/node-red-contrib-telegrambot/issues/191)
 
 # [9.6.1] - 2021-07-24
 ### fixed setMyCommands

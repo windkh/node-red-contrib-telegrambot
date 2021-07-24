@@ -1245,18 +1245,23 @@ module.exports = function (RED) {
                     if (node.config.isAuthorized(node, chatid, userid, username)) {
                         let msg;
                         let messageDetails;
+                        let messageId;
+                        if (botMsg.message != undefined) {
+                            messageId = botMsg.message.message_id;
+                        }
 
                         switch (this.event) {
                             case 'callback_query':
                                 messageDetails = {
                                     chatId: chatid,
-                                    messageId: botMsg.message?.message_id,
+                                    messageId: messageId,
                                     inlineMessageId: botMsg.inline_message_id,
                                     type: this.event,
                                     content: botMsg.data,
                                     callbackQueryId: botMsg.id,
                                     from: botMsg.from,
                                 };
+
                                 if (node.autoAnswerCallback) {
                                     node.telegramBot
                                         .answerCallbackQuery(botMsg.id)

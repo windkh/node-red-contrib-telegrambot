@@ -536,6 +536,7 @@ module.exports = function (RED) {
             };
             self.commands.push(commandInfo);
 
+            // if there is no language we can not register it at the server.
             if (language !== undefined) {
                 if (!self.commandsByLanguage[language]) {
                     self.commandsByLanguage[language] = [];
@@ -1249,7 +1250,8 @@ module.exports = function (RED) {
                             case 'callback_query':
                                 messageDetails = {
                                     chatId: chatid,
-                                    messageId: botMsg.message.message_id,
+                                    messageId: botMsg.message?.message_id,
+                                    inlineMessageId: botMsg.inline_message_id,
                                     type: this.event,
                                     content: botMsg.data,
                                     callbackQueryId: botMsg.id,

@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [9.6.2] - 2021-07-24
+### fixed callback_query bug
+- fix - [#192](https://github.com/windkh/node-red-contrib-telegrambot/issues/191)
+
 # [9.6.1] - 2021-07-24
 ### fixed setMyCommands
 - fix - [#192](https://github.com/windkh/node-red-contrib-telegrambot/issues/192)

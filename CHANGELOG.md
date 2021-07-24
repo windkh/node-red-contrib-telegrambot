@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [9.6.1] - 2021-07-24
+### fixed setMyCommands
+- fix - [#192](https://github.com/windkh/node-red-contrib-telegrambot/issues/192)
+
 # [9.6.0] - 2021-07-21
 ### you can choose a language for your command registration now.
 - new - [#189](https://github.com/windkh/node-red-contrib-telegrambot/issues/189)

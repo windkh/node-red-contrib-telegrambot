@@ -536,10 +536,12 @@ module.exports = function (RED) {
             };
             self.commands.push(commandInfo);
 
-            if (!self.commandsByLanguage[language]) {
-                self.commandsByLanguage[language] = [];
+            if (language !== undefined) {
+                if (!self.commandsByLanguage[language]) {
+                    self.commandsByLanguage[language] = [];
+                }
+                self.commandsByLanguage[language].push(commandInfo);
             }
-            self.commandsByLanguage[language].push(commandInfo);
         };
 
         this.isCommandRegistered = function (command) {
@@ -969,9 +971,9 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         let node = this;
         let command = config.command;
-        let description = config.description;
 
         let registerCommand = config.registercommand;
+        let description = config.description || '';
         let language = config.language || '';
         let scope = config.scope || 'default';
 
@@ -999,6 +1001,11 @@ module.exports = function (RED) {
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
+            // If the command should not be registered, then we invalidate the language.
+            if (!registerCommand) {
+                language = undefined;
+            }
+
             this.config.registerCommand(command, description, language, scope, registerCommand);
 
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });

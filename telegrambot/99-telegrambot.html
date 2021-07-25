@@ -54,7 +54,9 @@
                     $("#webhook").hide();
                     $("#polling").show();
                 } else {
-                    // option not supported
+                    // none is send only mode, no data is received
+                    $("#webhook").hide();
+                    $("#polling").hide();
                 }
             };
             updateOptions();
@@ -123,6 +125,7 @@
             <select id="node-config-input-updatemode">
                 <option value="polling">Polling</option>
                 <option value="webhook">Webhook</option>
+                <option value="none">None</option>
             </select>
         </div>
 

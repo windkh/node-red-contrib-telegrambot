@@ -265,6 +265,11 @@ Note that the certificate will expire after 365 days and needs to be renewed (e.
 Webhook can also be used without certificate but then the bot host must be behind a tunnel see https://github.com/windkh/node-red-contrib-telegrambot/pull/93.
 
 
+#### None mode
+The *None* method may be chosen to avoid traffic due to polling or incoming webhook calls.
+You can only send messages using the sender node but you can not receive any data.
+
+
 ### Configuration property flag *Use SOCKS5*
 SOCKS5 proxy support is optional when running behind a SOCKS5 proxy that requires authentication. In this case, additional configuration properties have to be set in the configuration node.
 

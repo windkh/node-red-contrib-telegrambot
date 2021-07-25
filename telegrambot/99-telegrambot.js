@@ -136,6 +136,11 @@ module.exports = function (RED) {
             }
         }
 
+        this.usePolling = false;
+        if (this.updateMode == 'polling') {
+            this.usePolling = true;
+        }
+
         // Activates the bot or returns the already activated bot.
         this.getTelegramBot = function () {
             if (!this.telegramBot) {
@@ -203,7 +208,7 @@ module.exports = function (RED) {
                                         });
                                     }
                                 });
-                            } else {
+                            } else if (this.usePolling) {
                                 let polling = {
                                     autoStart: true,
                                     interval: this.pollInterval,
@@ -268,6 +273,15 @@ module.exports = function (RED) {
                                         }
                                     }
                                 });
+                            } else {
+                                // here we configure send only mode. We do not poll nor use a web hook which means
+                                // that we can not receive messages.
+                                const options = {
+                                    baseApiUrl: this.baseApiUrl,
+                                    request: this.socksRequest,
+                                };
+                                this.telegramBot = new telegramBot(this.token, options);
+                                self.status = 'send only mode';
                             }
 
                             this.telegramBot.on('error', function (error) {
@@ -879,60 +893,68 @@ module.exports = function (RED) {
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
-                node.status({
-                    fill: 'green',
-                    shape: 'ring',
-                    text: 'connected',
-                });
-
-                node.telegramBot.on('message', function (botMsg) {
+                if (node.telegramBot._polling != null || node.telegramBot._webHook != null) {
                     node.status({
                         fill: 'green',
                         shape: 'ring',
                         text: 'connected',
                     });
 
-                    let username = botMsg.from.username;
-                    let userid = botMsg.from.id;
-                    let chatid = botMsg.chat.id;
-                    let messageDetails = getMessageDetails(botMsg);
-                    if (messageDetails) {
-                        let msg = {
-                            payload: messageDetails,
-                            originalMessage: botMsg,
-                        };
+                    node.telegramBot.on('message', function (botMsg) {
+                        node.status({
+                            fill: 'green',
+                            shape: 'ring',
+                            text: 'connected',
+                        });
 
-                        if (node.config.isAuthorized(node, chatid, userid, username)) {
-                            // downloadable "blob" message?
-                            if (messageDetails.blob) {
-                                let fileId = msg.payload.content;
-                                node.telegramBot.getFileLink(fileId).then(function (weblink) {
-                                    msg.payload.weblink = weblink;
+                        let username = botMsg.from.username;
+                        let userid = botMsg.from.id;
+                        let chatid = botMsg.chat.id;
+                        let messageDetails = getMessageDetails(botMsg);
+                        if (messageDetails) {
+                            let msg = {
+                                payload: messageDetails,
+                                originalMessage: botMsg,
+                            };
 
-                                    // download and provide with path
-                                    if (config.saveDataDir) {
-                                        node.telegramBot.downloadFile(fileId, config.saveDataDir).then(function (path) {
-                                            msg.payload.path = path;
+                            if (node.config.isAuthorized(node, chatid, userid, username)) {
+                                // downloadable "blob" message?
+                                if (messageDetails.blob) {
+                                    let fileId = msg.payload.content;
+                                    node.telegramBot.getFileLink(fileId).then(function (weblink) {
+                                        msg.payload.weblink = weblink;
+
+                                        // download and provide with path
+                                        if (config.saveDataDir) {
+                                            node.telegramBot.downloadFile(fileId, config.saveDataDir).then(function (path) {
+                                                msg.payload.path = path;
+                                                node.send([msg, null]);
+                                            });
+                                        } else {
                                             node.send([msg, null]);
-                                        });
-                                    } else {
-                                        node.send([msg, null]);
-                                    }
-                                });
-                                // vanilla message
-                            } else if (node.filterCommands && node.config.isCommandRegistered(messageDetails.content)) {
-                                // Do nothing
+                                        }
+                                    });
+                                    // vanilla message
+                                } else if (node.filterCommands && node.config.isCommandRegistered(messageDetails.content)) {
+                                    // Do nothing
+                                } else {
+                                    node.send([msg, null]);
+                                }
                             } else {
-                                node.send([msg, null]);
+                                if (node.config.verbose) {
+                                    node.warn('Unauthorized incoming call from ' + username);
+                                }
+                                node.send([null, msg]);
                             }
-                        } else {
-                            if (node.config.verbose) {
-                                node.warn('Unauthorized incoming call from ' + username);
-                            }
-                            node.send([null, msg]);
                         }
-                    }
-                });
+                    });
+                } else {
+                    node.status({
+                        fill: 'grey',
+                        shape: 'ring',
+                        text: 'send only mode',
+                    });
+                }
             } else {
                 node.warn('bot not initialized');
                 node.status({
@@ -1018,128 +1040,141 @@ module.exports = function (RED) {
             node.telegramBot = this.config.getTelegramBot();
             node.botname = this.config.botname;
             if (node.telegramBot) {
-                node.status({
-                    fill: 'green',
-                    shape: 'ring',
-                    text: 'connected',
-                });
-
-                node.telegramBot.on('message', function (botMsg) {
+                if (node.telegramBot._polling != null || node.telegramBot._webHook != null) {
                     node.status({
                         fill: 'green',
                         shape: 'ring',
                         text: 'connected',
                     });
 
-                    let username = botMsg.from.username;
-                    let chatid = botMsg.chat.id;
-                    let userid = botMsg.from.id;
-                    if (node.config.isAuthorized(node, chatid, userid, username)) {
-                        let msg;
-                        let messageDetails;
-                        if (botMsg.text) {
-                            let message = botMsg.text;
-                            let tokens = message.split(' ');
+                    node.telegramBot.on('message', function (botMsg) {
+                        node.status({
+                            fill: 'green',
+                            shape: 'ring',
+                            text: 'connected',
+                        });
 
-                            // check if this is a command at all first
-                            let commandToken = tokens[0];
-                            let isCommandMessage = commandToken.startsWith('/');
-                            let isGroupChat = chatid < 0;
-                            let toBot = '@' + node.botname;
+                        let username = botMsg.from.username;
+                        let chatid = botMsg.chat.id;
+                        let userid = botMsg.from.id;
+                        if (node.config.isAuthorized(node, chatid, userid, username)) {
+                            let msg;
+                            let messageDetails;
+                            if (botMsg.text) {
+                                let message = botMsg.text;
+                                let tokens = message.split(' ');
 
-                            // preprocess regex
-                            let command1 = command;
-                            let command2;
+                                // check if this is a command at all first
+                                let commandToken = tokens[0];
+                                let isCommandMessage = commandToken.startsWith('/');
+                                let isGroupChat = chatid < 0;
+                                let toBot = '@' + node.botname;
 
-                            let isRegExMatch;
-                            let isChatCommand = false;
-                            let isDirectCommand = false;
-                            if (useRegex) {
-                                let match = regEx.exec(commandToken);
-                                if (match !== null) {
-                                    isRegExMatch = true;
-                                    isChatCommand = true;
-                                    isDirectCommand = commandToken.endsWith(toBot);
+                                // preprocess regex
+                                let command1 = command;
+                                let command2;
 
-                                    if (removeRegexCommand) {
-                                        command1 = match[0];
-                                    }
+                                let isRegExMatch;
+                                let isChatCommand = false;
+                                let isDirectCommand = false;
+                                if (useRegex) {
+                                    let match = regEx.exec(commandToken);
+                                    if (match !== null) {
+                                        isRegExMatch = true;
+                                        isChatCommand = true;
+                                        isDirectCommand = commandToken.endsWith(toBot);
 
-                                    if (!command1.endsWith(toBot)) {
-                                        command2 = command1 + toBot;
-                                    } else {
-                                        command2 = command1;
-                                    }
-                                }
-                            } else {
-                                isRegExMatch = false;
+                                        if (removeRegexCommand) {
+                                            command1 = match[0];
+                                        }
 
-                                isChatCommand = commandToken === command1;
-                                command2 = command1 + toBot;
-                                isDirectCommand = commandToken === command2;
-                            }
-
-                            // then if this command is meant for this node
-
-                            if (isDirectCommand || (isChatCommand && !isGroupChat) || (isChatCommand && isGroupChat && !strict) || (useRegex && isRegExMatch)) {
-                                let remainingText;
-                                if (isDirectCommand) {
-                                    remainingText = message.replace(command2, '');
-                                } else {
-                                    remainingText = message.replace(command1, '');
-                                }
-
-                                messageDetails = {
-                                    chatId: botMsg.chat.id,
-                                    messageId: botMsg.message_id,
-                                    type: 'message',
-                                    content: remainingText,
-                                };
-                                msg = {
-                                    payload: messageDetails,
-                                    originalMessage: botMsg,
-                                };
-
-                                if (hasresponse) {
-                                    node.send([msg, null]);
-                                    node.config.setCommandPending(command1, username, chatid);
-                                } else {
-                                    node.send(msg);
-                                }
-                            } else {
-                                // Here we check if the received message is probably a resonse to a pending command.
-                                if (!isCommandMessage) {
-                                    if (hasresponse) {
-                                        let isPending = node.config.isCommandPending(command1, username, chatid);
-                                        if (isPending) {
-                                            messageDetails = {
-                                                chatId: botMsg.chat.id,
-                                                messageId: botMsg.message_id,
-                                                type: 'message',
-                                                content: botMsg.text,
-                                            };
-                                            msg = {
-                                                payload: messageDetails,
-                                                originalMessage: botMsg,
-                                            };
-                                            node.send([null, msg]);
-                                            node.config.resetCommandPending(command1, username, chatid);
+                                        if (!command1.endsWith(toBot)) {
+                                            command2 = command1 + toBot;
+                                        } else {
+                                            command2 = command1;
                                         }
                                     }
                                 } else {
-                                    // Here we just ignore what happened as we do not know if another node is registered for that command.
+                                    isRegExMatch = false;
+
+                                    isChatCommand = commandToken === command1;
+                                    command2 = command1 + toBot;
+                                    isDirectCommand = commandToken === command2;
                                 }
+
+                                // then if this command is meant for this node
+
+                                if (
+                                    isDirectCommand ||
+                                    (isChatCommand && !isGroupChat) ||
+                                    (isChatCommand && isGroupChat && !strict) ||
+                                    (useRegex && isRegExMatch)
+                                ) {
+                                    let remainingText;
+                                    if (isDirectCommand) {
+                                        remainingText = message.replace(command2, '');
+                                    } else {
+                                        remainingText = message.replace(command1, '');
+                                    }
+
+                                    messageDetails = {
+                                        chatId: botMsg.chat.id,
+                                        messageId: botMsg.message_id,
+                                        type: 'message',
+                                        content: remainingText,
+                                    };
+                                    msg = {
+                                        payload: messageDetails,
+                                        originalMessage: botMsg,
+                                    };
+
+                                    if (hasresponse) {
+                                        node.send([msg, null]);
+                                        node.config.setCommandPending(command1, username, chatid);
+                                    } else {
+                                        node.send(msg);
+                                    }
+                                } else {
+                                    // Here we check if the received message is probably a resonse to a pending command.
+                                    if (!isCommandMessage) {
+                                        if (hasresponse) {
+                                            let isPending = node.config.isCommandPending(command1, username, chatid);
+                                            if (isPending) {
+                                                messageDetails = {
+                                                    chatId: botMsg.chat.id,
+                                                    messageId: botMsg.message_id,
+                                                    type: 'message',
+                                                    content: botMsg.text,
+                                                };
+                                                msg = {
+                                                    payload: messageDetails,
+                                                    originalMessage: botMsg,
+                                                };
+                                                node.send([null, msg]);
+                                                node.config.resetCommandPending(command1, username, chatid);
+                                            }
+                                        }
+                                    } else {
+                                        // Here we just ignore what happened as we do not know if another node is registered for that command.
+                                    }
+                                }
+                            } else {
+                                // unknown type --> no output
                             }
                         } else {
-                            // unknown type --> no output
+                            // ignoring unauthorized calls
+                            if (node.config.verbose) {
+                                node.warn('Unauthorized incoming call from ' + username);
+                            }
                         }
-                    } else {
-                        // ignoring unauthorized calls
-                        if (node.config.verbose) {
-                            node.warn('Unauthorized incoming call from ' + username);
-                        }
-                    }
-                });
+                    });
+                } else {
+                    node.status({
+                        fill: 'grey',
+                        shape: 'ring',
+                        text: 'send only mode',
+                    });
+                }
             } else {
                 node.warn('bot not initialized.');
                 node.status({
@@ -1208,277 +1243,285 @@ module.exports = function (RED) {
             node.telegramBot = this.config.getTelegramBot();
             node.botname = this.config.botname;
             if (node.telegramBot) {
-                node.status({
-                    fill: 'green',
-                    shape: 'ring',
-                    text: 'connected',
-                });
-
-                node.telegramBot.on(this.event, (botMsg) => {
+                if (node.telegramBot._polling != null || node.telegramBot._webHook != null) {
                     node.status({
                         fill: 'green',
                         shape: 'ring',
                         text: 'connected',
                     });
 
-                    let username;
-                    let chatid;
-                    let userid;
-                    if (botMsg.chat) {
-                        //channel
-                        username = botMsg.chat.username;
-                        chatid = botMsg.chat.id;
-                        if (botMsg.from !== undefined) {
+                    node.telegramBot.on(this.event, (botMsg) => {
+                        node.status({
+                            fill: 'green',
+                            shape: 'ring',
+                            text: 'connected',
+                        });
+
+                        let username;
+                        let chatid;
+                        let userid;
+                        if (botMsg.chat) {
+                            //channel
+                            username = botMsg.chat.username;
+                            chatid = botMsg.chat.id;
+                            if (botMsg.from !== undefined) {
+                                userid = botMsg.from.id;
+                            }
+                        } else if (botMsg.from) {
+                            //sender, group, supergroup
+                            if (botMsg.message !== undefined) {
+                                chatid = botMsg.message.chat.id;
+                            }
+                            username = botMsg.from.username;
                             userid = botMsg.from.id;
-                        }
-                    } else if (botMsg.from) {
-                        //sender, group, supergroup
-                        if (botMsg.message !== undefined) {
-                            chatid = botMsg.message.chat.id;
-                        }
-                        username = botMsg.from.username;
-                        userid = botMsg.from.id;
-                    } else {
-                        // chatid can be null in case of polls, inline_queries,...
-                    }
-
-                    if (node.config.isAuthorized(node, chatid, userid, username)) {
-                        let msg;
-                        let messageDetails;
-                        let messageId;
-                        if (botMsg.message != undefined) {
-                            messageId = botMsg.message.message_id;
+                        } else {
+                            // chatid can be null in case of polls, inline_queries,...
                         }
 
-                        switch (this.event) {
-                            case 'callback_query':
-                                messageDetails = {
-                                    chatId: chatid,
-                                    messageId: messageId,
-                                    inlineMessageId: botMsg.inline_message_id,
-                                    type: this.event,
-                                    content: botMsg.data,
-                                    callbackQueryId: botMsg.id,
-                                    from: botMsg.from,
+                        if (node.config.isAuthorized(node, chatid, userid, username)) {
+                            let msg;
+                            let messageDetails;
+                            let messageId;
+                            if (botMsg.message != undefined) {
+                                messageId = botMsg.message.message_id;
+                            }
+
+                            switch (this.event) {
+                                case 'callback_query':
+                                    messageDetails = {
+                                        chatId: chatid,
+                                        messageId: messageId,
+                                        inlineMessageId: botMsg.inline_message_id,
+                                        type: this.event,
+                                        content: botMsg.data,
+                                        callbackQueryId: botMsg.id,
+                                        from: botMsg.from,
+                                    };
+
+                                    if (node.autoAnswerCallback) {
+                                        node.telegramBot
+                                            .answerCallbackQuery(botMsg.id)
+                                            .catch(function (ex) {
+                                                node.processError(ex, msg);
+                                            })
+                                            .then(function () {
+                                                // nothing to do here
+                                                // node.processResult(result);
+                                            });
+                                    }
+                                    break;
+
+                                // /setinline must be set before in botfather see https://core.telegram.org/bots/inline
+                                case 'inline_query':
+                                    messageDetails = {
+                                        chatId: chatid,
+                                        type: this.event,
+                                        content: botMsg.query,
+                                        inlineQueryId: botMsg.id,
+                                        offset: botMsg.offset,
+                                        from: botMsg.from,
+                                        location: botMsg.location, // location is only available when /setinlinegeo is set in botfather
+                                    };
+                                    // Right now this is not supported as a result is required!
+                                    //if (node.autoAnswerCallback) {
+                                    //    // result = https://core.telegram.org/bots/api#inlinequeryresult
+                                    //    node.telegramBot.answerInlineQuery(inlineQueryId, results).then(function (result) {
+                                    //        // Nothing to do here
+                                    //        ;
+                                    //    });
+                                    //}
+                                    break;
+
+                                case 'edited_message':
+                                    messageDetails = {
+                                        chatId: chatid,
+                                        messageId: botMsg.message_id,
+                                        type: this.event,
+                                        content: botMsg.text,
+                                        editDate: botMsg.edit_date,
+                                        date: botMsg.date,
+                                        from: botMsg.from,
+                                        chat: botMsg.chat,
+                                        location: botMsg.location, // for live location updates
+                                    };
+                                    break;
+
+                                // the text of an already sent message.
+                                case 'edited_message_text':
+                                    messageDetails = {
+                                        chatId: chatid,
+                                        type: this.event,
+                                        messageId: botMsg.message_id,
+                                        content: botMsg.text,
+                                        editDate: botMsg.edit_date,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
+                                    };
+                                    break;
+
+                                // the caption of a document or an image ...
+                                case 'edited_message_caption':
+                                    messageDetails = {
+                                        chatId: chatid,
+                                        type: this.event,
+                                        messageId: botMsg.message_id,
+                                        content: botMsg.caption,
+                                        editDate: botMsg.edit_date,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
+                                    };
+                                    break;
+
+                                case 'channel_post':
+                                    messageDetails = {
+                                        chatId: chatid,
+                                        messageId: botMsg.message_id,
+                                        type: this.event,
+                                        content: botMsg.text,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
+                                    };
+                                    break;
+
+                                case 'edited_channel_post':
+                                    messageDetails = {
+                                        chatId: chatid,
+                                        type: this.event,
+                                        messageId: botMsg.message_id,
+                                        content: botMsg.text,
+                                        editDate: botMsg.edit_date,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
+                                    };
+                                    break;
+
+                                case 'edited_channel_post_text':
+                                    messageDetails = {
+                                        chatId: chatid,
+                                        type: this.event,
+                                        messageId: botMsg.message_id,
+                                        content: botMsg.text,
+                                        editDate: botMsg.edit_date,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
+                                    };
+                                    break;
+
+                                case 'edited_channel_post_caption':
+                                    messageDetails = {
+                                        chatId: chatid,
+                                        type: this.event,
+                                        messageId: botMsg.message_id,
+                                        content: botMsg.caption,
+                                        editDate: botMsg.edit_date,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
+                                    };
+                                    break;
+
+                                case 'pre_checkout_query':
+                                    messageDetails = {
+                                        preCheckOutQueryId: botMsg.id,
+                                        chatId: chatid,
+                                        type: this.event,
+                                        from: botMsg.from,
+                                        currency: botMsg.currency,
+                                        total_amount: botMsg.total_amount,
+                                        invoice_payload: botMsg.invoice_payload,
+                                        shipping_option_id: botMsg.shipping_option_id,
+                                        order_info: botMsg.order_info,
+                                        content: botMsg.invoice_payload,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
+                                    };
+                                    break;
+
+                                case 'shipping_query':
+                                    messageDetails = {
+                                        shippingQueryId: botMsg.id,
+                                        chatId: chatid,
+                                        type: this.event,
+                                        from: botMsg.from,
+                                        invoice_payload: botMsg.invoice_payload,
+                                        content: botMsg.invoice_payload,
+                                        shipping_address: botMsg.shipping_address,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
+                                    };
+                                    break;
+
+                                case 'chosen_inline_result':
+                                    messageDetails = {
+                                        result_id: botMsg.result_id,
+                                        chatId: chatid,
+                                        type: this.event,
+                                        from: botMsg.from,
+                                        location: botMsg.location,
+                                        inline_message_id: botMsg.inline_message_id,
+                                        query: botMsg.query,
+                                        content: botMsg.result_id,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
+                                    };
+                                    break;
+
+                                case 'poll_answer':
+                                    messageDetails = {
+                                        poll_id: botMsg.poll_id,
+                                        chatId: chatid,
+                                        type: this.event,
+                                        user: botMsg.user,
+                                        option_ids: botMsg.option_ids,
+                                        content: botMsg.user,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
+                                    };
+                                    break;
+
+                                case 'poll':
+                                    messageDetails = {
+                                        type: this.event,
+                                        id: botMsg.id,
+                                        question: botMsg.question,
+                                        options: botMsg.options,
+                                        total_voter_count: botMsg.total_voter_count,
+                                        is_closed: botMsg.is_closed,
+                                        is_anonymous: botMsg.is_anonymous,
+                                        pollType: botMsg.type,
+                                        allows_multiple_answers: botMsg.allows_multiple_answers,
+                                        correct_option_id: botMsg.correct_option_id,
+                                        explanation: botMsg.explanation,
+                                        explanation_entities: botMsg.explanation_entities,
+                                        open_period: botMsg.open_period,
+                                        close_date: botMsg.close_date,
+                                        content: botMsg.question,
+                                    };
+                                    break;
+
+                                default:
+                            }
+
+                            if (messageDetails != null) {
+                                msg = {
+                                    payload: messageDetails,
+                                    originalMessage: botMsg,
                                 };
-
-                                if (node.autoAnswerCallback) {
-                                    node.telegramBot
-                                        .answerCallbackQuery(botMsg.id)
-                                        .catch(function (ex) {
-                                            node.processError(ex, msg);
-                                        })
-                                        .then(function () {
-                                            // nothing to do here
-                                            // node.processResult(result);
-                                        });
-                                }
-                                break;
-
-                            // /setinline must be set before in botfather see https://core.telegram.org/bots/inline
-                            case 'inline_query':
-                                messageDetails = {
-                                    chatId: chatid,
-                                    type: this.event,
-                                    content: botMsg.query,
-                                    inlineQueryId: botMsg.id,
-                                    offset: botMsg.offset,
-                                    from: botMsg.from,
-                                    location: botMsg.location, // location is only available when /setinlinegeo is set in botfather
-                                };
-                                // Right now this is not supported as a result is required!
-                                //if (node.autoAnswerCallback) {
-                                //    // result = https://core.telegram.org/bots/api#inlinequeryresult
-                                //    node.telegramBot.answerInlineQuery(inlineQueryId, results).then(function (result) {
-                                //        // Nothing to do here
-                                //        ;
-                                //    });
-                                //}
-                                break;
-
-                            case 'edited_message':
-                                messageDetails = {
-                                    chatId: chatid,
-                                    messageId: botMsg.message_id,
-                                    type: this.event,
-                                    content: botMsg.text,
-                                    editDate: botMsg.edit_date,
-                                    date: botMsg.date,
-                                    from: botMsg.from,
-                                    chat: botMsg.chat,
-                                    location: botMsg.location, // for live location updates
-                                };
-                                break;
-
-                            // the text of an already sent message.
-                            case 'edited_message_text':
-                                messageDetails = {
-                                    chatId: chatid,
-                                    type: this.event,
-                                    messageId: botMsg.message_id,
-                                    content: botMsg.text,
-                                    editDate: botMsg.edit_date,
-                                    date: botMsg.date,
-                                    chat: botMsg.chat,
-                                };
-                                break;
-
-                            // the caption of a document or an image ...
-                            case 'edited_message_caption':
-                                messageDetails = {
-                                    chatId: chatid,
-                                    type: this.event,
-                                    messageId: botMsg.message_id,
-                                    content: botMsg.caption,
-                                    editDate: botMsg.edit_date,
-                                    date: botMsg.date,
-                                    chat: botMsg.chat,
-                                };
-                                break;
-
-                            case 'channel_post':
-                                messageDetails = {
-                                    chatId: chatid,
-                                    messageId: botMsg.message_id,
-                                    type: this.event,
-                                    content: botMsg.text,
-                                    date: botMsg.date,
-                                    chat: botMsg.chat,
-                                };
-                                break;
-
-                            case 'edited_channel_post':
-                                messageDetails = {
-                                    chatId: chatid,
-                                    type: this.event,
-                                    messageId: botMsg.message_id,
-                                    content: botMsg.text,
-                                    editDate: botMsg.edit_date,
-                                    date: botMsg.date,
-                                    chat: botMsg.chat,
-                                };
-                                break;
-
-                            case 'edited_channel_post_text':
-                                messageDetails = {
-                                    chatId: chatid,
-                                    type: this.event,
-                                    messageId: botMsg.message_id,
-                                    content: botMsg.text,
-                                    editDate: botMsg.edit_date,
-                                    date: botMsg.date,
-                                    chat: botMsg.chat,
-                                };
-                                break;
-
-                            case 'edited_channel_post_caption':
-                                messageDetails = {
-                                    chatId: chatid,
-                                    type: this.event,
-                                    messageId: botMsg.message_id,
-                                    content: botMsg.caption,
-                                    editDate: botMsg.edit_date,
-                                    date: botMsg.date,
-                                    chat: botMsg.chat,
-                                };
-                                break;
-
-                            case 'pre_checkout_query':
-                                messageDetails = {
-                                    preCheckOutQueryId: botMsg.id,
-                                    chatId: chatid,
-                                    type: this.event,
-                                    from: botMsg.from,
-                                    currency: botMsg.currency,
-                                    total_amount: botMsg.total_amount,
-                                    invoice_payload: botMsg.invoice_payload,
-                                    shipping_option_id: botMsg.shipping_option_id,
-                                    order_info: botMsg.order_info,
-                                    content: botMsg.invoice_payload,
-                                    date: botMsg.date,
-                                    chat: botMsg.chat,
-                                };
-                                break;
-
-                            case 'shipping_query':
-                                messageDetails = {
-                                    shippingQueryId: botMsg.id,
-                                    chatId: chatid,
-                                    type: this.event,
-                                    from: botMsg.from,
-                                    invoice_payload: botMsg.invoice_payload,
-                                    content: botMsg.invoice_payload,
-                                    shipping_address: botMsg.shipping_address,
-                                    date: botMsg.date,
-                                    chat: botMsg.chat,
-                                };
-                                break;
-
-                            case 'chosen_inline_result':
-                                messageDetails = {
-                                    result_id: botMsg.result_id,
-                                    chatId: chatid,
-                                    type: this.event,
-                                    from: botMsg.from,
-                                    location: botMsg.location,
-                                    inline_message_id: botMsg.inline_message_id,
-                                    query: botMsg.query,
-                                    content: botMsg.result_id,
-                                    date: botMsg.date,
-                                    chat: botMsg.chat,
-                                };
-                                break;
-
-                            case 'poll_answer':
-                                messageDetails = {
-                                    poll_id: botMsg.poll_id,
-                                    chatId: chatid,
-                                    type: this.event,
-                                    user: botMsg.user,
-                                    option_ids: botMsg.option_ids,
-                                    content: botMsg.user,
-                                    date: botMsg.date,
-                                    chat: botMsg.chat,
-                                };
-                                break;
-
-                            case 'poll':
-                                messageDetails = {
-                                    type: this.event,
-                                    id: botMsg.id,
-                                    question: botMsg.question,
-                                    options: botMsg.options,
-                                    total_voter_count: botMsg.total_voter_count,
-                                    is_closed: botMsg.is_closed,
-                                    is_anonymous: botMsg.is_anonymous,
-                                    pollType: botMsg.type,
-                                    allows_multiple_answers: botMsg.allows_multiple_answers,
-                                    correct_option_id: botMsg.correct_option_id,
-                                    explanation: botMsg.explanation,
-                                    explanation_entities: botMsg.explanation_entities,
-                                    open_period: botMsg.open_period,
-                                    close_date: botMsg.close_date,
-                                    content: botMsg.question,
-                                };
-                                break;
-
-                            default:
+                                node.send(msg);
+                            }
+                        } else {
+                            // ignoring unauthorized calls
+                            if (node.config.verbose) {
+                                node.warn('Unauthorized incoming call from ' + username);
+                            }
                         }
-
-                        if (messageDetails != null) {
-                            msg = {
-                                payload: messageDetails,
-                                originalMessage: botMsg,
-                            };
-                            node.send(msg);
-                        }
-                    } else {
-                        // ignoring unauthorized calls
-                        if (node.config.verbose) {
-                            node.warn('Unauthorized incoming call from ' + username);
-                        }
-                    }
-                });
+                    });
+                } else {
+                    node.status({
+                        fill: 'grey',
+                        shape: 'ring',
+                        text: 'send only mode',
+                    });
+                }
             } else {
                 node.warn('bot not initialized.');
                 node.status({
@@ -2220,11 +2263,19 @@ module.exports = function (RED) {
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
-                node.status({
-                    fill: 'green',
-                    shape: 'ring',
-                    text: 'connected',
-                });
+                if (node.telegramBot._polling != null || node.telegramBot._webHook != null) {
+                    node.status({
+                        fill: 'green',
+                        shape: 'ring',
+                        text: 'connected',
+                    });
+                } else {
+                    node.status({
+                        fill: 'grey',
+                        shape: 'ring',
+                        text: 'send only mode',
+                    });
+                }
             } else {
                 node.warn('bot not initialized.');
                 node.status({

@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.0.2] - 2021-07-25
+### bot can run in send only mode which is neither polling nor webhook.
+- merged - [#151](https://github.com/windkh/node-red-contrib-telegrambot/issues/151)
+
 # [10.0.1] - 2021-07-25
 ### answerInlineQuery supports options now
 - merged - [#194](https://github.com/windkh/node-red-contrib-telegrambot/pull/194)

@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.0.1] - 2021-07-25
+### answerInlineQuery supports options now
+- merged - [#194](https://github.com/windkh/node-red-contrib-telegrambot/pull/194)
+
 # [10.0.0] - 2021-07-24
 ### upgrade to node-telegram-bot-api 0.54.0
 - update - [#190](https://github.com/windkh/node-red-contrib-telegrambot/issues/190)

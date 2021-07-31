@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.0.3] - 2021-07-31
+### Bot is restarted on polling error.
+- next try to fix - [#172](https://github.com/windkh/node-red-contrib-telegrambot/issues/172)
+
 # [10.0.2] - 2021-07-25
 ### bot can run in send only mode which is neither polling nor webhook.
 - merged - [#151](https://github.com/windkh/node-red-contrib-telegrambot/issues/151)

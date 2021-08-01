@@ -377,6 +377,7 @@ The node's configuration contains the following special properties:
 - **Description**: The description is used when the command should be published via /setMyCommands at the telegram server.  /
   It is optional if the **Register at telegram server** flag is not checked.
 - **Language**: The 2 digit language code (see ISO-639-1). If this field is empty it will be shown in every language, otherwise only to the users that have set the language of their client to this language.
+- **Scope**: The scope to register the command to: see also [BotCommandScope](https://core.telegram.org/bots/api#botcommandscope).
 - **Strict in group chats** flag: To avoid that the bot handles commands that are not directly sent to it using the long notation (e.g. /foo@YourBot) you can set the "strict" mode in the options of the command node. In this case the bot only accepts the full command notation in group chats.
 - **Has response output** flag: This enables the second output (*Unathorized Output*). Otherwise the node only has one single output.
 - **Use Regex** flag: Allows the usage of regular expressions as command. E.g. ^/toggle_ allows all commands starting with /toggle_.  

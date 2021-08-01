@@ -12,7 +12,7 @@ module.exports = function (RED) {
 
     let telegramBot = require('node-telegram-bot-api');
     const Agent = require('socks5-https-client/lib/Agent');
-
+   
     // --------------------------------------------------------------------------------------------
     // The configuration node
     // holds the token
@@ -22,7 +22,7 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, n);
 
         let self = this;
-
+        
         // this sandbox is a lightweight copy of the sandbox in the function node to be as compatible as possible to the syntax allowed there.
         let sandbox = {
             node: {},
@@ -264,14 +264,16 @@ module.exports = function (RED) {
                                             self.warn('Bot stopped: ' + hint);
                                         });
                                     } else {
+
                                         // here we simply ignore the bug and try to reestablish polling.
                                         self.telegramBot.stopPolling();
-                                        setTimeout(function () {
-                                            delete self.telegramBot._polling;
-                                            self.telegramBot._polling = null; // force the underlying API to recreate the class.
-                                            self.telegramBot.startPolling();
-                                        }, 1000);
-
+                                        setTimeout(function() 
+                                            {
+                                                delete self.telegramBot._polling;
+                                                self.telegramBot._polling = null; // force the underlying API to recreate the class.
+                                                self.telegramBot.startPolling(); 
+                                            }, 1000);
+                                        
                                         // The following line is removed as this would create endless log files
                                         if (self.verbose) {
                                             self.warn(hint);
@@ -303,42 +305,83 @@ module.exports = function (RED) {
             return this.telegramBot;
         };
 
-        // TODO: implement deleteMyCommands as soon as it is available.
+        // deletes the commands if we will register one.
+        this.deleteMyCommands = function () {
+            
+            let botCommandsByLanguage = self.getBotCommands();
+            if (Object.keys(botCommandsByLanguage).length > 0) {
+
+                let telegramBot = self.getTelegramBot();
+                if (telegramBot) {
+
+                    let options = {
+                    };
+
+                    telegramBot
+                        .deleteMyCommands(options)
+                        .then(function (result) {
+                            if (!result) {
+                                self.warn('Failed to call /deleteMyCommands');
+                            }
+                        })
+                        .catch(function (err) {
+                            self.warn('Failed to call /deleteMyCommands: ' + err);
+                        });
+                }
+            }
+        }
 
         // registers the bot commands at the telegram server.
         this.setMyCommands = function () {
             let botCommandsByLanguage = self.getBotCommands();
+            if (Object.keys(botCommandsByLanguage).length > 0) {
 
-            for (let language in botCommandsByLanguage) {
-                let botCommands = botCommandsByLanguage[language];
+                let scopes = [ 
+                    'default', 'all_private_chats', 'all_group_chats', 'all_chat_administrators'
+                ];
+    
+                let languages = Object.keys(botCommandsByLanguage);
 
-                if (botCommands && botCommands.length > 0) {
-                    let telegramBot = self.getTelegramBot();
-                    if (telegramBot) {
-                        let options = {
-                            // scope : { type : 'default' }, // TODO: in future we should support scopes.
-                        };
+                let telegramBot = self.getTelegramBot();
+                if (telegramBot) {
 
-                        if (language !== '') {
-                            options.language_code = language;
-                        }
+                    for (const scope in scopes) {
 
-                        telegramBot
-                            .setMyCommands(botCommands, options)
-                            .then(function (result) {
-                                if (!result) {
-                                    self.warn('Failed to call /setMyCommands for language' + language);
-                                }
-                            })
-                            .catch(function (err) {
-                                self.warn('Failed to call /setMyCommands for language ' + language + ': ' + err);
+                        for (let language in botCommandsByLanguage) {
+                            let botCommandsForLanguage = botCommandsByLanguage[language];
+            
+                            var botCommands = botCommandsForLanguage.filter(function(botCommand){
+                                return botCommand.scope == scope;
                             });
+                            
+                            if (botCommands && botCommands.length > 0) {
+                                let options = {
+                                    scope : { type : scope },
+                                };
+
+                                if (language !== '') {
+                                    options.language_code = language;
+                                }
+
+                                telegramBot
+                                    .setMyCommands(botCommands, options)
+                                    .then(function (result) {
+                                        if (!result) {
+                                            self.warn('Failed to call /setMyCommands for language' + language);
+                                        }
+                                    })
+                                    .catch(function (err) {
+                                        self.warn('Failed to call /setMyCommands for language ' + language + ': ' + err);
+                                    });
+                            }
+                        }
                     }
                 }
             }
         };
 
         this.onStarted = function () {
+            self.deleteMyCommands();
             self.setMyCommands();
         };
 

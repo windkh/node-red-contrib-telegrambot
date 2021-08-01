@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.0.4] - 2021-08-01
+### Added bot command scopes (see setMyCommands).
+- new - [#193](https://github.com/windkh/node-red-contrib-telegrambot/issues/193)
+
 # [10.0.3] - 2021-07-31
 ### Bot is restarted on polling error.
 - next try to fix - [#172](https://github.com/windkh/node-red-contrib-telegrambot/issues/172)

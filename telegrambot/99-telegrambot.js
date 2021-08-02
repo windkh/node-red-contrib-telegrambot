@@ -12,7 +12,7 @@ module.exports = function (RED) {
 
     let telegramBot = require('node-telegram-bot-api');
     const Agent = require('socks5-https-client/lib/Agent');
-
+   
     // --------------------------------------------------------------------------------------------
     // The configuration node
     // holds the token
@@ -22,7 +22,7 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, n);
 
         let self = this;
-
+        
         // this sandbox is a lightweight copy of the sandbox in the function node to be as compatible as possible to the syntax allowed there.
         let sandbox = {
             node: {},
@@ -67,7 +67,7 @@ module.exports = function (RED) {
         sandbox.node = this;
 
         this.pendingCommands = {}; // dictionary that contains all pending comands.
-        this.commands = []; // contains all configured command infos (command, description).
+        this.commandsByNode = {}; // contains all configured command infos (command, description) by node.
         this.commandsByLanguage = {}; // contains all command sorted by language.
 
         this.config = n;
@@ -264,14 +264,16 @@ module.exports = function (RED) {
                                             self.warn('Bot stopped: ' + hint);
                                         });
                                     } else {
+
                                         // here we simply ignore the bug and try to reestablish polling.
                                         self.telegramBot.stopPolling();
-                                        setTimeout(function () {
-                                            delete self.telegramBot._polling;
-                                            self.telegramBot._polling = null; // force the underlying API to recreate the class.
-                                            self.telegramBot.startPolling();
-                                        }, 1000);
-
+                                        setTimeout(function() 
+                                            {
+                                                delete self.telegramBot._polling;
+                                                self.telegramBot._polling = null; // force the underlying API to recreate the class.
+                                                self.telegramBot.startPolling(); 
+                                            }, 1000);
+                                        
                                         // The following line is removed as this would create endless log files
                                         if (self.verbose) {
                                             self.warn(hint);
@@ -305,11 +307,15 @@ module.exports = function (RED) {
 
         // deletes the commands if we will register one.
         this.deleteMyCommands = function () {
+            
             let botCommandsByLanguage = self.getBotCommands();
             if (Object.keys(botCommandsByLanguage).length > 0) {
+
                 let telegramBot = self.getTelegramBot();
                 if (telegramBot) {
-                    let options = {};
+
+                    let options = {
+                    };
 
                     telegramBot
                         .deleteMyCommands(options)
@@ -323,27 +329,34 @@ module.exports = function (RED) {
                         });
                 }
             }
-        };
+        }
 
         // registers the bot commands at the telegram server.
         this.setMyCommands = function () {
             let botCommandsByLanguage = self.getBotCommands();
             if (Object.keys(botCommandsByLanguage).length > 0) {
-                let scopes = ['default', 'all_private_chats', 'all_group_chats', 'all_chat_administrators'];
+
+                let scopes = [ 
+                    'default', 'all_private_chats', 'all_group_chats', 'all_chat_administrators'
+                ];
+    
+                let languages = Object.keys(botCommandsByLanguage);
 
                 let telegramBot = self.getTelegramBot();
                 if (telegramBot) {
+
                     for (const scope in scopes) {
+
                         for (let language in botCommandsByLanguage) {
                             let botCommandsForLanguage = botCommandsByLanguage[language];
-
-                            let botCommands = botCommandsForLanguage.filter(function (botCommand) {
+            
+                            var botCommands = botCommandsForLanguage.filter(function(botCommand){
                                 return botCommand.scope == scope;
                             });
-
+                            
                             if (botCommands && botCommands.length > 0) {
                                 let options = {
-                                    scope: { type: scope },
+                                    scope : { type : scope },
                                 };
 
                                 if (language !== '') {
@@ -575,7 +588,7 @@ module.exports = function (RED) {
             return isPending;
         };
 
-        this.registerCommand = function (command, description, language, scope, registerCommand) {
+        this.registerCommand = function (node, command, description, language, scope, registerCommand) {
             let commandInfo = {
                 command: command,
                 description: description,
@@ -583,7 +596,7 @@ module.exports = function (RED) {
                 language: language,
                 scope: scope,
             };
-            self.commands.push(commandInfo);
+            self.commandsByNode[node] = commandInfo;
 
             // if there is no language we can not register it at the server.
             if (language !== undefined) {
@@ -594,8 +607,13 @@ module.exports = function (RED) {
             }
         };
 
+        this.unregisterCommand = function (node) {
+            delete self.commandsByNode[node];
+        };
+
         this.isCommandRegistered = function (command) {
-            return self.commands.some((e) => e.command === command);
+            let commandInfo = Object.entries(commandsByNode).find( (e) => e.command === command)    
+            return commandInfo !== undefined;
         };
 
         this.getBotCommands = function () {
@@ -922,9 +940,7 @@ module.exports = function (RED) {
         if (this.config) {
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.config.on('status', function (status) {
-                node.status(status);
-            });
+            node.config.on('status', node.status);
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
@@ -1009,7 +1025,7 @@ module.exports = function (RED) {
 
         this.on('close', function () {
             node.telegramBot.off('message');
-            node.config.off('status');
+            node.config.off('status', node.status);
             node.status({});
         });
     }
@@ -1064,13 +1080,11 @@ module.exports = function (RED) {
                 language = undefined;
             }
 
-            this.config.registerCommand(command, description, language, scope, registerCommand);
+            this.config.registerCommand(node.id, command, description, language, scope, registerCommand);
 
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.config.on('status', function (status) {
-                node.status(status);
-            });
+            node.config.on('status', node.status);
 
             node.telegramBot = this.config.getTelegramBot();
             node.botname = this.config.botname;
@@ -1229,7 +1243,8 @@ module.exports = function (RED) {
 
         this.on('close', function () {
             node.telegramBot.off('message');
-            node.config.off('status');
+            node.config.off('status', node.status);
+            node.config.unregisterCommand(node.id);
             node.status({});
         });
     }
@@ -1271,9 +1286,7 @@ module.exports = function (RED) {
         if (this.config) {
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.config.on('status', function (status) {
-                node.status(status);
-            });
+            node.config.on('status', node.status);
 
             node.telegramBot = this.config.getTelegramBot();
             node.botname = this.config.botname;
@@ -1576,7 +1589,7 @@ module.exports = function (RED) {
 
         this.on('close', function () {
             node.telegramBot.off(this.event);
-            node.config.off('status');
+            node.config.off('status', node.status);
             node.status({});
         });
 
@@ -1622,9 +1635,7 @@ module.exports = function (RED) {
         if (this.config) {
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.config.on('status', function (status) {
-                node.status(status);
-            });
+            node.config.on('status', node.status);
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
@@ -2292,9 +2303,7 @@ module.exports = function (RED) {
         if (this.config) {
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.config.on('status', function (status) {
-                node.status(status);
-            });
+            node.config.on('status', node.status);
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {

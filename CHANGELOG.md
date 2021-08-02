@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.0.5] - 2021-08-02
+### Internal fixed when internally registering command nodes at the config node.
+- improved - [#197](https://github.com/windkh/node-red-contrib-telegrambot/issues/197)
+
 # [10.0.4] - 2021-08-01
 ### Added bot command scopes (see setMyCommands).
 - new - [#193](https://github.com/windkh/node-red-contrib-telegrambot/issues/193)

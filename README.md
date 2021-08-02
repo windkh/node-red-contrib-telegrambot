@@ -59,6 +59,11 @@ The nodes are tested with `Node.js v16.6.0` and `Node-RED v2.0.5`.
 # Changelog
 Changes can be followed [here](/CHANGELOG.md).
 
+# Hints
+- It is recommended to always do a full deploy when you changed some of the nodes of this library to prevent unexpected behavior.
+- Do not use a token in more than one configuration node at the same time as the telegram server does not allow multiple connections for one bot. 
+
+
 # Usage
 ## Basics
 ### Receiver and sender nodes

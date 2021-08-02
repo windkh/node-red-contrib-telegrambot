@@ -601,8 +601,16 @@ module.exports = function (RED) {
         };
 
         this.isCommandRegistered = function (command) {
-            let commandInfo = Object.entries(self.commandsByNode).find((e) => e.command === command);
-            return commandInfo !== undefined;
+            let found = false;
+
+            for (var key in self.commandsByNode){
+                if (self.commandsByNode[key].command === command){
+                    found = true;
+                    break;
+                }
+            }
+            
+            return found;
         };
 
         this.getBotCommands = function () {

@@ -603,13 +603,13 @@ module.exports = function (RED) {
         this.isCommandRegistered = function (command) {
             let found = false;
 
-            for (var key in self.commandsByNode){
-                if (self.commandsByNode[key].command === command){
+            for (let key in self.commandsByNode) {
+                if (self.commandsByNode[key].command === command) {
                     found = true;
                     break;
                 }
             }
-            
+
             return found;
         };
 

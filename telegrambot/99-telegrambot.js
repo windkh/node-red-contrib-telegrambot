@@ -23,6 +23,9 @@ module.exports = function (RED) {
 
         let self = this;
 
+        // see https://github.com/windkh/node-red-contrib-telegrambot/issues/198
+        self.setMaxListeners(0);
+
         // this sandbox is a lightweight copy of the sandbox in the function node to be as compatible as possible to the syntax allowed there.
         let sandbox = {
             node: {},
@@ -309,18 +312,27 @@ module.exports = function (RED) {
             if (Object.keys(botCommandsByLanguage).length > 0) {
                 let telegramBot = self.getTelegramBot();
                 if (telegramBot) {
-                    let options = {};
+                    // TODO:iterate over languages and delete the ones we do not have commands for.
+                    // let languages = Object.keys(botCommandsByLanguage);
 
-                    telegramBot
-                        .deleteMyCommands(options)
-                        .then(function (result) {
-                            if (!result) {
-                                self.warn('Failed to call /deleteMyCommands');
-                            }
-                        })
-                        .catch(function (err) {
-                            self.warn('Failed to call /deleteMyCommands: ' + err);
-                        });
+                    let scopes = ['default', 'all_private_chats', 'all_group_chats', 'all_chat_administrators'];
+                    for (const scope of scopes) {
+                        let options = {
+                            scope: { type: scope },
+                            language_code: '',
+                        };
+
+                        telegramBot
+                            .deleteMyCommands(options)
+                            .then(function (result) {
+                                if (!result) {
+                                    self.warn('Failed to call /deleteMyCommands');
+                                }
+                            })
+                            .catch(function (err) {
+                                self.warn('Failed to call /deleteMyCommands: ' + err);
+                            });
+                    }
                 }
             }
         };
@@ -335,7 +347,7 @@ module.exports = function (RED) {
 
                 let telegramBot = self.getTelegramBot();
                 if (telegramBot) {
-                    for (const scope in scopes) {
+                    for (const scope of scopes) {
                         for (let language in botCommandsByLanguage) {
                             let botCommandsForLanguage = botCommandsByLanguage[language];
 
@@ -346,11 +358,8 @@ module.exports = function (RED) {
                             if (botCommands && botCommands.length > 0) {
                                 let options = {
                                     scope: { type: scope },
+                                    language_code: language,
                                 };
-
-                                if (language !== '') {
-                                    options.language_code = language;
-                                }
 
                                 telegramBot
                                     .setMyCommands(botCommands, options)

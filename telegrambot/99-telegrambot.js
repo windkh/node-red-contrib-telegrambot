@@ -269,11 +269,16 @@ module.exports = function (RED) {
                                     } else {
                                         // here we simply ignore the bug and try to reestablish polling.
                                         self.telegramBot.stopPolling();
-                                        setTimeout(function () {
-                                            delete self.telegramBot._polling;
-                                            self.telegramBot._polling = null; // force the underlying API to recreate the class.
-                                            self.telegramBot.startPolling();
-                                        }, 1000);
+                                        self.telegramBot.stopPolling().then(function () {
+                                            setTimeout(function () {
+                                                // we check if abort was called in the meantime.
+                                                if (self.telegramBot !== null) {
+                                                    delete self.telegramBot._polling;
+                                                    self.telegramBot._polling = null; // force the underlying API to recreate the class.
+                                                    self.telegramBot.startPolling();
+                                                }
+                                            }, 1000);
+                                        });
 
                                         // The following line is removed as this would create endless log files
                                         if (self.verbose) {
@@ -950,7 +955,7 @@ module.exports = function (RED) {
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
-                if (node.telegramBot._polling != null || node.telegramBot._webHook != null) {
+                if (node.telegramBot._polling !== null || node.telegramBot._webHook !== null) {
                     node.status({
                         fill: 'green',
                         shape: 'ring',
@@ -1095,7 +1100,7 @@ module.exports = function (RED) {
             node.telegramBot = this.config.getTelegramBot();
             node.botname = this.config.botname;
             if (node.telegramBot) {
-                if (node.telegramBot._polling != null || node.telegramBot._webHook != null) {
+                if (node.telegramBot._polling !== null || node.telegramBot._webHook !== null) {
                     node.status({
                         fill: 'green',
                         shape: 'ring',
@@ -1297,7 +1302,7 @@ module.exports = function (RED) {
             node.telegramBot = this.config.getTelegramBot();
             node.botname = this.config.botname;
             if (node.telegramBot) {
-                if (node.telegramBot._polling != null || node.telegramBot._webHook != null) {
+                if (node.telegramBot._polling !== null || node.telegramBot._webHook !== null) {
                     node.status({
                         fill: 'green',
                         shape: 'ring',
@@ -1336,7 +1341,7 @@ module.exports = function (RED) {
                             let msg;
                             let messageDetails;
                             let messageId;
-                            if (botMsg.message != undefined) {
+                            if (botMsg.message !== undefined) {
                                 messageId = botMsg.message.message_id;
                             }
 
@@ -1555,7 +1560,7 @@ module.exports = function (RED) {
                                 default:
                             }
 
-                            if (messageDetails != null) {
+                            if (messageDetails !== null) {
                                 msg = {
                                     payload: messageDetails,
                                     originalMessage: botMsg,
@@ -2313,7 +2318,7 @@ module.exports = function (RED) {
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
-                if (node.telegramBot._polling != null || node.telegramBot._webHook != null) {
+                if (node.telegramBot._polling !== null || node.telegramBot._webHook !== null) {
                     node.status({
                         fill: 'green',
                         shape: 'ring',

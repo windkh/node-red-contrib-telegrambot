@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.0.7] - 2021-08-28
+### Tried to fix race crash
+- try to fix - [#207](https://github.com/windkh/node-red-contrib-telegrambot/issues/207)
+
 # [10.0.6] - 2021-08-22
 ### Minor improvements.
 - improved - [#198](https://github.com/windkh/node-red-contrib-telegrambot/issues/198)

@@ -1201,6 +1201,32 @@ return msg;
 ```
 </details>
 
+Instead of passing a file name you can also directly pass the buffer of a photo as msg.payload.content.
+This is useful whenever you download files or already have the buffer in memory from a previous action.
+The following example demonstrates how to accomplish this:
+[SendPhotoBuffer](examples/sendphotobuffer.json)
+
+<details>
+  <summary>Click to expand code snippet for <em><b>send picture buffer</b></em> function</summary>
+
+```javascript
+msg.payload.content = buffer;
+msg.payload.type = 'photo';
+
+/* type can be one of the following
+photo
+audio
+video
+sticker
+voice
+document
+*/
+
+return msg;
+```
+</details>
+
+
 
 ### Sending a mediaGroup as album
 

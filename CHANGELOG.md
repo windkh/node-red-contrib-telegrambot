@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.0.8] - 2021-10-03
+### Added new example fro sending photos as buffer.
+
 # [10.0.7] - 2021-08-28
 ### Tried to fix race crash
 - try to fix - [#207](https://github.com/windkh/node-red-contrib-telegrambot/issues/207)

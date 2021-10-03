@@ -39,7 +39,8 @@ If you want to support this free project. Any help is welcome. You can donate by
  - StephanStS: for extension/clearification/beautification of Readme.md and finding minor bugs
  - Diddlik: for extending webhook options
  - MorbidDevil: for extending answerInlineQuery with options
- 
+ - daredoes: for providing the webhook decumentation on Unraid/Docker with SWAG/NGINX/REVERSE-PROXY
+
 
 # Installation
 [![NPM](https://nodei.co/npm/node-red-contrib-telegrambot.png?downloads=true)](https://nodei.co/npm/node-red-contrib-telegrambot/)
@@ -246,28 +247,13 @@ E.g. a table with these coloumns:
 
 #### Webhook mode
 The *Webhook* method may be chosen to avoid polling.
-As a prerequisite you have to create your own certificate as described there:
-- https://core.telegram.org/bots/webhooks
-- https://stackoverflow.com/questions/42713926/what-is-easy-way-to-create-and-use-a-self-signed-certification-for-a-telegram-we  
-
-One of many pitfalls when creating certificates (that don't work) is, that the value CN you provided to openssl must match the bots domain name: see *Bot Host* below.
-Create our pair of private and public keys using the following command:
-```
-openssl req -newkey rsa:2048 -sha256 -nodes -keyout PRIVATE.key -x509 -days 365 -out PUBLIC.pem -subj "/C=DE/ST=Bavaria/L=Munich/O=YOUR_NAME_OR_COMPANY_NAME/CN=SERVER_NAME_OR_IP"
-```
-Important:
-Replace *SERVER_NAME_OR_IP* with the name you entered in the configuration node under ***Bot Host*** in the *Webhook Options*. Both names must be equal, otherwise the telegram server won't send updates to your bot.
-You should also replace *YOUR_NAME_OR_COMPANY_NAME* with some value.
-
-Note that the certificate will expire after 365 days and needs to be renewed (e.g. see [there](https://securitywing.com/how-renew-self-signed-ssl-certificate-openssl-tool-linux/)).
-
-[**example bat file for creating a certificate can be found here**](examples/makecert.bat)  
 
 <img src="images/TelegramBotWebHookConfiguration.png" title="Webhook configuration with self signed sertificate" width="350" />
 
 **Fig. 5:** Example configuration for webhook mode
 
-Webhook can also be used without certificate but then the bot host must be behind a tunnel see https://github.com/windkh/node-red-contrib-telegrambot/pull/93.
+As setting up a webhook can be very complex depending on the infrastructure this was moved to a seprate readme file.
+See also [WEBHOOK.md](WEBHOOK.md)
 
 
 #### None mode

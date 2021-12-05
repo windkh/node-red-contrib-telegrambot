@@ -272,7 +272,7 @@ module.exports = function (RED) {
                                         self.telegramBot.stopPolling().then(function () {
                                             setTimeout(function () {
                                                 // we check if abort was called in the meantime.
-                                                if (self.telegramBot !== null) {
+                                                if (self.telegramBot !== undefined && self.telegramBot !== null) {
                                                     delete self.telegramBot._polling;
                                                     self.telegramBot._polling = null; // force the underlying API to recreate the class.
                                                     self.telegramBot.startPolling();
@@ -396,34 +396,8 @@ module.exports = function (RED) {
         });
 
         this.abortBot = function (hint, done) {
-            if (self.telegramBot !== null) {
-                if (self.telegramBot._polling) {
-                    self.telegramBot.stopPolling().then(function () {
-                        self.telegramBot = null;
-                        self.status = 'disconnected';
-                        self.setStatus({
-                            fill: 'red',
-                            shape: 'ring',
-                            text: 'bot stopped. ' + hint,
-                        });
-                        done();
-                    });
-                }
-
-                if (self.telegramBot._webHook) {
-                    self.telegramBot.deleteWebHook();
-                    self.telegramBot.closeWebHook().then(function () {
-                        self.telegramBot = null;
-                        self.status = 'disconnected';
-                        self.setStatus({
-                            fill: 'red',
-                            shape: 'ring',
-                            text: 'bot stopped. ' + hint,
-                        });
-                        done();
-                    });
-                }
-            } else {
+            function setStatusDisconnected() {
+                self.telegramBot = null;
                 self.status = 'disconnected';
                 self.setStatus({
                     fill: 'red',
@@ -431,6 +405,19 @@ module.exports = function (RED) {
                     text: 'bot stopped. ' + hint,
                 });
                 done();
+            }
+
+            if (self.telegramBot !== undefined && self.telegramBot !== null) {
+                if (self.telegramBot._polling) {
+                    self.telegramBot.stopPolling().then(setStatusDisconnected);
+                } else if (self.telegramBot._webHook) {
+                    self.telegramBot.deleteWebHook();
+                    self.telegramBot.closeWebHook().then(setStatusDisconnected);
+                } else {
+                    setStatusDisconnected();
+                }
+            } else {
+                setStatusDisconnected();
             }
         };
 

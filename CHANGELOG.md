@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.1.0] - 2021-12-05
+### Added webhook readme.
+- Fixed timeout on redeploy when node is not in polling nor in webhook mode - [#220](https://github.com/windkh/node-red-contrib-telegrambot/issues/220)
+
 # [10.0.9] - 2021-10-03
 ### Added webhook readme.
 - see also - [#207](https://github.com/windkh/node-red-contrib-telegrambot/issues/209)

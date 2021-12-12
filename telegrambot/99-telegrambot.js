@@ -413,8 +413,7 @@ module.exports = function (RED) {
                 } else if (self.telegramBot._webHook) {
                     self.telegramBot.deleteWebHook();
                     self.telegramBot.closeWebHook().then(setStatusDisconnected);
-                }
-                else {
+                } else {
                     setStatusDisconnected();
                 }
             } else {

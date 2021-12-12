@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.2.0] - 2021-12-12
+### Added example flow for super group administration.
+- added missing function banChatMember
+
 # [10.1.0] - 2021-12-05
 ### Added webhook readme.
 - Fixed timeout on redeploy when node is not in polling nor in webhook mode - [#220](https://github.com/windkh/node-red-contrib-telegrambot/issues/220)

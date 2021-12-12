@@ -340,7 +340,7 @@ The `msg.payload.type` needs to be set to one of the following values:
 - inline_query, answerInlineQuery
 - action, sendChatAction
 - leaveChat, exportChatInviteLink
-- kickChatMember, unbanChatMember, restrictChatMember, promoteChatMember
+- kickChatMember, banChatMember, unbanChatMember, restrictChatMember, promoteChatMember
 - setChatPhoto, deleteChatPhoto, setChatTitle, setChatDescription
 - pinChatMessage, unpinChatMessage, unpinAllChatMessages
 - getChatAdministrators, getChatMembersCount, getChat, getChatMember

@@ -413,7 +413,8 @@ module.exports = function (RED) {
                 } else if (self.telegramBot._webHook) {
                     self.telegramBot.deleteWebHook();
                     self.telegramBot.closeWebHook().then(setStatusDisconnected);
-                } else {
+                }
+                else {
                     setStatusDisconnected();
                 }
             } else {
@@ -2114,7 +2115,7 @@ module.exports = function (RED) {
                             }
                             break;
 
-                        // 2 arguments: chatId , content
+                        // 2 arguments: chatId, content
                         case 'setChatTitle':
                         case 'setChatDescription':
                         case 'unpinChatMessage':
@@ -2130,11 +2131,12 @@ module.exports = function (RED) {
                             }
                             break;
 
-                        // 3 arguments: chatId , content, options
+                        // 3 arguments: chatId, content, options
                         case 'pinChatMessage':
                         case 'setChatPhoto':
                         case 'kickChatMember':
                         case 'unbanChatMember':
+                        case 'banChatMember':
                         case 'restrictChatMember':
                         case 'promoteChatMember':
                         case 'getChatMember':

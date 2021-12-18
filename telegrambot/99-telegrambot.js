@@ -2116,6 +2116,7 @@ module.exports = function (RED) {
 
                         // 2 arguments: chatId, content
                         case 'setChatTitle':
+                        case 'setChatPhoto':
                         case 'setChatDescription':
                         case 'unpinChatMessage':
                         case 'deleteMessage':
@@ -2132,7 +2133,6 @@ module.exports = function (RED) {
 
                         // 3 arguments: chatId, content, options
                         case 'pinChatMessage':
-                        case 'setChatPhoto':
                         case 'kickChatMember':
                         case 'unbanChatMember':
                         case 'banChatMember':
@@ -2214,7 +2214,10 @@ module.exports = function (RED) {
                             break;
 
                         // TODO:
+                        // setChatPermissions
+                        // createChatInviteLink, editChatInviteLink, revokeChatInviteLink
                         // getUserProfilePhotos, getFile,
+                        // getMyCommands
                         // setChatStickerSet, deleteChatStickerSet
                         // sendGame, setGameScore, getGameHighScores
                         // getStickerSet, uploadStickerFile, createNewStickerSet, addStickerToSet, setStickerPositionInSet, deleteStickerFromSet

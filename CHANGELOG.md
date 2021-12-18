@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.2.1] - 2021-12-18
+### Extended example supergroupadmin.json
+- added missing function banChatMember
+
 # [10.2.0] - 2021-12-12
 ### Added example flow for super group administration.
 - added missing function banChatMember

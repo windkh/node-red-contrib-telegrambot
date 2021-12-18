@@ -1,9 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.3.0] - 2021-12-18
+### added ne events My Chat Member and Chat Join Request
+
 # [10.2.1] - 2021-12-18
 ### Extended example supergroupadmin.json
-- added missing function banChatMember
 
 # [10.2.0] - 2021-12-12
 ### Added example flow for super group administration.

@@ -405,6 +405,10 @@ The node receives events from the bot like:
 - **Chosen Inline Result** which is triggered when a user has chosen a result from an inline query.
 - **Poll** which is triggered when a poll is created.
 - **Poll Answer** which is triggered when a poll is answered.
+- **My Chat Member** which is triggered when the status of the bot is changed.
+- **Chat Join Request** which is triggered when a chat join request is issued.
+Note that - **Chat Member** is deactivated as it requires special rights by the bot and modifications in polling.
+
 
 
 ### Configuration

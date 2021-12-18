@@ -213,6 +213,26 @@ module.exports = function (RED) {
                                 let polling = {
                                     autoStart: true,
                                     interval: this.pollInterval,
+
+                                    // this is used when chat_member should be received.
+                                    // params: {
+                                    //     allowed_updates: [
+                                    //         'update_id',
+                                    //         'message',
+                                    //         'edited_message',
+                                    //         'channel_post',
+                                    //         'edited_channel_post',
+                                    //         'inline_query',
+                                    //         'chosen_inline_result',
+                                    //         'callback_query',
+                                    //         'shipping_query',
+                                    //         'pre_checkout_query',
+                                    //         'poll',
+                                    //         'poll_answer',
+                                    //         'my_chat_member',
+                                    //         'chat_member',
+                                    //         'chat_join_request'],
+                                    // }
                                 };
 
                                 const options = {
@@ -828,6 +848,7 @@ module.exports = function (RED) {
                 messageId: botMsg.message_id,
                 type: 'new_chat_members',
                 content: botMsg.new_chat_members,
+                user: botMsg.new_chat_member,
                 date: botMsg.date,
             };
         } else if (botMsg.left_chat_member) {
@@ -836,6 +857,7 @@ module.exports = function (RED) {
                 messageId: botMsg.message_id,
                 type: 'left_chat_member',
                 content: botMsg.left_chat_member,
+                user: botMsg.left_chat_member,
                 date: botMsg.date,
             };
         } else if (botMsg.delete_chat_photo) {
@@ -900,8 +922,7 @@ module.exports = function (RED) {
             };
         } else {
             // unknown type --> no output
-            // TODO:
-            // 'game',
+            // TODO: connected_website, passport_data, proximity_alert_triggered, voice_chat_scheduled, voice_chat_started, voice_chat_ended, voice_chat_participants_invited, reply_markup
         }
 
         return messageDetails;
@@ -1249,22 +1270,25 @@ module.exports = function (RED) {
     RED.nodes.registerType('telegram command', TelegramCommandNode);
 
     // --------------------------------------------------------------------------------------------
-    // The input node receives an event from the chat.
+    // The input node receives an event from the chat. See https://core.telegram.org/bots/api#update
     // The type of event can be configured:
-    // - callback_query
-    // - inline_query
     // - edited_message
+    // - edited_message_text
+    // - edited_message_caption
     // - channel_post
     // - edited_channel_post
     // - edited_channel_post_text
     // - edited_channel_post_caption
-    // - edited_message_text
-    // - edited_message_caption
-    // - pre_checkout_query
-    // - shipping_query
+    // - inline_query
     // - chosen_inline_result
+    // - callback_query
+    // - shipping_query
+    // - pre_checkout_query
     // - poll
     // - poll_answer
+    // - my_chat_member
+    // - chat_member
+    // - TODO: chat_join_request
     // The message details are stored in the payload
     // chatId
     // messageId
@@ -1541,6 +1565,32 @@ module.exports = function (RED) {
                                         open_period: botMsg.open_period,
                                         close_date: botMsg.close_date,
                                         content: botMsg.question,
+                                    };
+                                    break;
+
+                                case 'my_chat_member':
+                                case 'chat_member':
+                                    messageDetails = {
+                                        from: botMsg.from,
+                                        old_chat_member: botMsg.old_chat_member,
+                                        new_chat_member: botMsg.new_chat_member,
+                                        invite_link: botMsg.invite_link,
+                                        chatId: chatid,
+                                        type: this.event,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
+                                    };
+                                    break;
+
+                                case 'chat_join_request':
+                                    messageDetails = {
+                                        from: botMsg.from,
+                                        bio: botMsg.bio,
+                                        invite_link: botMsg.invite_link,
+                                        chatId: chatid,
+                                        type: this.event,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
                                     };
                                     break;
 

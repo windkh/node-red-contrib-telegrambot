@@ -2223,7 +2223,11 @@ module.exports = function (RED) {
                             //if (this.hasContent(msg)) {
                             // this type requires ok to be set: see https://core.telegram.org/bots/api#answerprecheckoutquery
                             node.telegramBot
-                                .answerPreCheckoutQuery(msg.payload.preCheckOutQueryId, msg.payload.ok)
+                                .answerPreCheckoutQuery(
+                                    msg.payload.preCheckOutQueryId,
+                                    msg.payload.ok,
+                                    msg.payload.errorMeessage // optional when ok is false
+                                )
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })

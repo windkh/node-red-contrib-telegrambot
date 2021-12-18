@@ -2207,7 +2207,7 @@ module.exports = function (RED) {
                                     msg.payload.shippingQueryId,
                                     msg.payload.ok,
                                     msg.payload.options, // optional
-                                    msg.payload.errorMeessage // optional when ok is false
+                                    msg.payload.errorMessage // optional when ok is false
                                 )
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
@@ -2226,7 +2226,7 @@ module.exports = function (RED) {
                                 .answerPreCheckoutQuery(
                                     msg.payload.preCheckOutQueryId,
                                     msg.payload.ok,
-                                    msg.payload.errorMeessage // optional when ok is false
+                                    msg.payload.errorMessage // optional when ok is false
                                 )
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);

@@ -1262,6 +1262,7 @@ module.exports = function (RED) {
     // - edited_message_caption
     // - pre_checkout_query
     // - shipping_query
+    // - successful_payment
     // - chosen_inline_result
     // - poll
     // - poll_answer
@@ -1491,6 +1492,25 @@ module.exports = function (RED) {
                                         invoice_payload: botMsg.invoice_payload,
                                         content: botMsg.invoice_payload,
                                         shipping_address: botMsg.shipping_address,
+                                        date: botMsg.date,
+                                        chat: botMsg.chat,
+                                    };
+                                    break;
+
+                                case 'successful_payment':
+                                    messageDetails = {
+                                        successfulPaymentId: botMsg.id,
+                                        chatId: chatid,
+                                        type: this.event,
+                                        from: botMsg.from,
+                                        currency: botMsg.currency,
+                                        total_amount: botMsg.total_amount,
+                                        invoice_payload: botMsg.invoice_payload,
+                                        shipping_option_id: botMsg.shipping_option_id,
+                                        order_info: botMsg.order_info,
+                                        content: botMsg.invoice_payload,
+                                        telegram_payment_charge_id: botMsg.telegram_payment_charge_id,
+                                        provider_payment_charge_id: botMsg.provider_payment_charge_id,
                                         date: botMsg.date,
                                         chat: botMsg.chat,
                                     };

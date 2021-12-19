@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [11.0.0] - 2021-12-19
+### updated dependancies and node-telegram-bot-api to 0.56.0
+
 # [10.4.1] - 2021-12-19
 ### Added full example for sendInvoice payments. 
 - see also - [#225](https://github.com/windkh/node-red-contrib-telegrambot/pull/225) 

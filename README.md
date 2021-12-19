@@ -40,6 +40,7 @@ If you want to support this free project. Any help is welcome. You can donate by
  - Diddlik: for extending webhook options
  - MorbidDevil: for extending answerInlineQuery with options
  - daredoes: for providing the webhook decumentation on Unraid/Docker with SWAG/NGINX/REVERSE-PROXY
+ - kickouille: for fixing the payment functions.
 
 
 # Installation

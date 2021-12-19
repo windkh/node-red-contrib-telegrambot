@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.4.0] - 2021-12-19
+### Fixed payment functions 
+- see also - [#224](https://github.com/windkh/node-red-contrib-telegrambot/pull/224) 
+
 # [10.3.0] - 2021-12-18
 ### added ne events My Chat Member and Chat Join Request
 

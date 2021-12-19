@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [10.4.1] - 2021-12-19
+### Added full example for sendInvoice payments. 
+- see also - [#225](https://github.com/windkh/node-red-contrib-telegrambot/pull/225) 
+
 # [10.4.0] - 2021-12-19
 ### Fixed payment functions 
 - see also - [#224](https://github.com/windkh/node-red-contrib-telegrambot/pull/224) 

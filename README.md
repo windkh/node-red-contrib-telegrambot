@@ -40,7 +40,7 @@ If you want to support this free project. Any help is welcome. You can donate by
  - Diddlik: for extending webhook options
  - MorbidDevil: for extending answerInlineQuery with options
  - daredoes: for providing the webhook decumentation on Unraid/Docker with SWAG/NGINX/REVERSE-PROXY
- - kickouille: for fixing the payment functions.
+ - kickouille: for fixing the payment functions and providing the full payment example flow
 
 
 # Installation
@@ -1755,10 +1755,13 @@ return msg;
 
 
 ## Payments
-This feature is under construction. See  
+For a full description of how to handle payments see
 https://core.telegram.org/bots/payments  
-https://core.telegram.org/bots/api#sendinvoice  
+https://core.telegram.org/bots/api#sendinvoice
+
 [**send invoice flow**](examples/sendinvoice.json)
+[**full payment example flow**](examples/sendinvoice2.json)
+
 
 ## Implementing a simple bot
 Putting all pieces together you will have a simple bot implementing some useful functions.

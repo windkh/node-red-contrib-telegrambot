@@ -1491,7 +1491,7 @@ module.exports = function (RED) {
 
                                 case 'pre_checkout_query':
                                     messageDetails = {
-                                        preCheckOutQueryId: botMsg.id,
+                                        preCheckoutQueryId: botMsg.id,
                                         chatId: chatid,
                                         type: this.event,
                                         from: botMsg.from,
@@ -2236,8 +2236,7 @@ module.exports = function (RED) {
                                 .answerShippingQuery(
                                     msg.payload.shippingQueryId,
                                     msg.payload.ok,
-                                    msg.payload.options, // optional
-                                    msg.payload.errorMeessage // optional when ok is false
+                                    msg.payload.options // optional
                                 )
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
@@ -2253,7 +2252,11 @@ module.exports = function (RED) {
                             //if (this.hasContent(msg)) {
                             // this type requires ok to be set: see https://core.telegram.org/bots/api#answerprecheckoutquery
                             node.telegramBot
-                                .answerPreCheckoutQuery(msg.payload.preCheckOutQueryId, msg.payload.ok)
+                                .answerPreCheckoutQuery(
+                                    msg.payload.preCheckoutQueryId,
+                                    msg.payload.ok,
+                                    msg.payload.options // optional
+                                )
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })

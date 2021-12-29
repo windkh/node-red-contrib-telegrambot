@@ -955,6 +955,55 @@ module.exports = function (RED) {
         this.bot = config.bot;
         node.filterCommands = config.filterCommands || false;
 
+        this.processMessage = function (botMsg) {
+            node.status({
+                fill: 'green',
+                shape: 'ring',
+                text: 'connected',
+            });
+
+            let username = botMsg.from.username;
+            let userid = botMsg.from.id;
+            let chatid = botMsg.chat.id;
+            let messageDetails = getMessageDetails(botMsg);
+            if (messageDetails) {
+                let msg = {
+                    payload: messageDetails,
+                    originalMessage: botMsg,
+                };
+
+                if (node.config.isAuthorized(node, chatid, userid, username)) {
+                    // downloadable "blob" message?
+                    if (messageDetails.blob) {
+                        let fileId = msg.payload.content;
+                        node.telegramBot.getFileLink(fileId).then(function (weblink) {
+                            msg.payload.weblink = weblink;
+
+                            // download and provide with path
+                            if (config.saveDataDir) {
+                                node.telegramBot.downloadFile(fileId, config.saveDataDir).then(function (path) {
+                                    msg.payload.path = path;
+                                    node.send([msg, null]);
+                                });
+                            } else {
+                                node.send([msg, null]);
+                            }
+                        });
+                        // vanilla message
+                    } else if (node.filterCommands && node.config.isCommandRegistered(messageDetails.content)) {
+                        // Do nothing
+                    } else {
+                        node.send([msg, null]);
+                    }
+                } else {
+                    if (node.config.verbose) {
+                        node.warn('Unauthorized incoming call from ' + username);
+                    }
+                    node.send([null, msg]);
+                }
+            }
+        };
+
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
@@ -970,54 +1019,7 @@ module.exports = function (RED) {
                         text: 'connected',
                     });
 
-                    node.telegramBot.on('message', function (botMsg) {
-                        node.status({
-                            fill: 'green',
-                            shape: 'ring',
-                            text: 'connected',
-                        });
-
-                        let username = botMsg.from.username;
-                        let userid = botMsg.from.id;
-                        let chatid = botMsg.chat.id;
-                        let messageDetails = getMessageDetails(botMsg);
-                        if (messageDetails) {
-                            let msg = {
-                                payload: messageDetails,
-                                originalMessage: botMsg,
-                            };
-
-                            if (node.config.isAuthorized(node, chatid, userid, username)) {
-                                // downloadable "blob" message?
-                                if (messageDetails.blob) {
-                                    let fileId = msg.payload.content;
-                                    node.telegramBot.getFileLink(fileId).then(function (weblink) {
-                                        msg.payload.weblink = weblink;
-
-                                        // download and provide with path
-                                        if (config.saveDataDir) {
-                                            node.telegramBot.downloadFile(fileId, config.saveDataDir).then(function (path) {
-                                                msg.payload.path = path;
-                                                node.send([msg, null]);
-                                            });
-                                        } else {
-                                            node.send([msg, null]);
-                                        }
-                                    });
-                                    // vanilla message
-                                } else if (node.filterCommands && node.config.isCommandRegistered(messageDetails.content)) {
-                                    // Do nothing
-                                } else {
-                                    node.send([msg, null]);
-                                }
-                            } else {
-                                if (node.config.verbose) {
-                                    node.warn('Unauthorized incoming call from ' + username);
-                                }
-                                node.send([null, msg]);
-                            }
-                        }
-                    });
+                    node.telegramBot.on('message', (botMsg) => this.processMessage(botMsg));
                 } else {
                     node.status({
                         fill: 'grey',
@@ -1092,6 +1094,123 @@ module.exports = function (RED) {
 
         this.bot = config.bot;
 
+        this.processMessage = function (botMsg) {
+            node.status({
+                fill: 'green',
+                shape: 'ring',
+                text: 'connected',
+            });
+
+            let username = botMsg.from.username;
+            let chatid = botMsg.chat.id;
+            let userid = botMsg.from.id;
+            if (node.config.isAuthorized(node, chatid, userid, username)) {
+                let msg;
+                let messageDetails;
+                if (botMsg.text) {
+                    let message = botMsg.text;
+                    let tokens = message.split(' ');
+
+                    // check if this is a command at all first
+                    let commandToken = tokens[0];
+                    let isCommandMessage = commandToken.startsWith('/');
+                    let isGroupChat = chatid < 0;
+                    let toBot = '@' + node.botname;
+
+                    // preprocess regex
+                    let command1 = command;
+                    let command2;
+
+                    let isRegExMatch;
+                    let isChatCommand = false;
+                    let isDirectCommand = false;
+                    if (useRegex) {
+                        let match = regEx.exec(commandToken);
+                        if (match !== null) {
+                            isRegExMatch = true;
+                            isChatCommand = true;
+                            isDirectCommand = commandToken.endsWith(toBot);
+
+                            if (removeRegexCommand) {
+                                command1 = match[0];
+                            }
+
+                            if (!command1.endsWith(toBot)) {
+                                command2 = command1 + toBot;
+                            } else {
+                                command2 = command1;
+                            }
+                        }
+                    } else {
+                        isRegExMatch = false;
+
+                        isChatCommand = commandToken === command1;
+                        command2 = command1 + toBot;
+                        isDirectCommand = commandToken === command2;
+                    }
+
+                    // then if this command is meant for this node
+
+                    if (isDirectCommand || (isChatCommand && !isGroupChat) || (isChatCommand && isGroupChat && !strict) || (useRegex && isRegExMatch)) {
+                        let remainingText;
+                        if (isDirectCommand) {
+                            remainingText = message.replace(command2, '');
+                        } else {
+                            remainingText = message.replace(command1, '');
+                        }
+
+                        messageDetails = {
+                            chatId: botMsg.chat.id,
+                            messageId: botMsg.message_id,
+                            type: 'message',
+                            content: remainingText,
+                        };
+                        msg = {
+                            payload: messageDetails,
+                            originalMessage: botMsg,
+                        };
+
+                        if (hasresponse) {
+                            node.send([msg, null]);
+                            node.config.setCommandPending(command1, username, chatid);
+                        } else {
+                            node.send(msg);
+                        }
+                    } else {
+                        // Here we check if the received message is probably a resonse to a pending command.
+                        if (!isCommandMessage) {
+                            if (hasresponse) {
+                                let isPending = node.config.isCommandPending(command1, username, chatid);
+                                if (isPending) {
+                                    messageDetails = {
+                                        chatId: botMsg.chat.id,
+                                        messageId: botMsg.message_id,
+                                        type: 'message',
+                                        content: botMsg.text,
+                                    };
+                                    msg = {
+                                        payload: messageDetails,
+                                        originalMessage: botMsg,
+                                    };
+                                    node.send([null, msg]);
+                                    node.config.resetCommandPending(command1, username, chatid);
+                                }
+                            }
+                        } else {
+                            // Here we just ignore what happened as we do not know if another node is registered for that command.
+                        }
+                    }
+                } else {
+                    // unknown type --> no output
+                }
+            } else {
+                // ignoring unauthorized calls
+                if (node.config.verbose) {
+                    node.warn('Unauthorized incoming call from ' + username);
+                }
+            }
+        };
+
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             // If the command should not be registered, then we invalidate the language.
@@ -1115,127 +1234,7 @@ module.exports = function (RED) {
                         text: 'connected',
                     });
 
-                    node.telegramBot.on('message', function (botMsg) {
-                        node.status({
-                            fill: 'green',
-                            shape: 'ring',
-                            text: 'connected',
-                        });
-
-                        let username = botMsg.from.username;
-                        let chatid = botMsg.chat.id;
-                        let userid = botMsg.from.id;
-                        if (node.config.isAuthorized(node, chatid, userid, username)) {
-                            let msg;
-                            let messageDetails;
-                            if (botMsg.text) {
-                                let message = botMsg.text;
-                                let tokens = message.split(' ');
-
-                                // check if this is a command at all first
-                                let commandToken = tokens[0];
-                                let isCommandMessage = commandToken.startsWith('/');
-                                let isGroupChat = chatid < 0;
-                                let toBot = '@' + node.botname;
-
-                                // preprocess regex
-                                let command1 = command;
-                                let command2;
-
-                                let isRegExMatch;
-                                let isChatCommand = false;
-                                let isDirectCommand = false;
-                                if (useRegex) {
-                                    let match = regEx.exec(commandToken);
-                                    if (match !== null) {
-                                        isRegExMatch = true;
-                                        isChatCommand = true;
-                                        isDirectCommand = commandToken.endsWith(toBot);
-
-                                        if (removeRegexCommand) {
-                                            command1 = match[0];
-                                        }
-
-                                        if (!command1.endsWith(toBot)) {
-                                            command2 = command1 + toBot;
-                                        } else {
-                                            command2 = command1;
-                                        }
-                                    }
-                                } else {
-                                    isRegExMatch = false;
-
-                                    isChatCommand = commandToken === command1;
-                                    command2 = command1 + toBot;
-                                    isDirectCommand = commandToken === command2;
-                                }
-
-                                // then if this command is meant for this node
-
-                                if (
-                                    isDirectCommand ||
-                                    (isChatCommand && !isGroupChat) ||
-                                    (isChatCommand && isGroupChat && !strict) ||
-                                    (useRegex && isRegExMatch)
-                                ) {
-                                    let remainingText;
-                                    if (isDirectCommand) {
-                                        remainingText = message.replace(command2, '');
-                                    } else {
-                                        remainingText = message.replace(command1, '');
-                                    }
-
-                                    messageDetails = {
-                                        chatId: botMsg.chat.id,
-                                        messageId: botMsg.message_id,
-                                        type: 'message',
-                                        content: remainingText,
-                                    };
-                                    msg = {
-                                        payload: messageDetails,
-                                        originalMessage: botMsg,
-                                    };
-
-                                    if (hasresponse) {
-                                        node.send([msg, null]);
-                                        node.config.setCommandPending(command1, username, chatid);
-                                    } else {
-                                        node.send(msg);
-                                    }
-                                } else {
-                                    // Here we check if the received message is probably a resonse to a pending command.
-                                    if (!isCommandMessage) {
-                                        if (hasresponse) {
-                                            let isPending = node.config.isCommandPending(command1, username, chatid);
-                                            if (isPending) {
-                                                messageDetails = {
-                                                    chatId: botMsg.chat.id,
-                                                    messageId: botMsg.message_id,
-                                                    type: 'message',
-                                                    content: botMsg.text,
-                                                };
-                                                msg = {
-                                                    payload: messageDetails,
-                                                    originalMessage: botMsg,
-                                                };
-                                                node.send([null, msg]);
-                                                node.config.resetCommandPending(command1, username, chatid);
-                                            }
-                                        }
-                                    } else {
-                                        // Here we just ignore what happened as we do not know if another node is registered for that command.
-                                    }
-                                }
-                            } else {
-                                // unknown type --> no output
-                            }
-                        } else {
-                            // ignoring unauthorized calls
-                            if (node.config.verbose) {
-                                node.warn('Unauthorized incoming call from ' + username);
-                            }
-                        }
-                    });
+                    node.telegramBot.on('message', (botMsg) => this.processMessage(botMsg));
                 } else {
                     node.status({
                         fill: 'grey',
@@ -1677,36 +1676,6 @@ module.exports = function (RED) {
         let haserroroutput = config.haserroroutput;
         if (haserroroutput === undefined) {
             haserroroutput = false;
-        }
-
-        this.config = RED.nodes.getNode(this.bot);
-        if (this.config) {
-            node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
-
-            node.config.on('status', node.status);
-
-            node.telegramBot = this.config.getTelegramBot();
-            if (node.telegramBot) {
-                node.status({
-                    fill: 'green',
-                    shape: 'ring',
-                    text: 'connected',
-                });
-            } else {
-                node.warn('bot not initialized.');
-                node.status({
-                    fill: 'red',
-                    shape: 'ring',
-                    text: 'bot not initialized',
-                });
-            }
-        } else {
-            node.warn('config node failed to initialize.');
-            node.status({
-                fill: 'red',
-                shape: 'ring',
-                text: 'config node failed to initialize',
-            });
         }
 
         this.hasContent = function (msg) {
@@ -2312,6 +2281,36 @@ module.exports = function (RED) {
             opts.qs.media = JSON.stringify(payload);
             return node.telegramBot._request('editMessageMedia', opts);
         };
+
+        this.config = RED.nodes.getNode(this.bot);
+        if (this.config) {
+            node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
+
+            node.config.on('status', node.status);
+
+            node.telegramBot = this.config.getTelegramBot();
+            if (node.telegramBot) {
+                node.status({
+                    fill: 'green',
+                    shape: 'ring',
+                    text: 'connected',
+                });
+            } else {
+                node.warn('bot not initialized.');
+                node.status({
+                    fill: 'red',
+                    shape: 'ring',
+                    text: 'bot not initialized',
+                });
+            }
+        } else {
+            node.warn('config node failed to initialize.');
+            node.status({
+                fill: 'red',
+                shape: 'ring',
+                text: 'config node failed to initialize',
+            });
+        }
 
         this.on('input', function (msg, nodeSend, nodeDone) {
             nodeSend =

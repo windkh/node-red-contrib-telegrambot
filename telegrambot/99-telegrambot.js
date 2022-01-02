@@ -117,14 +117,19 @@ module.exports = function (RED) {
         // 4. optional when request via SOCKS5 is used.
         this.useSocks = n.usesocks;
         if (this.useSocks) {
+            let agentOptions = {
+                socksHost: n.sockshost,
+                socksPort: n.socksport,
+            };
+
+            if (n.socksusername !== '') {
+                agentOptions.socksUsername = n.socksusername;
+                agentOptions.socksPassword = n.sockspassword;
+            }
+
             this.socksRequest = {
                 agentClass: Agent,
-                agentOptions: {
-                    socksHost: n.sockshost,
-                    socksPort: n.socksport,
-                    socksUsername: n.socksusername,
-                    socksPassword: n.sockspassword,
-                },
+                agentOptions: agentOptions,
             };
         }
 
@@ -1040,7 +1045,10 @@ module.exports = function (RED) {
         if (this.config) {
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.config.on('status', node.status);
+            node.onStatusChanged = function (status) {
+                node.status(status);
+            };
+            node.config.addListener('status', node.onStatusChanged);
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
@@ -1078,7 +1086,11 @@ module.exports = function (RED) {
 
         this.on('close', function () {
             node.telegramBot.off('message');
-            node.config.off('status', node.status);
+
+            if (node.onStatusChanged) {
+                node.config.removeListener('status', node.onStatusChanged);
+            }
+
             node.status({});
         });
     }
@@ -1254,7 +1266,10 @@ module.exports = function (RED) {
 
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.config.on('status', node.status);
+            node.onStatusChanged = function (status) {
+                node.status(status);
+            };
+            node.config.addListener('status', node.onStatusChanged);
 
             node.telegramBot = this.config.getTelegramBot();
             node.botname = this.config.botname;
@@ -1293,7 +1308,11 @@ module.exports = function (RED) {
 
         this.on('close', function () {
             node.telegramBot.off('message');
-            node.config.off('status', node.status);
+
+            if (node.onStatusChanged) {
+                node.config.removeListener('status', node.onStatusChanged);
+            }
+
             node.config.unregisterCommand(node.id);
             node.status({});
         });
@@ -1335,11 +1354,20 @@ module.exports = function (RED) {
         this.event = config.event;
         this.autoAnswerCallback = config.autoanswer;
 
+        this.processError = function (exception, msg) {
+            let errorMessage = 'Caught exception in event node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.stringify(msg);
+            node.error(errorMessage, msg);
+            throw exception;
+        };
+
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.config.on('status', node.status);
+            node.onStatusChanged = function (status) {
+                node.status(status);
+            };
+            node.config.addListener('status', node.onStatusChanged);
 
             node.telegramBot = this.config.getTelegramBot();
             node.botname = this.config.botname;
@@ -1668,15 +1696,13 @@ module.exports = function (RED) {
 
         this.on('close', function () {
             node.telegramBot.off(this.event);
-            node.config.off('status', node.status);
+
+            if (node.onStatusChanged) {
+                node.config.removeListener('status', node.onStatusChanged);
+            }
+
             node.status({});
         });
-
-        this.processError = function (exception, msg) {
-            let errorMessage = 'Caught exception in event node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.stringify(msg);
-            node.error(errorMessage, msg);
-            throw exception;
-        };
     }
     RED.nodes.registerType('telegram event', TelegramEventNode);
 
@@ -2318,7 +2344,10 @@ module.exports = function (RED) {
         if (this.config) {
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.config.on('status', node.status);
+            node.onStatusChanged = function (status) {
+                node.status(status);
+            };
+            node.config.addListener('status', node.onStatusChanged);
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
@@ -2371,6 +2400,14 @@ module.exports = function (RED) {
                 node.warn('msg.payload is empty');
             }
         });
+
+        this.on('close', function () {
+            if (node.onStatusChanged) {
+                node.config.removeListener('status', node.onStatusChanged);
+            }
+
+            node.status({});
+        });
     }
     RED.nodes.registerType('telegram sender', TelegramOutNode);
 
@@ -2389,7 +2426,10 @@ module.exports = function (RED) {
         if (this.config) {
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.config.on('status', node.status);
+            node.onStatusChanged = function (status) {
+                node.status(status);
+            };
+            node.config.addListener('status', node.onStatusChanged);
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
@@ -2452,6 +2492,14 @@ module.exports = function (RED) {
             } else {
                 node.warn('msg.payload is empty');
             }
+        });
+
+        this.on('close', function () {
+            if (node.onStatusChanged) {
+                node.config.removeListener('status', node.onStatusChanged);
+            }
+
+            node.status({});
         });
     }
     RED.nodes.registerType('telegram reply', TelegramReplyNode);

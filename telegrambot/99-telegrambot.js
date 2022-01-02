@@ -117,10 +117,10 @@ module.exports = function (RED) {
         // 4. optional when request via SOCKS5 is used.
         this.useSocks = n.usesocks;
         if (this.useSocks) {
-            let agentOptions = {
+            let agentOptions =  {
                 socksHost: n.sockshost,
-                socksPort: n.socksport,
-            };
+                socksPort: n.socksport
+            }
 
             if (n.socksusername !== '') {
                 agentOptions.socksUsername = n.socksusername;
@@ -480,20 +480,21 @@ module.exports = function (RED) {
 
         this.getBotToken = function (botToken) {
             botToken = this.credentials.token;
-            if (botToken) {
+            if (botToken !== undefined) {
                 botToken = botToken.trim();
-            }
 
-            if (botToken.startsWith('{') && botToken.endsWith('}')) {
-                let expression = botToken.substr(1, botToken.length - 2);
-                let code = `sandbox.${expression};`;
-
-                try {
-                    botToken = eval(code);
-                } catch (e) {
-                    botToken = undefined;
+                if (botToken.startsWith('{') && botToken.endsWith('}')) {
+                    let expression = botToken.substr(1, botToken.length - 2);
+                    let code = `sandbox.${expression};`;
+    
+                    try {
+                        botToken = eval(code);
+                    } catch (e) {
+                        botToken = undefined;
+                    }
                 }
             }
+
             return botToken;
         };
 
@@ -1068,7 +1069,7 @@ module.exports = function (RED) {
                     });
                 }
             } else {
-                node.warn('bot not initialized');
+                node.warn('bot not initialized.');
                 node.status({
                     fill: 'red',
                     shape: 'ring',
@@ -1086,7 +1087,7 @@ module.exports = function (RED) {
 
         this.on('close', function () {
             node.telegramBot.off('message');
-
+            
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }
@@ -1294,7 +1295,7 @@ module.exports = function (RED) {
                 node.status({
                     fill: 'red',
                     shape: 'ring',
-                    text: 'no bot token found in config',
+                    text: 'bot not initialized',
                 });
             }
         } else {
@@ -1308,7 +1309,7 @@ module.exports = function (RED) {
 
         this.on('close', function () {
             node.telegramBot.off('message');
-
+           
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }
@@ -1682,7 +1683,7 @@ module.exports = function (RED) {
                 node.status({
                     fill: 'red',
                     shape: 'ring',
-                    text: 'no bot token found in config',
+                    text: 'bot not initialized',
                 });
             }
         } else {
@@ -1696,7 +1697,7 @@ module.exports = function (RED) {
 
         this.on('close', function () {
             node.telegramBot.off(this.event);
-
+            
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }

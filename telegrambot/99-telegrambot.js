@@ -11,7 +11,7 @@ module.exports = function (RED) {
     });
 
     let telegramBot = require('node-telegram-bot-api');
-    var SocksProxyAgent = require('socks-proxy-agent');
+    let SocksProxyAgent = require('socks-proxy-agent');
 
     // --------------------------------------------------------------------------------------------
     // The configuration node
@@ -117,12 +117,11 @@ module.exports = function (RED) {
         // 4. optional when request via SOCKS5 is used.
         this.useSocks = n.usesocks;
         if (this.useSocks) {
-
             let agentOptions = {
-                host : n.sockshost,
-                port : n.socksport,
+                host: n.sockshost,
+                port: n.socksport,
                 // protocol :  'socks5',
-                type : 5
+                type: 5,
             };
 
             if (n.socksusername !== '') {
@@ -492,7 +491,7 @@ module.exports = function (RED) {
                 if (botToken.startsWith('{') && botToken.endsWith('}')) {
                     let expression = botToken.substr(1, botToken.length - 2);
                     let code = `sandbox.${expression};`;
-    
+
                     try {
                         botToken = eval(code);
                     } catch (e) {
@@ -1093,7 +1092,7 @@ module.exports = function (RED) {
 
         this.on('close', function () {
             node.telegramBot.off('message');
-            
+
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }
@@ -1315,7 +1314,7 @@ module.exports = function (RED) {
 
         this.on('close', function () {
             node.telegramBot.off('message');
-           
+
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }
@@ -1703,7 +1702,7 @@ module.exports = function (RED) {
 
         this.on('close', function () {
             node.telegramBot.off(this.event);
-            
+
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }

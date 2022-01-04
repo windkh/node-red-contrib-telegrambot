@@ -5,7 +5,7 @@
     "dependencies": {
         "bluebird": "^3.5.1",
         "node-telegram-bot-api": "^0.56.0",
-        "socks5-https-client": "1.2.1"
+        "socks-proxy-agent": "^6.1.1"
     },
     "scripts": {
         "lint": "eslint telegrambot/*.js",

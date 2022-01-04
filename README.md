@@ -56,7 +56,7 @@ Or run the following command in the root directory of your Node-RED installation
 # Dependencies
 The nodes are tested with `Node.js v16.6.0` and `Node-RED v2.0.5`.
  - [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
- - [socks5-https-client](https://github.com/mattcg/socks5-https-client)
+ - [socks-proxy-agent](https://www.npmjs.com/package/socks-proxy-agent)
 
 # Changelog
 Changes can be followed [here](/CHANGELOG.md).

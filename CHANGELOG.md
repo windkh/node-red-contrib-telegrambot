@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [11.2.0] - 2022-01-04
+### fixed socks5 support - [#229](https://github.com/windkh/node-red-contrib-telegrambot/pull/229) 
+replaced socks5-https-client with socks-proxy-agent 
+
 # [11.1.0] - 2022-01-02
 ### fixed status of nodes - [#230](https://github.com/windkh/node-red-contrib-telegrambot/pull/230) 
 

@@ -11,7 +11,7 @@ module.exports = function (RED) {
     });
 
     let telegramBot = require('node-telegram-bot-api');
-    const Agent = require('socks5-https-client/lib/Agent');
+    var SocksProxyAgent = require('socks-proxy-agent');
 
     // --------------------------------------------------------------------------------------------
     // The configuration node
@@ -117,18 +117,24 @@ module.exports = function (RED) {
         // 4. optional when request via SOCKS5 is used.
         this.useSocks = n.usesocks;
         if (this.useSocks) {
-            let agentOptions =  {
-                socksHost: n.sockshost,
-                socksPort: n.socksport
-            }
+
+            let agentOptions = {
+                host : n.sockshost,
+                port : n.socksport,
+                // protocol :  'socks5',
+                type : 5
+            };
 
             if (n.socksusername !== '') {
-                agentOptions.socksUsername = n.socksusername;
-                agentOptions.socksPassword = n.sockspassword;
+                agentOptions.username = n.socksusername;
+            }
+
+            if (n.sockspassword !== '') {
+                agentOptions.password = n.sockspassword;
             }
 
             this.socksRequest = {
-                agentClass: Agent,
+                agentClass: SocksProxyAgent,
                 agentOptions: agentOptions,
             };
         }

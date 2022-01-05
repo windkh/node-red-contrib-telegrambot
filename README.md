@@ -265,6 +265,10 @@ You can only send messages using the sender node but you can not receive any dat
 ### Configuration property flag *Use SOCKS5*
 SOCKS5 proxy support is optional when running behind a SOCKS5 proxy that requires authentication. In this case, additional configuration properties have to be set in the configuration node.
 
+As setting up a socks5 proxy can be very complex depending on the infrastructure this was moved to a seprate readme file.
+See also [SOCKS5.md](SOCKS5.md)
+
+
 ### Configuration property flag *Verbose Logging*
 The ***Verbose Logging*** flag should only be activated when debugging network problems as this will create cyclic warnings when the network is down.
 

@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [11.2.2] - 2022-02-03
+### allowed node-red 1.0 and nodejs 10.0
+
 # [11.2.1] - 2022-02-01
 ### added missing node red tags
  

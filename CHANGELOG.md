@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [11.2.4] - 2022-02-13
+### removed version properties from package.json - [#235](https://github.com/windkh/node-red-contrib-telegrambot/pull/235)
+
 # [11.2.3] - 2022-02-03
 ### allowed node-red 1.3.7 and nodejs 12.0.0
 

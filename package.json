@@ -1,6 +1,6 @@
 {
     "name": "node-red-contrib-telegrambot",
-    "version": "11.2.4",
+    "version": "11.2.5",
     "description": "Telegram bot nodes for Node-RED",
     "dependencies": {
         "bluebird": "^3.5.1",
@@ -17,9 +17,13 @@
         }
     },
     "node-red": {
-		  "nodes": {
+	    "version": ">=0.1.0",
+		"nodes": {
             "telegrambot": "telegrambot/99-telegrambot.js"
         }
+    },
+	"engines": {
+        "node": ">=7.6.0"
     },
     "keywords": [
         "node-red",

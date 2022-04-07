@@ -764,6 +764,15 @@ module.exports = function (RED) {
                 date: botMsg.date,
                 blob: true,
             };
+        } else if (botMsg.dice) {
+            messageDetails = {
+                chatId: botMsg.chat.id,
+                messageId: botMsg.message_id,
+                type: 'dice',
+                content: botMsg.dice,
+                date: botMsg.date,
+                blob: false,
+            };
         } else if (botMsg.animation) {
             messageDetails = {
                 chatId: botMsg.chat.id,
@@ -1957,6 +1966,19 @@ module.exports = function (RED) {
                             if (this.hasContent(msg)) {
                                 node.telegramBot
                                     .sendSticker(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
+                                    .catch(function (ex) {
+                                        node.processError(ex, msg, nodeSend, nodeDone);
+                                    })
+                                    .then(function (result) {
+                                        node.processResult(result, msg, nodeSend, nodeDone);
+                                    });
+                            }
+                            break;
+
+                        case 'dice':
+                            if (this.hasContent(msg)) {
+                                node.telegramBot
+                                    .sendDice(chatId, msg.payload.content, msg.payload.options)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })

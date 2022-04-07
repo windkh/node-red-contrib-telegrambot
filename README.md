@@ -98,6 +98,7 @@ The following message contents can be sent and received (given in `msg.payload.t
 - **document** - content is the file_id of the document
 - **sticker** - content is the file_id of the sticker
 - **animation** - content is the file_id of the animation file
+- **dice** - content is a dice
 - **video** - content is the file_id of the video file
 - **video_note** - content is the file_id of the video note file
 - **voice** - content is the file_id of the voice file
@@ -137,6 +138,7 @@ The following table shows the relationship between the message *type* and additi
 | **message** | text |-|-|-|-|-|
 | **photo** | photo[index].file_id |-| optional | true | + | optional |
 | **audio**| audio.file_id | - | optional | true | - | - |
+| **dice**| dice |  - | -  | false | - | - |
 | **sticker**| sticker.file_id |  - | -  | true | - | - |
 | **animation**| animation.file_id | - | optional | true | - | optional |
 | **video**| video.file_id |  - | optional | true | - | optional |
@@ -1153,6 +1155,7 @@ You can use one of the following types to send your file as content:
 - video
 - video_note
 - sticker
+- dice
 - animation
 - voice
 - document
@@ -1188,6 +1191,7 @@ photo
 audio
 video
 sticker
+dice
 voice
 document
 */
@@ -1213,6 +1217,7 @@ photo
 audio
 video
 sticker
+dice
 voice
 document
 */

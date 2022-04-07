@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [11.3.0] - 2022-04-07
+### sendDice added - [#238](https://github.com/windkh/node-red-contrib-telegrambot/pull/238) 
+
 # [11.2.4] - 2022-02-13
 ### removed version properties from package.json - [#235](https://github.com/windkh/node-red-contrib-telegrambot/pull/235)
 

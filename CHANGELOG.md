@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [11.4.0] - 2022-05-16
+### added added approveChatJoinRequest, declineChatJoinRequest - [#245](https://github.com/windkh/node-red-contrib-telegrambot/pull/245) 
+
 # [11.3.0] - 2022-04-07
 ### sendDice added - [#238](https://github.com/windkh/node-red-contrib-telegrambot/pull/238) 
 

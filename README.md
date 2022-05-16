@@ -41,6 +41,7 @@ If you want to support this free project. Any help is welcome. You can donate by
  - MorbidDevil: for extending answerInlineQuery with options
  - daredoes: for providing the webhook decumentation on Unraid/Docker with SWAG/NGINX/REVERSE-PROXY
  - kickouille: for fixing the payment functions and providing the full payment example flow
+ - skrashevich: for providing approveChatJoinRequest, declineChatJoinRequest
 
 
 # Installation

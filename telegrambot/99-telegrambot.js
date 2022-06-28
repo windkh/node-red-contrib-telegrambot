@@ -93,7 +93,7 @@ module.exports = function (RED) {
         if (isNaN(this.pollInterval)) {
             this.pollInterval = 300;
         }
-        this.pollTimeout = 10; // seconds
+        this.pollTimeout = 10; // seconds. This timeout is set to avoid close timeout on redeploy.
 
         // 2. optional when webhook is used.
         this.botHost = n.bothost;
@@ -228,7 +228,6 @@ module.exports = function (RED) {
                 params: {
                     timeout: this.pollTimeout,
                 },
-                
                 // this is used when chat_member should be received.
                 // params: {
                 //     allowed_updates: [

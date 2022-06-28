@@ -1500,6 +1500,21 @@ See the example flow [**copy message**](examples/copymessage.json) in the exampl
 Remark: You need to have sufficient permissions to be able to do this message forwarding.
 
 
+## Dwonloading files manually
+The receiver node can automatically download files into the configured download directory.
+You can also download the files manually using a fileId by passing the following message to the sender node:
+
+```javascript
+msg.payload.download = { 
+  fileId : "<yourfileidhere>",
+  filePath : "c:\\downloaddirectory"
+  };
+return msg;
+```
+
+See the example flow [**download file**](examples/downloadfile.json) in the examples folder.
+
+
 ## Creating polls
 You can create polls, listen to poll events and even receive polls.
 A poll can be created using the following pattern:

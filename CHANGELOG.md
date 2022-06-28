@@ -1,7 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# [11.5.0] - 2022-05-16
+# [11.6.0] - 2022-06-28
+### added download file by fileId feature - [#252](https://github.com/windkh/node-red-contrib-telegrambot/pull/252) 
+
+# [11.5.0] - 2022-06-28
 ### upgraded to node-telegram-bot-api to 0.58.0, added explicit dependency to request: see [#247](https://github.com/windkh/node-red-contrib-telegrambot/pull/247)
 ### fixed [#249](https://github.com/windkh/node-red-contrib-telegrambot/pull/249) 
 ### fixed [#250](https://github.com/windkh/node-red-contrib-telegrambot/pull/250) 

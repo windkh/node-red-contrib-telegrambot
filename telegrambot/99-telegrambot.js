@@ -1822,6 +1822,18 @@ module.exports = function (RED) {
                     .then(function (result) {
                         node.processResult(result, msg, nodeSend, nodeDone);
                     });
+            } else if (msg.payload.download) {
+                let fileId = msg.payload.download.fileId;
+                let filePath = msg.payload.download.filePath;
+
+                node.telegramBot
+                    .downloadFile(fileId, filePath)
+                    .catch(function (ex) {
+                        node.processError(ex, msg, nodeSend, nodeDone);
+                    })
+                    .then(function (result) {
+                        node.processResult(result, msg, nodeSend, nodeDone);
+                    });
             } else {
                 if (msg.payload.type) {
                     let type = msg.payload.type;

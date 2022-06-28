@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [11.5.0] - 2022-05-16
+### upgraded to node-telegram-bot-api to 0.58.0, added explicit dependency to request: see [#247](https://github.com/windkh/node-red-contrib-telegrambot/pull/247)
+### fixed [#249](https://github.com/windkh/node-red-contrib-telegrambot/pull/249) 
+### fixed [#250](https://github.com/windkh/node-red-contrib-telegrambot/pull/250) 
+
 # [11.4.0] - 2022-05-16
 ### added added approveChatJoinRequest, declineChatJoinRequest - [#245](https://github.com/windkh/node-red-contrib-telegrambot/pull/245) 
 

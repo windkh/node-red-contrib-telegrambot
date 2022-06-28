@@ -93,6 +93,7 @@ module.exports = function (RED) {
         if (isNaN(this.pollInterval)) {
             this.pollInterval = 300;
         }
+        this.pollTimeout = 10; // seconds
 
         // 2. optional when webhook is used.
         this.botHost = n.bothost;
@@ -224,7 +225,10 @@ module.exports = function (RED) {
             let polling = {
                 autoStart: true,
                 interval: this.pollInterval,
-
+                params: {
+                    timeout: this.pollTimeout,
+                },
+                
                 // this is used when chat_member should be received.
                 // params: {
                 //     allowed_updates: [

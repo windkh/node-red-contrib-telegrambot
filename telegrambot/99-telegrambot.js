@@ -1871,7 +1871,7 @@ module.exports = function (RED) {
                                     }
 
                                     node.telegramBot
-                                        .sendMessage(chatId, messageToSend, msg.payload.options)
+                                        .sendMessage(chatId, messageToSend, msg.payload.options || {})
                                         .then(function (result) {
                                             node.processResult(result, msg, nodeSend, nodeDone);
                                         })
@@ -1890,7 +1890,7 @@ module.exports = function (RED) {
                                             ) {
                                                 delete msg.payload.options.parse_mode;
                                                 node.telegramBot
-                                                    .sendMessage(chatId, messageToSend, msg.payload.options)
+                                                    .sendMessage(chatId, messageToSend, msg.payload.options || {})
                                                     .catch(function (ex) {
                                                         node.processError(ex, msg, nodeSend, nodeDone);
                                                     })
@@ -1909,7 +1909,7 @@ module.exports = function (RED) {
                         case 'photo':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .sendPhoto(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
+                                    .sendPhoto(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -1933,7 +1933,7 @@ module.exports = function (RED) {
                                         }
                                     }
                                     node.telegramBot
-                                        .sendMediaGroup(chatId, msg.payload.content, msg.payload.options)
+                                        .sendMediaGroup(chatId, msg.payload.content, msg.payload.options || {})
                                         .catch(function (ex) {
                                             node.processError(ex, msg, nodeSend, nodeDone);
                                         })
@@ -1948,7 +1948,7 @@ module.exports = function (RED) {
                         case 'audio':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .sendAudio(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
+                                    .sendAudio(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -1966,7 +1966,7 @@ module.exports = function (RED) {
                         case 'document':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .sendDocument(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
+                                    .sendDocument(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -1979,7 +1979,7 @@ module.exports = function (RED) {
                         case 'poll':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .sendPoll(chatId, msg.payload.content, msg.payload.options, msg.payload.optional)
+                                    .sendPoll(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.optional)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -1992,7 +1992,7 @@ module.exports = function (RED) {
                         case 'sticker':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .sendSticker(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
+                                    .sendSticker(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2005,7 +2005,7 @@ module.exports = function (RED) {
                         case 'dice':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .sendDice(chatId, msg.payload.content, msg.payload.options)
+                                    .sendDice(chatId, msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2018,7 +2018,7 @@ module.exports = function (RED) {
                         case 'animation':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .sendAnimation(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
+                                    .sendAnimation(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2031,7 +2031,7 @@ module.exports = function (RED) {
                         case 'video':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .sendVideo(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
+                                    .sendVideo(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2044,7 +2044,7 @@ module.exports = function (RED) {
                         case 'video_note':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .sendVideoNote(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
+                                    .sendVideoNote(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2057,7 +2057,7 @@ module.exports = function (RED) {
                         case 'voice':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .sendVoice(chatId, msg.payload.content, msg.payload.options, msg.payload.fileOptions)
+                                    .sendVoice(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2070,7 +2070,7 @@ module.exports = function (RED) {
                         case 'location':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .sendLocation(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options)
+                                    .sendLocation(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2089,7 +2089,7 @@ module.exports = function (RED) {
                                         msg.payload.content.longitude,
                                         msg.payload.content.title,
                                         msg.payload.content.address,
-                                        msg.payload.options
+                                        msg.payload.options || {}
                                     )
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2109,7 +2109,7 @@ module.exports = function (RED) {
                                     msg.payload.options.last_name = msg.payload.content.last_name;
                                 }
                                 node.telegramBot
-                                    .sendContact(chatId, msg.payload.content.phone_number, msg.payload.content.first_name, msg.payload.options)
+                                    .sendContact(chatId, msg.payload.content.phone_number, msg.payload.content.first_name, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2123,7 +2123,7 @@ module.exports = function (RED) {
                         case 'editMessageLiveLocation':
                             if (this.hasContent(msg)) {
                                 node.telegramBot
-                                    .editMessageLiveLocation(msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options)
+                                    .editMessageLiveLocation(msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2183,6 +2183,20 @@ module.exports = function (RED) {
                             //}
                             break;
 
+                        case 'answerWebAppQuery':
+                            //if (this.hasContent(msg)) {
+                            // this type requires results to be set: see https://core.telegram.org/bots/api#inlinequeryresult
+                            node.telegramBot
+                                .answerWebAppQuery(msg.payload.webAppQueryId, msg.payload.results, msg.payload.options || {})
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeSend, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
+                                });
+                            //}
+                            break;
+                            
                         case 'sendChatAction':
                         case 'action':
                             if (this.hasContent(msg)) {
@@ -2210,7 +2224,7 @@ module.exports = function (RED) {
                         case 'createChatInviteLink':
                         case 'unpinAllChatMessages':
                         case 'deleteChatPhoto':
-                            node.telegramBot[type](chatId, msg.payload.options)
+                            node.telegramBot[type](chatId, msg.payload.options || {})
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })
@@ -2224,7 +2238,7 @@ module.exports = function (RED) {
                         case 'editMessageText':
                         case 'editMessageReplyMarkup':
                             if (this.hasContent(msg)) {
-                                node.telegramBot[type](msg.payload.content, msg.payload.options)
+                                node.telegramBot[type](msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2238,7 +2252,7 @@ module.exports = function (RED) {
                         // https://github.com/yagop/node-telegram-bot-api/issues/876
                         case 'editMessageMedia':
                             if (this.hasContent(msg)) {
-                                node.editMessageMedia(msg.payload.content, msg.payload.options)
+                                node.editMessageMedia(msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2278,7 +2292,7 @@ module.exports = function (RED) {
                             // The userId must be passed in msg.payload.content: note that this is is a number not the username.
                             // Right now there is no way for resolving the user_id by username in the official API.
                             if (this.hasContent(msg)) {
-                                node.telegramBot[type](chatId, msg.payload.content, msg.payload.options)
+                                node.telegramBot[type](chatId, msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2303,7 +2317,7 @@ module.exports = function (RED) {
                                 msg.payload.content.startParameter,
                                 msg.payload.content.currency,
                                 msg.payload.content.prices,
-                                msg.payload.options
+                                msg.payload.options || {}
                             )
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
@@ -2322,7 +2336,7 @@ module.exports = function (RED) {
                                 .answerShippingQuery(
                                     msg.payload.shippingQueryId,
                                     msg.payload.ok,
-                                    msg.payload.options // optional
+                                    msg.payload.options || {}
                                 )
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
@@ -2341,7 +2355,7 @@ module.exports = function (RED) {
                                 .answerPreCheckoutQuery(
                                     msg.payload.preCheckoutQueryId,
                                     msg.payload.ok,
-                                    msg.payload.options // optional
+                                    msg.payload.options || {}
                                 )
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);

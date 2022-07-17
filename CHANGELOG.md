@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [11.8.0] - 2022-07-17
+### fixed - [#242](https://github.com/windkh/node-red-contrib-telegrambot/issues/242) 
+
 # [11.7.0] - 2022-07-17
 ### fixed - [#258](https://github.com/windkh/node-red-contrib-telegrambot/issues/258) 
 ### fixed - [#258](https://github.com/windkh/node-red-contrib-telegrambot/issues/259) 

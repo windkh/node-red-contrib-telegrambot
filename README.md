@@ -346,12 +346,13 @@ The `msg.payload.type` needs to be set to one of the following values:
 - editMessageLiveLocation, stopMessageLiveLocation
 - callback_query, answerCallbackQuery
 - inline_query, answerInlineQuery
+- answerWebAppQuery
 - action, sendChatAction
-- leaveChat, exportChatInviteLink
+- leaveChat, exportChatInviteLink, createChatInviteLink
 - kickChatMember, banChatMember, unbanChatMember, restrictChatMember, promoteChatMember
 - setChatPhoto, deleteChatPhoto, setChatTitle, setChatDescription
 - pinChatMessage, unpinChatMessage, unpinAllChatMessages
-- getChatAdministrators, getChatMembersCount, getChat, getChatMember, approveChatJoinRequest, declineChatJoinRequest
+- getChatAdministrators, getChatMembersCount, getChatMemberCount, getChat, getChatMember, approveChatJoinRequest, declineChatJoinRequest
 - sendInvoice, answerShippingQuery, answerPreCheckoutQuery, pre_checkout_query, answerPreCheckoutQuery, shipping_query
 
 The content format of the command arguments (required and optional) depends on the api command.  

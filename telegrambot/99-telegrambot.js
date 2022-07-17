@@ -13,7 +13,7 @@ module.exports = function (RED) {
     });
 
     let telegramBot = require('node-telegram-bot-api');
-    let SocksProxyAgent = require('socks-proxy-agent');
+    let { socksProxyAgent } = require('socks-proxy-agent');
 
     // --------------------------------------------------------------------------------------------
     // The configuration node
@@ -121,7 +121,7 @@ module.exports = function (RED) {
         this.useSocks = n.usesocks;
         if (this.useSocks) {
             let agentOptions = {
-                host: n.sockshost,
+                hostname: n.sockshost,
                 port: n.socksport,
                 // protocol :  'socks5',
                 type: 5,
@@ -136,7 +136,7 @@ module.exports = function (RED) {
             }
 
             this.socksRequest = {
-                agentClass: SocksProxyAgent,
+                agentClass: socksProxyAgent,
                 agentOptions: agentOptions,
             };
         }

@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [12.0.0] - 2022-07-17
+### upgraded socks-proxy-agent to 7.0 - [#260](https://github.com/windkh/node-red-contrib-telegrambot/issues/260) 
+
 # [11.8.0] - 2022-07-17
 ### fixed - [#242](https://github.com/windkh/node-red-contrib-telegrambot/issues/242) 
 

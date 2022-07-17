@@ -1,22 +1,26 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [11.7.0] - 2022-07-17
+### fixed - [#258](https://github.com/windkh/node-red-contrib-telegrambot/issues/258) 
+### fixed - [#258](https://github.com/windkh/node-red-contrib-telegrambot/issues/259) 
+
 # [11.6.0] - 2022-06-28
-### added download file by fileId feature - [#252](https://github.com/windkh/node-red-contrib-telegrambot/pull/252) 
+### added download file by fileId feature - [#252](https://github.com/windkh/node-red-contrib-telegrambot/issues/252) 
 
 # [11.5.0] - 2022-06-28
-### upgraded to node-telegram-bot-api to 0.58.0, added explicit dependency to request: see [#247](https://github.com/windkh/node-red-contrib-telegrambot/pull/247)
-### fixed [#249](https://github.com/windkh/node-red-contrib-telegrambot/pull/249) 
-### fixed [#250](https://github.com/windkh/node-red-contrib-telegrambot/pull/250) 
+### upgraded to node-telegram-bot-api to 0.58.0, added explicit dependency to request: see [#247](https://github.com/windkh/node-red-contrib-telegrambot/issues/247)
+### fixed [#249](https://github.com/windkh/node-red-contrib-telegrambot/issues249) 
+### fixed [#250](https://github.com/windkh/node-red-contrib-telegrambot/issues/250) 
 
 # [11.4.0] - 2022-05-16
-### added added approveChatJoinRequest, declineChatJoinRequest - [#245](https://github.com/windkh/node-red-contrib-telegrambot/pull/245) 
+### added added approveChatJoinRequest, declineChatJoinRequest - [#245](https://github.com/windkh/node-red-contrib-telegrambot/issues/245) 
 
 # [11.3.0] - 2022-04-07
-### sendDice added - [#238](https://github.com/windkh/node-red-contrib-telegrambot/pull/238) 
+### sendDice added - [#238](https://github.com/windkh/node-red-contrib-telegrambot/issues/238) 
 
 # [11.2.4] - 2022-02-13
-### removed version properties from package.json - [#235](https://github.com/windkh/node-red-contrib-telegrambot/pull/235)
+### removed version properties from package.json - [#235](https://github.com/windkh/node-red-contrib-telegrambot/issues/235)
 
 # [11.2.3] - 2022-02-03
 ### allowed node-red 1.3.7 and nodejs 12.0.0
@@ -28,11 +32,11 @@ All notable changes to this project will be documented in this file.
 ### added missing node red tags
  
 # [11.2.0] - 2022-01-04
-### fixed socks5 support - [#229](https://github.com/windkh/node-red-contrib-telegrambot/pull/229) 
+### fixed socks5 support - [#229](https://github.com/windkh/node-red-contrib-telegrambot/issues/229) 
 replaced socks5-https-client with socks-proxy-agent 
 
 # [11.1.0] - 2022-01-02
-### fixed status of nodes - [#230](https://github.com/windkh/node-red-contrib-telegrambot/pull/230) 
+### fixed status of nodes - [#230](https://github.com/windkh/node-red-contrib-telegrambot/issues/230) 
 
 # [11.0.1] - 2021-12-29
 ### minor internal refactorings

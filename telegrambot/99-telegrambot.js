@@ -5,6 +5,8 @@ process.env['NTBA_FIX_319'] = 1;
 
 module.exports = function (RED) {
     'use strict';
+
+    const fs = require('fs');
     let Promise = require('bluebird');
     Promise.config({
         cancellation: true,
@@ -1070,20 +1072,30 @@ module.exports = function (RED) {
 
             node.telegramBot = this.config.getTelegramBot();
             if (node.telegramBot) {
-                if (node.telegramBot._polling !== null || node.telegramBot._webHook !== null) {
+                // Before starting we check if the download dir really exists.
+                if (config.saveDataDir && !fs.existsSync(config.saveDataDir)) {
+                    node.warn('The configured download directory does not exist: ' + config.saveDataDir);
                     node.status({
-                        fill: 'green',
+                        fill: 'red',
                         shape: 'ring',
-                        text: 'connected',
+                        text: 'download dir not accessible',
                     });
-
-                    node.telegramBot.on('message', (botMsg) => this.processMessage(botMsg));
                 } else {
-                    node.status({
-                        fill: 'grey',
-                        shape: 'ring',
-                        text: 'send only mode',
-                    });
+                    if (node.telegramBot._polling !== null || node.telegramBot._webHook !== null) {
+                        node.status({
+                            fill: 'green',
+                            shape: 'ring',
+                            text: 'connected',
+                        });
+
+                        node.telegramBot.on('message', (botMsg) => this.processMessage(botMsg));
+                    } else {
+                        node.status({
+                            fill: 'grey',
+                            shape: 'ring',
+                            text: 'send only mode',
+                        });
+                    }
                 }
             } else {
                 node.warn('bot not initialized.');
@@ -2191,12 +2203,14 @@ module.exports = function (RED) {
                         // 1 argument: chatId
                         case 'getChatAdministrators':
                         case 'getChatMembersCount':
+                        case 'getChatMemberCount':
                         case 'getChat':
                         case 'leaveChat':
                         case 'exportChatInviteLink':
+                        case 'createChatInviteLink':
                         case 'unpinAllChatMessages':
                         case 'deleteChatPhoto':
-                            node.telegramBot[type](chatId)
+                            node.telegramBot[type](chatId, msg.payload.options)
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })

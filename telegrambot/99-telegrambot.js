@@ -2196,7 +2196,7 @@ module.exports = function (RED) {
                                 });
                             //}
                             break;
-                            
+
                         case 'sendChatAction':
                         case 'action':
                             if (this.hasContent(msg)) {
@@ -2333,11 +2333,7 @@ module.exports = function (RED) {
                             //if (this.hasContent(msg)) {
                             // this type requires ok to be set: see https://core.telegram.org/bots/api#answershippingquery
                             node.telegramBot
-                                .answerShippingQuery(
-                                    msg.payload.shippingQueryId,
-                                    msg.payload.ok,
-                                    msg.payload.options || {}
-                                )
+                                .answerShippingQuery(msg.payload.shippingQueryId, msg.payload.ok, msg.payload.options || {})
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })
@@ -2352,11 +2348,7 @@ module.exports = function (RED) {
                             //if (this.hasContent(msg)) {
                             // this type requires ok to be set: see https://core.telegram.org/bots/api#answerprecheckoutquery
                             node.telegramBot
-                                .answerPreCheckoutQuery(
-                                    msg.payload.preCheckoutQueryId,
-                                    msg.payload.ok,
-                                    msg.payload.options || {}
-                                )
+                                .answerPreCheckoutQuery(msg.payload.preCheckoutQueryId, msg.payload.ok, msg.payload.options || {})
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })

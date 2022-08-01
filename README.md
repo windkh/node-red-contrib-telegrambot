@@ -1786,7 +1786,7 @@ https://core.telegram.org/bots/payments
 https://core.telegram.org/bots/api#sendinvoice
 
 [**send invoice flow**](examples/sendinvoice.json)
-[**full payment example flow**](examples/sendinvoice2.json)
+[**full payment example flow**](examples/sendInvoice2.json)
 
 
 ## Implementing a simple bot

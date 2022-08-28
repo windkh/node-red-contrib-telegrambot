@@ -324,8 +324,7 @@ module.exports = function (RED) {
                     });
                 } else {
                     // here we simply ignore the bug and try to reestablish polling.
-                    self.telegramBot.stopPolling();
-                    self.telegramBot.stopPolling().then(function () {
+                    function restartPolling() {
                         setTimeout(function () {
                             // we check if abort was called in the meantime.
                             if (self.telegramBot !== undefined && self.telegramBot !== null) {
@@ -333,8 +332,10 @@ module.exports = function (RED) {
                                 self.telegramBot._polling = null; // force the underlying API to recreate the class.
                                 self.telegramBot.startPolling();
                             }
-                        }, 1000);
-                    });
+                        }, 3000); // 3 seconds to not flood the output with too many messages.
+                    }
+
+                    self.telegramBot.stopPolling({ cancel: false }).then(restartPolling, restartPolling);
 
                     // The following line is removed as this would create endless log files
                     if (self.verbose) {
@@ -497,7 +498,7 @@ module.exports = function (RED) {
 
             if (self.telegramBot !== undefined && self.telegramBot !== null) {
                 if (self.telegramBot._polling) {
-                    self.telegramBot.stopPolling().then(setStatusDisconnected, setStatusDisconnected);
+                    self.telegramBot.stopPolling({ cancel: false }).then(setStatusDisconnected, setStatusDisconnected);
                 } else if (self.telegramBot._webHook) {
                     self.telegramBot.deleteWebHook();
                     self.telegramBot.closeWebHook().then(setStatusDisconnected, setStatusDisconnected);

@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [13.1.0] - 2022-08-28
+### added check during startup to avoid that the token is used twice.
+
 # [13.0.0] - 2022-08-28
 ### breaking change in answerCallbackQuery: options is now an object - [#266](https://github.com/windkh/node-red-contrib-telegrambot/issues/266) 
 

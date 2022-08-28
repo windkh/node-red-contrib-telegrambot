@@ -15,6 +15,8 @@ module.exports = function (RED) {
     let telegramBot = require('node-telegram-bot-api');
     let { socksProxyAgent } = require('socks-proxy-agent');
 
+    let botsByToken = {};
+
     // --------------------------------------------------------------------------------------------
     // The configuration node
     // holds the token
@@ -24,6 +26,24 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, n);
 
         let self = this;
+
+        // this is a dummy in case we abort to avoid problems in the nodes that make use of this function.
+        // It will be overwritten during initialization!
+        this.getTelegramBot = function () {
+            return null;
+        };
+
+        // first of all check if the token is used twice: in this case we abort
+        this.token = this.credentials.token;
+        let tokenUser = botsByToken[this.token];
+        if (tokenUser === undefined) {
+            botsByToken[this.token] = n;
+        } else {
+            if (tokenUser != n) {
+                self.error('Aborting: Token of ' + n.botname + ' is already in use by ' + tokenUser.botname + ': ' + self.token);
+                return;
+            }
+        }
 
         // see https://github.com/windkh/node-red-contrib-telegrambot/issues/198
         self.setMaxListeners(0);
@@ -459,6 +479,7 @@ module.exports = function (RED) {
 
         this.on('close', function (done) {
             RED.events.removeListener('flows:started', this.onStarted);
+            delete botsByToken[self.token];
             self.abortBot('closing', done);
         });
 
@@ -476,10 +497,10 @@ module.exports = function (RED) {
 
             if (self.telegramBot !== undefined && self.telegramBot !== null) {
                 if (self.telegramBot._polling) {
-                    self.telegramBot.stopPolling().then(setStatusDisconnected);
+                    self.telegramBot.stopPolling().then(setStatusDisconnected, setStatusDisconnected);
                 } else if (self.telegramBot._webHook) {
                     self.telegramBot.deleteWebHook();
-                    self.telegramBot.closeWebHook().then(setStatusDisconnected);
+                    self.telegramBot.closeWebHook().then(setStatusDisconnected, setStatusDisconnected);
                 } else {
                     setStatusDisconnected();
                 }
@@ -739,11 +760,12 @@ module.exports = function (RED) {
         } else if (botMsg.photo) {
             // photos are sent using several resolutions. Therefore photo is an array. We choose the one with the highest resolution in the array.
             const index = getPhotoIndexWithHighestResolution(botMsg.photo);
+            const fileId = botMsg.photo[index].file_id;
             messageDetails = {
                 chatId: botMsg.chat.id,
                 messageId: botMsg.message_id,
                 type: 'photo',
-                content: botMsg.photo[index].file_id,
+                content: fileId,
                 caption: botMsg.caption,
                 date: botMsg.date,
                 blob: true,
@@ -1400,6 +1422,7 @@ module.exports = function (RED) {
             node.config.addListener('status', node.onStatusChanged);
 
             node.telegramBot = this.config.getTelegramBot();
+
             node.botname = this.config.botname;
             if (node.telegramBot) {
                 if (node.telegramBot._polling !== null || node.telegramBot._webHook !== null) {

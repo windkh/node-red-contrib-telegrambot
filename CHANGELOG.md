@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [13.0.0] - 2022-08-28
+### breaking change in answerCallbackQuery: options is now an object - [#266](https://github.com/windkh/node-red-contrib-telegrambot/issues/266) 
+
 # [12.0.0] - 2022-07-17
 ### upgraded socks-proxy-agent to 7.0 - [#260](https://github.com/windkh/node-red-contrib-telegrambot/issues/260) 
 

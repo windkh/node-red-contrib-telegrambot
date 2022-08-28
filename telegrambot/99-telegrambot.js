@@ -2150,13 +2150,17 @@ module.exports = function (RED) {
                         case 'callback_query':
                         case 'answerCallbackQuery':
                             if (this.hasContent(msg)) {
-                                // The new signature expects one object instead of three arguments.
                                 let callbackQueryId = msg.payload.callbackQueryId;
-                                let options = {
-                                    callback_query_id: callbackQueryId,
-                                    text: msg.payload.content,
-                                    show_alert: msg.payload.options,
-                                };
+
+                                let options = msg.payload.options;
+                                if (options === undefined) {
+                                    options = {};
+                                }
+
+                                if (options.text === undefined) {
+                                    options.text = msg.payload.content;
+                                }
+
                                 node.telegramBot
                                     .answerCallbackQuery(callbackQueryId, options)
                                     .catch(function (ex) {

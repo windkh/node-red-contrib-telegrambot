@@ -244,6 +244,17 @@ module.exports = function (RED) {
         };
 
         this.createTelegramBotForPollingMode = function () {
+            function restartPolling() {
+                setTimeout(function () {
+                    // we check if abort was called in the meantime.
+                    if (self.telegramBot !== undefined && self.telegramBot !== null) {
+                        delete self.telegramBot._polling;
+                        self.telegramBot._polling = null; // force the underlying API to recreate the class.
+                        self.telegramBot.startPolling({ restart: true });
+                    }
+                }, 3000); // 3 seconds to not flood the output with too many messages.
+            }
+
             let newTelegramBot;
 
             let polling = {
@@ -331,17 +342,6 @@ module.exports = function (RED) {
                     });
                 } else {
                     // here we simply ignore the bug and try to reestablish polling.
-                    function restartPolling() {
-                        setTimeout(function () {
-                            // we check if abort was called in the meantime.
-                            if (self.telegramBot !== undefined && self.telegramBot !== null) {
-                                delete self.telegramBot._polling;
-                                self.telegramBot._polling = null; // force the underlying API to recreate the class.
-                                self.telegramBot.startPolling({ restart: true });
-                            }
-                        }, 3000); // 3 seconds to not flood the output with too many messages.
-                    }
-
                     self.telegramBot.stopPolling({ cancel: false }).then(restartPolling, restartPolling);
 
                     // The following line is removed as this would create endless log files

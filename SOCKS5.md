@@ -1,12 +1,14 @@
 # Socks5 Documentation
-You can enable Socks5 support if you want to re-route your calls to the telegram bot api server (api.telergam.org) via an anonymous server.
+You can enable SOCKS proxy support if you want to re-route your calls to the telegram bot api server (api.telergam.org) via an anonymous server.
 
 If the proxy server requires authentication you need to provide a username and password. If not, the fields must be empty:
 <img src="images/TelegramBotSocks5Configuration.png" title="Socks5 configuration without user and password" width="600" />
 
-Note: The default port for socks5 is 1080.
+# General Notes
+- The default port for socks5 is 1080.
+- As the underlying request lib pools the agent, you need to restart node red when changing IP or the PORT. 
 
-# Finding a socks5 proxy
+# Finding a SOCKS proxy
 ## Internet
 You can google for free socks5 proxy in the internet to find one, however this is not recommended as you do not know who
 is able to intercept your calls to the telegram bot server. Traffic between you and the telegram server is done using the https protocol, but that is not 100% safe. You can also pay a provider of your choice for a socks5 instance running in the internet but the best choice is to set up your own one.

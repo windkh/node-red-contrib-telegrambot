@@ -13,7 +13,7 @@ module.exports = function (RED) {
     });
 
     let telegramBot = require('node-telegram-bot-api');
-    let { socksProxyAgent } = require('socks-proxy-agent');
+    let { SocksProxyAgent } = require('socks-proxy-agent');
 
     let botsByToken = {};
 
@@ -137,14 +137,16 @@ module.exports = function (RED) {
         this.useSelfSignedCertificate = n.useselfsignedcertificate;
         this.sslTerminated = n.sslterminated;
 
-        // 4. optional when request via SOCKS5 is used.
+        // 4. optional when request via SOCKS is used.
         this.useSocks = n.usesocks;
         if (this.useSocks) {
+            let socksprotocol = n.socksprotocol || 'socks5';
             let agentOptions = {
                 hostname: n.sockshost,
                 port: n.socksport,
-                // protocol :  'socks5',
-                type: 5,
+                protocol: socksprotocol,
+                // type: 5,
+                timeout: 5000, // ms <-- does not really work
             };
 
             if (n.socksusername !== '') {
@@ -156,7 +158,7 @@ module.exports = function (RED) {
             }
 
             this.socksRequest = {
-                agentClass: socksProxyAgent,
+                agentClass: SocksProxyAgent,
                 agentOptions: agentOptions,
             };
         }
@@ -277,6 +279,7 @@ module.exports = function (RED) {
                 request: this.socksRequest,
             };
             newTelegramBot = new telegramBot(this.token, options);
+
             self.status = 'connected';
 
             newTelegramBot.on('polling_error', function (error) {
@@ -313,6 +316,10 @@ module.exports = function (RED) {
                     hint = 'Network connection may be down. Trying again.';
                 } else if (error.message.startsWith('EFATAL: Error: SOCKS connection failed. Connection refused.')) {
                     hint = 'Username or password may be be wrong or connection is down. Aborting.';
+                } else if (error.message.startsWith('EFATAL: Error: Client network socket disconnected before secure TLS connection was established')) {
+                    hint = 'Maybe SOCKS proxy refused connection.';
+                } else if (error.message.startsWith('EFATAL: Error: certificate has expired')) {
+                    hint = 'Maybe SOCKS proxy refused connection.';
                 } else {
                     // unknown error occured... we simply ignore it.
                     hint = 'Unknown error. Trying again.';
@@ -330,7 +337,7 @@ module.exports = function (RED) {
                             if (self.telegramBot !== undefined && self.telegramBot !== null) {
                                 delete self.telegramBot._polling;
                                 self.telegramBot._polling = null; // force the underlying API to recreate the class.
-                                self.telegramBot.startPolling();
+                                self.telegramBot.startPolling({ restart: true });
                             }
                         }, 3000); // 3 seconds to not flood the output with too many messages.
                     }

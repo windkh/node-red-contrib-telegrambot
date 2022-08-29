@@ -265,8 +265,8 @@ The *None* method may be chosen to avoid traffic due to polling or incoming webh
 You can only send messages using the sender node but you can not receive any data.
 
 
-### Configuration property flag *Use SOCKS5*
-SOCKS5 proxy support is optional when running behind a SOCKS5 proxy that requires authentication. In this case, additional configuration properties have to be set in the configuration node.
+### Configuration property flag *Use SOCKS*
+SOCKS4/5 proxy support is optional when running behind a SOCKS4/5 proxy that requires authentication. In this case, additional configuration properties have to be set in the configuration node.
 
 As setting up a socks5 proxy can be very complex depending on the infrastructure this was moved to a seprate readme file.
 See also [SOCKS5.md](SOCKS5.md)

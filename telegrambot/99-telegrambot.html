@@ -16,9 +16,10 @@
             // only for polling mode
             pollinterval: { value: 300, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
             
-            // only for socks5 proxy support
+            // only for socks4/5 proxy support
             usesocks: { value: false, required: false },
             sockshost: { value: "", required: false },
+            socksprotocol: { value: "socks5", required: false },
             socksport: { value: 6667, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
             socksusername: { value: "anonymous", required: false },
             sockspassword: { value: "", required: false },
@@ -188,13 +189,20 @@
         <hr align="middle"/>
 
         <div class="form-row">
-            <label for="node-config-input-usesocks"><i class="fa fa-lock"></i> Use SOCKS5</label>
+            <label for="node-config-input-usesocks"><i class="fa fa-lock"></i> SOCKS Proxy</label>
             <input type="checkbox" id="node-config-input-usesocks" style="display: inline-block; width: auto; vertical-align: top;">
         </div>
         <div class="form-row hidden" id="socks" style="background: #fbfbfb">
-            <label style="width: auto"><i class="fa fa-cogs"></i> SOCKS5 Options:</label>
+            <label style="width: auto"><i class="fa fa-cogs"></i> SOCKS Proxy Options:</label>
           
-            <div class="form-row" style="background: #fff; margin-left: 20px">        
+            <div class="form-row" style="background: #fff; margin-left: 20px">     
+                <div class="form-row">
+                    <label for="node-config-input-socksprotocol"><i class="fa fa-user-secret"></i> Protocol</label>
+                    <select id="node-config-input-socksprotocol">
+                        <option value="socks4">socks4</option>
+                        <option value="socks5">socks5</option>
+                    </select>
+                </div>   
                 <div class="form-row">
                     <label for="node-config-input-sockshost"><i class="fa fa-desktop"></i> Host</label>
                     <input type="text" id="node-config-input-sockshost" placeholder="(Optional IP or hostname of the socks proxy when using polling mode.)">
@@ -213,7 +221,7 @@
                 </div>
             </div>
 
-            <div class="form-tips" style="width: auto"><b>Tip:</b> SOCKS5 support is optional can can only be used with a valid proxy server, port, username and password.</div>
+            <div class="form-tips" style="width: auto"><b>Tip:</b> SOCKS proxy support is optional can can only be used with a valid proxy server, port, username and password.</div>
         </div>
 
         <hr align="middle"/>

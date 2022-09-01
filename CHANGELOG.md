@@ -1,7 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# [14.0.0] - 2022-29-08
+# [14.1.0] - 2022-09-01
+### Added web app data support - [#264](https://github.com/windkh/node-red-contrib-telegrambot/issues/264) 
+
+# [14.0.0] - 2022-08-29
 ### fixed version 12.0.0 where SOCKS was broken - [#263](https://github.com/windkh/node-red-contrib-telegrambot/issues/263) 
 
 # [13.2.0] - 2022-08-28

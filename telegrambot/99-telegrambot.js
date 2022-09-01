@@ -1007,6 +1007,15 @@ module.exports = function (RED) {
                 chat: botMsg.chat,
                 date: botMsg.date,
             };
+        } else if (botMsg.web_app_data) {
+            messageDetails = {
+                chatId: botMsg.chat.id,
+                messageId: botMsg.message_id,
+                type: 'web_app_data',
+                content: botMsg.web_app_data,
+                chat: botMsg.chat,
+                date: botMsg.date,
+            };
         } else {
             // unknown type --> no output
             // TODO: connected_website, passport_data, proximity_alert_triggered, voice_chat_scheduled, voice_chat_started, voice_chat_ended, voice_chat_participants_invited, reply_markup

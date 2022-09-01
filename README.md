@@ -42,7 +42,8 @@ If you want to support this free project. Any help is welcome. You can donate by
  - daredoes: for providing the webhook decumentation on Unraid/Docker with SWAG/NGINX/REVERSE-PROXY
  - kickouille: for fixing the payment functions and providing the full payment example flow
  - skrashevich: for providing approveChatJoinRequest, declineChatJoinRequest
-
+ - ShotokanZH: for providing the web app data example
+ 
 
 # Installation
 [![NPM](https://nodei.co/npm/node-red-contrib-telegrambot.png?downloads=true)](https://nodei.co/npm/node-red-contrib-telegrambot/)
@@ -1532,6 +1533,14 @@ return msg;
 See the example flow [**create poll**](examples/createpoll.json) in the examples folder.
 
 Use the event node 'Poll' for receiving the updated poll results.
+
+
+## Web App Data
+WebApps is a new feature described here: https://core.telegram.org/bots/webapps
+You need to run your web app using a public web server. The url of this web page can be used to communicate with the bot.
+Note that the communication must use the https protocol.
+
+See the example flow [**web app data**](examples/webappdata.json) in the examples folder.
 
 
 ## Advanced options when sending messages

@@ -1331,18 +1331,19 @@ module.exports = function (RED) {
                 language = undefined;
             }
 
-            this.config.registerCommand(node.id, command, description, language, scope, registerCommand);
-
-            node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
-
-            node.onStatusChanged = function (status) {
-                node.status(status);
-            };
-            node.config.addListener('status', node.onStatusChanged);
-
             node.telegramBot = this.config.getTelegramBot();
-            node.botname = this.config.botname;
             if (node.telegramBot) {
+                this.config.registerCommand(node.id, command, description, language, scope, registerCommand);
+
+                node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
+
+                node.onStatusChanged = function (status) {
+                    node.status(status);
+                };
+                node.config.addListener('status', node.onStatusChanged);
+
+                node.botname = this.config.botname;
+
                 if (node.telegramBot._polling !== null || node.telegramBot._webHook !== null) {
                     node.status({
                         fill: 'green',
@@ -2492,18 +2493,27 @@ module.exports = function (RED) {
             node.status({ fill: 'green', shape: 'ring', text: 'connected' });
 
             if (msg.payload) {
-                if (!Array.isArray(msg.payload.chatId)) {
-                    this.processMessage(msg.payload.chatId, msg, nodeSend, nodeDone);
-                } else {
-                    let chatIds = msg.payload.chatId;
-                    let length = chatIds.length;
-                    for (let i = 0; i < length; i++) {
-                        let chatId = chatIds[i];
+                if (node.telegramBot) {
+                    if (!Array.isArray(msg.payload.chatId)) {
+                        this.processMessage(msg.payload.chatId, msg, nodeSend, nodeDone);
+                    } else {
+                        let chatIds = msg.payload.chatId;
+                        let length = chatIds.length;
+                        for (let i = 0; i < length; i++) {
+                            let chatId = chatIds[i];
 
-                        let clonedMsg = RED.util.cloneMessage(msg);
-                        clonedMsg.payload.chatId = chatId;
-                        this.processMessage(chatId, clonedMsg, nodeSend, nodeDone);
+                            let clonedMsg = RED.util.cloneMessage(msg);
+                            clonedMsg.payload.chatId = chatId;
+                            this.processMessage(chatId, clonedMsg, nodeSend, nodeDone);
+                        }
                     }
+                } else {
+                    node.warn('bot not initialized.');
+                    node.status({
+                        fill: 'red',
+                        shape: 'ring',
+                        text: 'bot not initialized',
+                    });
                 }
             } else {
                 node.warn('msg.payload is empty');
@@ -2576,27 +2586,36 @@ module.exports = function (RED) {
             node.status({ fill: 'green', shape: 'ring', text: 'connected' });
 
             if (msg.payload) {
-                if (msg.payload.chatId) {
-                    if (msg.payload.sentMessageId) {
-                        let chatId = msg.payload.chatId;
-                        let messageId = msg.payload.sentMessageId;
+                if (node.telegramBot) {
+                    if (msg.payload.chatId) {
+                        if (msg.payload.sentMessageId) {
+                            let chatId = msg.payload.chatId;
+                            let messageId = msg.payload.sentMessageId;
 
-                        node.telegramBot.onReplyToMessage(chatId, messageId, function (botMsg) {
-                            let messageDetails = getMessageDetails(botMsg);
-                            if (messageDetails) {
-                                msg.payload = messageDetails;
-                                msg.originalMessage = botMsg;
-                                nodeSend(msg);
-                                if (nodeDone) {
-                                    nodeDone();
+                            node.telegramBot.onReplyToMessage(chatId, messageId, function (botMsg) {
+                                let messageDetails = getMessageDetails(botMsg);
+                                if (messageDetails) {
+                                    msg.payload = messageDetails;
+                                    msg.originalMessage = botMsg;
+                                    nodeSend(msg);
+                                    if (nodeDone) {
+                                        nodeDone();
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        } else {
+                            node.warn('msg.payload.sentMessageId is empty');
+                        }
                     } else {
-                        node.warn('msg.payload.sentMessageId is empty');
+                        node.warn('msg.payload.chatId is empty');
                     }
                 } else {
-                    node.warn('msg.payload.chatId is empty');
+                    node.warn('bot not initialized.');
+                    node.status({
+                        fill: 'red',
+                        shape: 'ring',
+                        text: 'bot not initialized',
+                    });
                 }
             } else {
                 node.warn('msg.payload is empty');

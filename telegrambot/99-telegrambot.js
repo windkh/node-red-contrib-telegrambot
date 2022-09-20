@@ -33,14 +33,21 @@ module.exports = function (RED) {
             return null;
         };
 
+        this.tokenRegistered = false;
+
         // first of all check if the token is used twice: in this case we abort
         this.token = this.credentials.token;
-        let tokenUser = botsByToken[this.token];
-        if (tokenUser === undefined) {
-            botsByToken[this.token] = n;
+        let configNodeId = botsByToken[this.token];
+        if (configNodeId === undefined) {
+            botsByToken[self.token] = n.id;
+            this.tokenRegistered = true;
         } else {
-            if (tokenUser != n) {
-                self.error('Aborting: Token of ' + n.botname + ' is already in use by ' + tokenUser.botname + ': ' + self.token);
+            if (configNodeId == n.id) {
+                this.tokenRegistered = true;
+            } else {
+                this.tokenRegistered = false;
+                let conflictingConfigNode = RED.nodes.getNode(configNodeId);
+                self.error('Aborting: Token of ' + n.botname + ' is already in use by ' + conflictingConfigNode.botname + ': ' + self.token);
                 return;
             }
         }
@@ -235,7 +242,7 @@ module.exports = function (RED) {
                     self.status = 'connected';
                 } else {
                     self.abortBot('Failed to set webhook ' + botUrl, function () {
-                        self.warn('Bot stopped: Webhook not set.');
+                        self.error('Bot stopped: Webhook not set.');
                     });
                 }
             });
@@ -301,11 +308,14 @@ module.exports = function (RED) {
                 });
                 // We reset the polling status after the 80% of the timeout
                 setTimeout(function () {
-                    self.setStatus({
-                        fill: 'green',
-                        shape: 'ring',
-                        text: 'polling',
-                    });
+                    // check if abort was called in the meantime.
+                    if (self.telegramBot) {
+                        self.setStatus({
+                            fill: 'green',
+                            shape: 'ring',
+                            text: 'polling',
+                        });
+                    }
                 }, self.pollInterval * 0.8);
 
                 if (self.verbose) {
@@ -338,7 +348,7 @@ module.exports = function (RED) {
 
                 if (stopPolling) {
                     self.abortBot(error.message, function () {
-                        self.warn('Bot stopped: ' + hint);
+                        self.error('Bot ' + self.botname + ' stopped: ' + hint);
                     });
                 } else {
                     // here we simply ignore the bug and try to reestablish polling.
@@ -485,9 +495,13 @@ module.exports = function (RED) {
 
         RED.events.on('flows:started', this.onStarted);
 
-        this.on('close', function (done) {
+        this.on('close', function (removed, done) {
             RED.events.removeListener('flows:started', this.onStarted);
-            delete botsByToken[self.token];
+            if (removed) {
+                if (self.tokenRegistered) {
+                    delete botsByToken[self.token];
+                }
+            }
             self.abortBot('closing', done);
         });
 
@@ -1153,7 +1167,7 @@ module.exports = function (RED) {
             });
         }
 
-        this.on('close', function () {
+        this.on('close', function (removed, done) {
             node.telegramBot.off('message');
 
             if (node.onStatusChanged) {
@@ -1161,6 +1175,7 @@ module.exports = function (RED) {
             }
 
             node.status({});
+            done();
         });
     }
     RED.nodes.registerType('telegram receiver', TelegramInNode);
@@ -1376,7 +1391,7 @@ module.exports = function (RED) {
             });
         }
 
-        this.on('close', function () {
+        this.on('close', function (removed, done) {
             node.telegramBot.off('message');
 
             if (node.onStatusChanged) {
@@ -1385,6 +1400,7 @@ module.exports = function (RED) {
 
             node.config.unregisterCommand(node.id);
             node.status({});
+            done();
         });
     }
     RED.nodes.registerType('telegram command', TelegramCommandNode);
@@ -1765,7 +1781,7 @@ module.exports = function (RED) {
             });
         }
 
-        this.on('close', function () {
+        this.on('close', function (removed, done) {
             node.telegramBot.off(this.event);
 
             if (node.onStatusChanged) {
@@ -1773,6 +1789,7 @@ module.exports = function (RED) {
             }
 
             node.status({});
+            done();
         });
     }
     RED.nodes.registerType('telegram event', TelegramEventNode);
@@ -2520,12 +2537,13 @@ module.exports = function (RED) {
             }
         });
 
-        this.on('close', function () {
+        this.on('close', function (removed, done) {
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }
 
             node.status({});
+            done();
         });
     }
     RED.nodes.registerType('telegram sender', TelegramOutNode);
@@ -2622,12 +2640,13 @@ module.exports = function (RED) {
             }
         });
 
-        this.on('close', function () {
+        this.on('close', function (removed, done) {
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }
 
             node.status({});
+            done();
         });
     }
     RED.nodes.registerType('telegram reply', TelegramReplyNode);

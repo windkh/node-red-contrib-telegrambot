@@ -1,8 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [14.3.0] - 2022-09-20
+### improved deuplicate token usage detection - [#272](https://github.com/windkh/node-red-contrib-telegrambot/issues/272) 
+
 # [14.2.0] - 2022-09-19
-### MAde node more robust when initialization is aborted due to duplicate token usage - [#272](https://github.com/windkh/node-red-contrib-telegrambot/issues/272) 
+### Made node more robust when initialization is aborted due to duplicate token usage - [#272](https://github.com/windkh/node-red-contrib-telegrambot/issues/272) 
 
 # [14.1.0] - 2022-09-01
 ### Added web app data support - [#264](https://github.com/windkh/node-red-contrib-telegrambot/issues/264) 

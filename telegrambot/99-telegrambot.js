@@ -6,6 +6,8 @@ process.env['NTBA_FIX_319'] = 1;
 module.exports = function (RED) {
     'use strict';
 
+    const path = require('path');
+    const pump = require('pump');
     const fs = require('fs');
     let Promise = require('bluebird');
     Promise.config({
@@ -1895,9 +1897,9 @@ module.exports = function (RED) {
             } else if (msg.payload.download) {
                 let fileId = msg.payload.download.fileId;
                 let filePath = msg.payload.download.filePath;
+                let fileName = msg.payload.download.fileName;
 
-                node.telegramBot
-                    .downloadFile(fileId, filePath)
+                node.downloadFile(fileId, filePath, fileName)
                     .catch(function (ex) {
                         node.processError(ex, msg, nodeSend, nodeDone);
                     })
@@ -2438,6 +2440,39 @@ module.exports = function (RED) {
             } // forward
         };
 
+        // Derived from original code but with optional fileName
+        this.downloadFile = function(fileId, downloadDir, fileName) {
+            let resolve;
+            let reject;
+            const promise = new Promise((a, b) => {
+                resolve = a;
+                reject = b;
+            });
+
+            let form = {};
+            const fileStream = node.telegramBot.getFileStream(fileId, form);
+            fileStream.on('info', (info) => {
+                if(fileName === undefined) {
+                    fileName = info.uri.slice(info.uri.lastIndexOf('/') + 1);
+                }
+                
+                const filePath = path.join(downloadDir, fileName);
+                pump(fileStream, fs.createWriteStream(filePath), (error) => {
+                    if (!error) {    
+                        return resolve(filePath);
+                    }
+                    else { 
+                        return reject(error);
+                    }
+                });
+            });
+            fileStream.on('error', (err) => {
+                reject(err);
+            });
+            return promise;
+       };
+
+       
         // TODO: https://github.com/windkh/node-red-contrib-telegrambot/issues/178
         // TODO: https://github.com/yagop/node-telegram-bot-api/issues/876
         this.editMessageMedia = function (media, form = {}) {

@@ -1502,14 +1502,15 @@ See the example flow [**copy message**](examples/copymessage.json) in the exampl
 Remark: You need to have sufficient permissions to be able to do this message forwarding.
 
 
-## Dwonloading files manually
+## Downloading files manually
 The receiver node can automatically download files into the configured download directory.
 You can also download the files manually using a fileId by passing the following message to the sender node:
 
 ```javascript
 msg.payload.download = { 
   fileId : "<yourfileidhere>",
-  filePath : "c:\\downloaddirectory"
+  filePath : "c:\\downloaddirectory",
+  fileName : "foo.jpg" // this is optional
   };
 return msg;
 ```

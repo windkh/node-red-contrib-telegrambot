@@ -2441,7 +2441,7 @@ module.exports = function (RED) {
         };
 
         // Derived from original code but with optional fileName
-        this.downloadFile = function(fileId, downloadDir, fileName) {
+        this.downloadFile = function (fileId, downloadDir, fileName) {
             let resolve;
             let reject;
             const promise = new Promise((a, b) => {
@@ -2452,16 +2452,15 @@ module.exports = function (RED) {
             let form = {};
             const fileStream = node.telegramBot.getFileStream(fileId, form);
             fileStream.on('info', (info) => {
-                if(fileName === undefined) {
+                if (fileName === undefined) {
                     fileName = info.uri.slice(info.uri.lastIndexOf('/') + 1);
                 }
-                
+
                 const filePath = path.join(downloadDir, fileName);
                 pump(fileStream, fs.createWriteStream(filePath), (error) => {
-                    if (!error) {    
+                    if (!error) {
                         return resolve(filePath);
-                    }
-                    else { 
+                    } else {
                         return reject(error);
                     }
                 });
@@ -2470,9 +2469,8 @@ module.exports = function (RED) {
                 reject(err);
             });
             return promise;
-       };
+        };
 
-       
         // TODO: https://github.com/windkh/node-red-contrib-telegrambot/issues/178
         // TODO: https://github.com/yagop/node-telegram-bot-api/issues/876
         this.editMessageMedia = function (media, form = {}) {

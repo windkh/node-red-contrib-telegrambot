@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [14.5.0] - 2022-10-15
+### added control node - [#228](https://github.com/windkh/node-red-contrib-telegrambot/issues/228) 
+
 # [14.4.0] - 2022-10-14
 ### fileName can be specified when downloading file - [#275](https://github.com/windkh/node-red-contrib-telegrambot/issues/275) 
 

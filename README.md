@@ -474,6 +474,18 @@ The `msg.payload` contains:
 - **content** : The message content.
 
 
+## Control Node
+This node can be used to stop, start, restart a bot (config node).
+See the example flow [**control bot**](examples/control.json) in the examples folder.
+
+### Input
+The `msg.payload` contains:
+- **command** : 'start' | 'stop' | 'restart'
+- **delay** : Optional delay (between stop and start) in milliseconds for 'restart'.
+
+### Output
+Standard Output: Contains the msg object passed to the input.
+
 
 # Keyboards
 

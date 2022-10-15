@@ -715,3 +715,64 @@
     <li><code>content</code> the message content.</li></ul>
 </script>
 <!-- ------------------------------------------------------------------------------------------ -->
+
+
+<!-- ------------------------------------------------------------------------------------------ -->
+<script type="text/javascript">
+    RED.nodes.registerType('telegram control', {
+        category: 'telegram',
+        color: '#3BABDD',
+        defaults: {
+            name: { value: "" },
+            bot: { value: "", type: "telegram bot", required: true },
+            outputs: {value: 1}
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "telegram.png",
+        align: "right",
+        paletteLabel: "control",
+        label: function () {
+            return this.name || "Telegram control";
+        },
+        labelStyle: function() {
+            return this.name?"node_label_italic":"";
+        },
+        oneditprepare: function() {
+            var that = this;
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="telegram control">
+    <div class="form-row">
+        <label for="node-input-bot"><i class="fa fa-telegram"></i> Bot</label>
+        <input type="text" id="node-input-bot" placeholder="Bot">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+
+    <hr align="middle"/>
+</script>
+
+<script type="text/x-red" data-help-name="telegram control">
+    <p>A telegram node that control the configuration node.</p>
+
+    <h3>Inputs</h3>
+    <p>1. Standard Input: receives a control command.</p>
+    
+    <h3>Outputs</h3>
+    <p>1. The result of the operation.</p>
+    <h3>Details</h3>
+    <p>The <code>msg.payload</code> must be an object that contains a complete command,
+     at a minimum these should contain:
+     <ul>
+     <li><code>command</code> The command as string: stop, start, restart</li>
+     <li><code>delay</code> The optional delay in milliseconds between stop and start for command restart</li>
+     </ul>
+
+</script>
+<!-- ------------------------------------------------------------------------------------------ -->
+

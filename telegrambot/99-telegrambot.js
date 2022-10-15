@@ -38,21 +38,28 @@ module.exports = function (RED) {
         this.tokenRegistered = false;
 
         // first of all check if the token is used twice: in this case we abort
-        this.token = this.credentials.token;
-        let configNodeId = botsByToken[this.token];
-        if (configNodeId === undefined) {
-            botsByToken[self.token] = n.id;
-            this.tokenRegistered = true;
-        } else {
-            if (configNodeId == n.id) {
+        if(this.credentials !== undefined && this.credentials.token !== undefined) {
+            this.token = this.credentials.token;
+            let configNodeId = botsByToken[this.token];
+            if (configNodeId === undefined) {
+                botsByToken[self.token] = n.id;
                 this.tokenRegistered = true;
             } else {
-                this.tokenRegistered = false;
-                let conflictingConfigNode = RED.nodes.getNode(configNodeId);
-                self.error('Aborting: Token of ' + n.botname + ' is already in use by ' + conflictingConfigNode.botname + ': ' + self.token);
-                return;
+                if (configNodeId == n.id) {
+                    this.tokenRegistered = true;
+                } else {
+                    this.tokenRegistered = false;
+                    let conflictingConfigNode = RED.nodes.getNode(configNodeId);
+                    self.error('Aborting: Token of ' + n.botname + ' is already in use by ' + conflictingConfigNode.botname + ': ' + self.token);
+                    return;
+                }
             }
         }
+        else {
+            self.warn('Aborting: Token of ' + n.botname + ' is not set');
+            return;
+        }
+
 
         // see https://github.com/windkh/node-red-contrib-telegrambot/issues/198
         self.setMaxListeners(0);
@@ -205,11 +212,7 @@ module.exports = function (RED) {
             newTelegramBot = new telegramBot(this.token, options);
 
             newTelegramBot.on('webhook_error', function (error) {
-                self.setStatus({
-                    fill: 'red',
-                    shape: 'ring',
-                    text: 'webhook error',
-                });
+                self.setStatus('error', 'webhook error');
 
                 if (self.verbose) {
                     self.warn('Webhook error: ' + error.message);
@@ -303,20 +306,13 @@ module.exports = function (RED) {
             self.status = 'connected';
 
             newTelegramBot.on('polling_error', function (error) {
-                self.setStatus({
-                    fill: 'red',
-                    shape: 'ring',
-                    text: 'polling error',
-                });
+                self.setStatus('error', 'polling error');
+
                 // We reset the polling status after the 80% of the timeout
                 setTimeout(function () {
                     // check if abort was called in the meantime.
                     if (self.telegramBot) {
-                        self.setStatus({
-                            fill: 'green',
-                            shape: 'ring',
-                            text: 'polling',
-                        });
+                        self.setStatus('info', 'polling');
                     }
                 }, self.pollInterval * 0.8);
 
@@ -508,20 +504,25 @@ module.exports = function (RED) {
         });
 
         this.abortBot = function (hint, done) {
+
+            self.status = 'disconnecting';
+
             function setStatusDisconnected() {
-                self.telegramBot = null;
                 self.status = 'disconnected';
-                self.setStatus({
-                    fill: 'red',
-                    shape: 'ring',
-                    text: 'bot stopped. ' + hint,
-                });
+                self.setStatus('stopped', 'stopped ' + hint);
+                self.telegramBot = null;
                 done();
             }
 
             if (self.telegramBot !== undefined && self.telegramBot !== null) {
                 if (self.telegramBot._polling) {
+                    // cancel true only cancels the current request.
+                    // cancel false aborts polling completely.
                     self.telegramBot.stopPolling({ cancel: false }).then(setStatusDisconnected, setStatusDisconnected);
+                    let lastRequest = self.telegramBot._polling._lastRequest;
+                    if (lastRequest) {
+                        lastRequest.cancel('stopping');
+                    }
                 } else if (self.telegramBot._webHook) {
                     self.telegramBot.deleteWebHook();
                     self.telegramBot.closeWebHook().then(setStatusDisconnected, setStatusDisconnected);
@@ -531,6 +532,29 @@ module.exports = function (RED) {
             } else {
                 setStatusDisconnected();
             }
+        };
+
+        // stops the bot if not already stopped
+        this.stop  = function (hint, done) {
+            if(self.telegramBot !== null && self.status === 'connected'){
+                self.abortBot(hint, done);
+            }
+            else {
+                done();
+            }
+        };
+
+        // starts the bot if not already started
+        this.start  = function (hint, done) {
+            if(self.telegramBot === null && self.status === 'disconnected'){
+                self.status = 'connecting';
+                self.getTelegramBot(); // trigger creation
+                if(self.telegramBot !== null) {
+                    self.status = 'connected';
+                    self.setStatus('started', 'started ' + hint);
+                }
+            }
+            done();
         };
 
         this.getBotToken = function (botToken) {
@@ -660,8 +684,46 @@ module.exports = function (RED) {
             return isAuthorized;
         };
 
-        this.setStatus = function (status) {
-            self.emit('status', status);
+        this.setStatus = function (status, text = {}) {
+
+            let nodeStatus = {};
+            switch(status){
+                case 'started':
+                    nodeStatus = {
+                        fill: 'green',
+                        shape: 'ring',
+                        text: text,
+                    }
+                    break;
+
+                case 'stopped':
+                    nodeStatus = {
+                        fill: 'red',
+                        shape: 'ring',
+                        text: text,
+                    }
+                    break;
+
+                case 'info': 
+                    nodeStatus = {
+                        fill: 'green',
+                        shape: 'ring',
+                        text: 'polling',
+                    }
+                    break;
+
+                case 'error':
+                    nodeStatus = {
+                        fill: 'red',
+                        shape: 'ring',
+                        text: text,
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            self.emit('status', status, nodeStatus);
         };
 
         this.createUniqueKey = function (username, chatid) {
@@ -1067,6 +1129,55 @@ module.exports = function (RED) {
         this.bot = config.bot;
         node.filterCommands = config.filterCommands || false;
 
+        this.start = function () {
+            let telegramBot = this.config.getTelegramBot();
+            if (telegramBot) {
+                // Before starting we check if the download dir really exists.
+                if (config.saveDataDir && !fs.existsSync(config.saveDataDir)) {
+                    node.warn('The configured download directory does not exist: ' + config.saveDataDir);
+                    node.status({
+                        fill: 'red',
+                        shape: 'ring',
+                        text: 'download dir not accessible',
+                    });
+                } else {
+                    if (telegramBot._polling !== null || telegramBot._webHook !== null) {
+                        node.status({
+                            fill: 'green',
+                            shape: 'ring',
+                            text: 'connected',
+                        });
+
+                        telegramBot.on('message', (botMsg) => this.processMessage(botMsg));
+                    } else {
+                        node.status({
+                            fill: 'grey',
+                            shape: 'ring',
+                            text: 'send only mode',
+                        });
+                    }
+                }
+            } else {
+                node.warn('bot not initialized.');
+                node.status({
+                    fill: 'red',
+                    shape: 'ring',
+                    text: 'bot not initialized',
+                });
+            }
+        };
+
+        this.stop = function () {
+            let telegramBot = this.config.getTelegramBot();
+            telegramBot.off('message');
+
+            node.status({
+                fill: 'red',
+                shape: 'ring',
+                text: 'disconnected',
+            });
+        };
+
         this.processMessage = function (botMsg) {
             node.status({
                 fill: 'green',
@@ -1084,16 +1195,18 @@ module.exports = function (RED) {
                     originalMessage: botMsg,
                 };
 
+                let telegramBot = this.config.getTelegramBot();
+                
                 if (node.config.isAuthorized(node, chatid, userid, username)) {
                     // downloadable "blob" message?
                     if (messageDetails.blob) {
                         let fileId = msg.payload.content;
-                        node.telegramBot.getFileLink(fileId).then(function (weblink) {
+                        telegramBot.getFileLink(fileId).then(function (weblink) {
                             msg.payload.weblink = weblink;
 
                             // download and provide with path
                             if (config.saveDataDir) {
-                                node.telegramBot.downloadFile(fileId, config.saveDataDir).then(function (path) {
+                                telegramBot.downloadFile(fileId, config.saveDataDir).then(function (path) {
                                     msg.payload.path = path;
                                     node.send([msg, null]);
                                 });
@@ -1116,50 +1229,27 @@ module.exports = function (RED) {
             }
         };
 
+        // Initializes a new instance of the node:
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
+            
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
-
-            node.onStatusChanged = function (status) {
-                node.status(status);
+            node.onStatusChanged = function (status, nodeStatus) {
+                node.status(nodeStatus);
+                switch(status){
+                    case 'started':
+                        node.start();
+                        break;
+                    case 'stopped':
+                        node.stop();
+                        break;
+                    default:
+                        break;
+                }
             };
             node.config.addListener('status', node.onStatusChanged);
 
-            node.telegramBot = this.config.getTelegramBot();
-            if (node.telegramBot) {
-                // Before starting we check if the download dir really exists.
-                if (config.saveDataDir && !fs.existsSync(config.saveDataDir)) {
-                    node.warn('The configured download directory does not exist: ' + config.saveDataDir);
-                    node.status({
-                        fill: 'red',
-                        shape: 'ring',
-                        text: 'download dir not accessible',
-                    });
-                } else {
-                    if (node.telegramBot._polling !== null || node.telegramBot._webHook !== null) {
-                        node.status({
-                            fill: 'green',
-                            shape: 'ring',
-                            text: 'connected',
-                        });
-
-                        node.telegramBot.on('message', (botMsg) => this.processMessage(botMsg));
-                    } else {
-                        node.status({
-                            fill: 'grey',
-                            shape: 'ring',
-                            text: 'send only mode',
-                        });
-                    }
-                }
-            } else {
-                node.warn('bot not initialized.');
-                node.status({
-                    fill: 'red',
-                    shape: 'ring',
-                    text: 'bot not initialized',
-                });
-            }
+            node.start();
         } else {
             node.warn('config node failed to initialize.');
             node.status({
@@ -1170,13 +1260,14 @@ module.exports = function (RED) {
         }
 
         this.on('close', function (removed, done) {
-            node.telegramBot.off('message');
+            node.stop();
 
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }
 
             node.status({});
+
             done();
         });
     }
@@ -1223,6 +1314,55 @@ module.exports = function (RED) {
         }
 
         this.bot = config.bot;
+        
+        // If the command should not be registered, then we invalidate the language.
+        if (!registerCommand) {
+            language = undefined;
+        }
+
+        this.start = function() {
+
+            let telegramBot = this.config.getTelegramBot();
+            if (telegramBot) {
+                this.config.registerCommand(node.id, command, description, language, scope, registerCommand);
+
+                node.botname = this.config.botname;
+
+                if (telegramBot._polling !== null || telegramBot._webHook !== null) {
+                    node.status({
+                        fill: 'green',
+                        shape: 'ring',
+                        text: 'connected',
+                    });
+
+                    telegramBot.on('message', (botMsg) => this.processMessage(botMsg));
+                } else {
+                    node.status({
+                        fill: 'grey',
+                        shape: 'ring',
+                        text: 'send only mode',
+                    });
+                }
+            } else {
+                node.warn('bot not initialized.');
+                node.status({
+                    fill: 'red',
+                    shape: 'ring',
+                    text: 'bot not initialized',
+                });
+            }
+        };
+
+        this.stop = function() {
+            let telegramBot = this.config.getTelegramBot();
+            telegramBot.off('message');
+
+            node.status({
+                fill: 'red',
+                shape: 'ring',
+                text: 'disconnected',
+            });
+        };
 
         this.processMessage = function (botMsg) {
             node.status({
@@ -1343,47 +1483,24 @@ module.exports = function (RED) {
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
-            // If the command should not be registered, then we invalidate the language.
-            if (!registerCommand) {
-                language = undefined;
-            }
 
-            node.telegramBot = this.config.getTelegramBot();
-            if (node.telegramBot) {
-                this.config.registerCommand(node.id, command, description, language, scope, registerCommand);
-
-                node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
-
-                node.onStatusChanged = function (status) {
-                    node.status(status);
-                };
-                node.config.addListener('status', node.onStatusChanged);
-
-                node.botname = this.config.botname;
-
-                if (node.telegramBot._polling !== null || node.telegramBot._webHook !== null) {
-                    node.status({
-                        fill: 'green',
-                        shape: 'ring',
-                        text: 'connected',
-                    });
-
-                    node.telegramBot.on('message', (botMsg) => this.processMessage(botMsg));
-                } else {
-                    node.status({
-                        fill: 'grey',
-                        shape: 'ring',
-                        text: 'send only mode',
-                    });
+            node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
+            node.onStatusChanged = function (status, nodeStatus) {
+                node.status(nodeStatus);
+                switch(status){
+                    case 'started':
+                        node.start();
+                        break;
+                    case 'stopped':
+                        node.stop();
+                        break;
+                    default:
+                        break;
                 }
-            } else {
-                node.warn('bot not initialized.');
-                node.status({
-                    fill: 'red',
-                    shape: 'ring',
-                    text: 'bot not initialized',
-                });
-            }
+            };
+            node.config.addListener('status', node.onStatusChanged);
+
+            node.start();
         } else {
             node.warn('config node failed to initialize.');
             node.status({
@@ -1394,7 +1511,7 @@ module.exports = function (RED) {
         }
 
         this.on('close', function (removed, done) {
-            node.telegramBot.off('message');
+            node.stop();
 
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
@@ -1448,27 +1565,53 @@ module.exports = function (RED) {
             throw exception;
         };
 
+        this.start = function() {
+            node.status({
+                fill: 'green',
+                shape: 'ring',
+                text: 'connected',
+            });
+        };
+        
+        this.stop = function() {
+            node.status({
+                fill: 'red',
+                shape: 'ring',
+                text: 'disconnected',
+            });
+        };
+
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
-            node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.onStatusChanged = function (status) {
-                node.status(status);
+            node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
+            node.onStatusChanged = function (status, nodeStatus) {
+                node.status(nodeStatus);
+                switch(status){
+                    case 'started':
+                        node.start();
+                        break;
+                    case 'stopped':
+                        node.stop();
+                        break;
+                    default:
+                        break;
+                }
             };
             node.config.addListener('status', node.onStatusChanged);
 
-            node.telegramBot = this.config.getTelegramBot();
-
             node.botname = this.config.botname;
-            if (node.telegramBot) {
-                if (node.telegramBot._polling !== null || node.telegramBot._webHook !== null) {
+            
+            let telegramBot = this.config.getTelegramBot();
+            if (telegramBot) {
+                if (telegramBot._polling !== null || telegramBot._webHook !== null) {
                     node.status({
                         fill: 'green',
                         shape: 'ring',
                         text: 'connected',
                     });
 
-                    node.telegramBot.on(this.event, (botMsg) => {
+                    telegramBot.on(this.event, (botMsg) => {
                         node.status({
                             fill: 'green',
                             shape: 'ring',
@@ -1517,7 +1660,7 @@ module.exports = function (RED) {
                                     };
 
                                     if (node.autoAnswerCallback) {
-                                        node.telegramBot
+                                        telegramBot
                                             .answerCallbackQuery(botMsg.id)
                                             .catch(function (ex) {
                                                 node.processError(ex, msg);
@@ -1543,7 +1686,7 @@ module.exports = function (RED) {
                                     // Right now this is not supported as a result is required!
                                     //if (node.autoAnswerCallback) {
                                     //    // result = https://core.telegram.org/bots/api#inlinequeryresult
-                                    //    node.telegramBot.answerInlineQuery(inlineQueryId, results).then(function (result) {
+                                    //    telegramBot.answerInlineQuery(inlineQueryId, results).then(function (result) {
                                     //        // Nothing to do here
                                     //        ;
                                     //    });
@@ -1784,7 +1927,8 @@ module.exports = function (RED) {
         }
 
         this.on('close', function (removed, done) {
-            node.telegramBot.off(this.event);
+            let telegramBot = this.config.getTelegramBot();
+            telegramBot.off(this.event);
 
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
@@ -1838,6 +1982,22 @@ module.exports = function (RED) {
             return hasContent;
         };
 
+        this.start = function() {
+            node.status({
+                fill: 'green',
+                shape: 'ring',
+                text: 'connected',
+            });
+        };
+
+        this.stop = function() {
+            node.status({
+                fill: 'red',
+                shape: 'ring',
+                text: 'disconnected',
+            });
+        };
+        
         this.processError = function (exception, msg, nodeSend, nodeDone) {
             let errorMessage = 'Caught exception in sender node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.stringify(msg);
 
@@ -1868,12 +2028,14 @@ module.exports = function (RED) {
         };
 
         this.processMessage = function (chatId, msg, nodeSend, nodeDone) {
+            let telegramBot = this.config.getTelegramBot();
+                
             if (msg.payload.forward) {
                 // the message should be forwarded
                 let toChatId = msg.payload.forward.chatId;
 
                 let messageId = msg.payload.messageId;
-                node.telegramBot
+                telegramBot
                     .forwardMessage(toChatId, chatId, messageId, msg.payload.forward.options)
                     .catch(function (ex) {
                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -1886,7 +2048,7 @@ module.exports = function (RED) {
                 let toChatId = msg.payload.copy.chatId;
 
                 let messageId = msg.payload.messageId;
-                node.telegramBot
+                telegramBot
                     .copyMessage(toChatId, chatId, messageId, msg.payload.copy.options)
                     .catch(function (ex) {
                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -1930,7 +2092,7 @@ module.exports = function (RED) {
                                         done = true;
                                     }
 
-                                    node.telegramBot
+                                    telegramBot
                                         .sendMessage(chatId, messageToSend, msg.payload.options || {})
                                         .then(function (result) {
                                             node.processResult(result, msg, nodeSend, nodeDone);
@@ -1949,7 +2111,7 @@ module.exports = function (RED) {
                                                 msg.payload.options.parse_mode === 'Markdown'
                                             ) {
                                                 delete msg.payload.options.parse_mode;
-                                                node.telegramBot
+                                                telegramBot
                                                     .sendMessage(chatId, messageToSend, msg.payload.options || {})
                                                     .catch(function (ex) {
                                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -1968,7 +2130,7 @@ module.exports = function (RED) {
 
                         case 'photo':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendPhoto(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -1992,7 +2154,7 @@ module.exports = function (RED) {
                                             break;
                                         }
                                     }
-                                    node.telegramBot
+                                    telegramBot
                                         .sendMediaGroup(chatId, msg.payload.content, msg.payload.options || {})
                                         .catch(function (ex) {
                                             node.processError(ex, msg, nodeSend, nodeDone);
@@ -2007,7 +2169,7 @@ module.exports = function (RED) {
                             break;
                         case 'audio':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendAudio(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2025,7 +2187,7 @@ module.exports = function (RED) {
 
                         case 'document':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendDocument(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2038,7 +2200,7 @@ module.exports = function (RED) {
 
                         case 'poll':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendPoll(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.optional)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2051,7 +2213,7 @@ module.exports = function (RED) {
 
                         case 'sticker':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendSticker(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2064,7 +2226,7 @@ module.exports = function (RED) {
 
                         case 'dice':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendDice(chatId, msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2077,7 +2239,7 @@ module.exports = function (RED) {
 
                         case 'animation':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendAnimation(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2090,7 +2252,7 @@ module.exports = function (RED) {
 
                         case 'video':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendVideo(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2103,7 +2265,7 @@ module.exports = function (RED) {
 
                         case 'video_note':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendVideoNote(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2116,7 +2278,7 @@ module.exports = function (RED) {
 
                         case 'voice':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendVoice(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2129,7 +2291,7 @@ module.exports = function (RED) {
 
                         case 'location':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendLocation(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2142,7 +2304,7 @@ module.exports = function (RED) {
 
                         case 'venue':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendVenue(
                                         chatId,
                                         msg.payload.content.latitude,
@@ -2168,7 +2330,7 @@ module.exports = function (RED) {
                                     }
                                     msg.payload.options.last_name = msg.payload.content.last_name;
                                 }
-                                node.telegramBot
+                                telegramBot
                                     .sendContact(chatId, msg.payload.content.phone_number, msg.payload.content.first_name, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2182,7 +2344,7 @@ module.exports = function (RED) {
 
                         case 'editMessageLiveLocation':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .editMessageLiveLocation(msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2196,7 +2358,7 @@ module.exports = function (RED) {
                         case 'stopMessageLiveLocation':
                             // This message requires the options to be set!
                             //if (this.hasContent(msg)) {
-                            node.telegramBot
+                            telegramBot
                                 .stopMessageLiveLocation(msg.payload.options)
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
@@ -2221,7 +2383,7 @@ module.exports = function (RED) {
                                     options.text = msg.payload.content;
                                 }
 
-                                node.telegramBot
+                                telegramBot
                                     .answerCallbackQuery(callbackQueryId, options)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2236,7 +2398,7 @@ module.exports = function (RED) {
                         case 'answerInlineQuery':
                             //if (this.hasContent(msg)) {
                             // this type requires results to be set: see https://core.telegram.org/bots/api#inlinequeryresult
-                            node.telegramBot
+                            telegramBot
                                 .answerInlineQuery(msg.payload.inlineQueryId, msg.payload.results, msg.payload.options || {})
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
@@ -2250,7 +2412,7 @@ module.exports = function (RED) {
                         case 'answerWebAppQuery':
                             //if (this.hasContent(msg)) {
                             // this type requires results to be set: see https://core.telegram.org/bots/api#inlinequeryresult
-                            node.telegramBot
+                            telegramBot
                                 .answerWebAppQuery(msg.payload.webAppQueryId, msg.payload.results, msg.payload.options || {})
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
@@ -2264,7 +2426,7 @@ module.exports = function (RED) {
                         case 'sendChatAction':
                         case 'action':
                             if (this.hasContent(msg)) {
-                                node.telegramBot
+                                telegramBot
                                     .sendChatAction(chatId, msg.payload.content)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
@@ -2288,7 +2450,7 @@ module.exports = function (RED) {
                         case 'createChatInviteLink':
                         case 'unpinAllChatMessages':
                         case 'deleteChatPhoto':
-                            node.telegramBot[type](chatId, msg.payload.options || {})
+                            telegramBot[type](chatId, msg.payload.options || {})
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
                                 })
@@ -2302,7 +2464,7 @@ module.exports = function (RED) {
                         case 'editMessageText':
                         case 'editMessageReplyMarkup':
                             if (this.hasContent(msg)) {
-                                node.telegramBot[type](msg.payload.content, msg.payload.options || {})
+                                telegramBot[type](msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2333,7 +2495,7 @@ module.exports = function (RED) {
                         case 'unpinChatMessage':
                         case 'deleteMessage':
                             if (this.hasContent(msg)) {
-                                node.telegramBot[type](chatId, msg.payload.content)
+                                telegramBot[type](chatId, msg.payload.content)
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2356,7 +2518,7 @@ module.exports = function (RED) {
                             // The userId must be passed in msg.payload.content: note that this is is a number not the username.
                             // Right now there is no way for resolving the user_id by username in the official API.
                             if (this.hasContent(msg)) {
-                                node.telegramBot[type](chatId, msg.payload.content, msg.payload.options || {})
+                                telegramBot[type](chatId, msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2372,7 +2534,7 @@ module.exports = function (RED) {
                         // See https://core.telegram.org/bots/api#sendinvoice
                         case 'sendInvoice':
                             //if (this.hasContent(msg)) {
-                            node.telegramBot[type](
+                            telegramBot[type](
                                 chatId,
                                 msg.payload.content.title,
                                 msg.payload.content.description,
@@ -2396,7 +2558,7 @@ module.exports = function (RED) {
                         case 'answerShippingQuery':
                             //if (this.hasContent(msg)) {
                             // this type requires ok to be set: see https://core.telegram.org/bots/api#answershippingquery
-                            node.telegramBot
+                            telegramBot
                                 .answerShippingQuery(msg.payload.shippingQueryId, msg.payload.ok, msg.payload.options || {})
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
@@ -2411,7 +2573,7 @@ module.exports = function (RED) {
                         case 'answerPreCheckoutQuery':
                             //if (this.hasContent(msg)) {
                             // this type requires ok to be set: see https://core.telegram.org/bots/api#answerprecheckoutquery
-                            node.telegramBot
+                            telegramBot
                                 .answerPreCheckoutQuery(msg.payload.preCheckoutQueryId, msg.payload.ok, msg.payload.options || {})
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
@@ -2450,7 +2612,8 @@ module.exports = function (RED) {
             });
 
             let form = {};
-            const fileStream = node.telegramBot.getFileStream(fileId, form);
+            let telegramBot = this.config.getTelegramBot();
+            const fileStream = telegramBot.getFileStream(fileId, form);
             fileStream.on('info', (info) => {
                 if (fileName === undefined) {
                     fileName = info.uri.slice(info.uri.lastIndexOf('/') + 1);
@@ -2485,7 +2648,8 @@ module.exports = function (RED) {
 
             try {
                 const attachName = String(0);
-                const [formData, fileId] = node.telegramBot._formatSendData(attachName, media.media, media.fileOptions);
+                let telegramBot = this.config.getTelegramBot();
+                const [formData, fileId] = telegramBot._formatSendData(attachName, media.media, media.fileOptions);
                 if (formData) {
                     opts.formData[attachName] = formData[attachName];
                     payload.media = `attach://${attachName}`;
@@ -2497,20 +2661,30 @@ module.exports = function (RED) {
             }
 
             opts.qs.media = JSON.stringify(payload);
-            return node.telegramBot._request('editMessageMedia', opts);
+            return telegramBot._request('editMessageMedia', opts);
         };
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
-            node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.onStatusChanged = function (status) {
-                node.status(status);
+            node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
+            node.onStatusChanged = function (status, nodeStatus) {
+                node.status(nodeStatus);
+                switch(status){
+                    case 'started':
+                        node.start();
+                        break;
+                    case 'stopped':
+                        node.stop();
+                        break;
+                    default:
+                        break;
+                }
             };
             node.config.addListener('status', node.onStatusChanged);
 
-            node.telegramBot = this.config.getTelegramBot();
-            if (node.telegramBot) {
+            let telegramBot = this.config.getTelegramBot();
+            if (telegramBot) {
                 node.status({
                     fill: 'green',
                     shape: 'ring',
@@ -2543,7 +2717,8 @@ module.exports = function (RED) {
             node.status({ fill: 'green', shape: 'ring', text: 'connected' });
 
             if (msg.payload) {
-                if (node.telegramBot) {
+                let telegramBot = this.config.getTelegramBot();
+                if (telegramBot) {
                     if (!Array.isArray(msg.payload.chatId)) {
                         this.processMessage(msg.payload.chatId, msg, nodeSend, nodeDone);
                     } else {
@@ -2592,18 +2767,44 @@ module.exports = function (RED) {
         let node = this;
         this.bot = config.bot;
 
+        this.start = function() {
+            node.status({
+                fill: 'green',
+                shape: 'ring',
+                text: 'connected',
+            });
+        };
+
+        this.stop = function() {
+            node.status({
+                fill: 'red',
+                shape: 'ring',
+                text: 'disconnected',
+            });
+        };
+        
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
-            node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
 
-            node.onStatusChanged = function (status) {
-                node.status(status);
+            node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
+            node.onStatusChanged = function (status, nodeStatus) {
+                node.status(nodeStatus);
+                switch(status){
+                    case 'started':
+                        node.start();
+                        break;
+                    case 'stopped':
+                        node.stop();
+                        break;
+                    default:
+                        break;
+                }
             };
             node.config.addListener('status', node.onStatusChanged);
 
-            node.telegramBot = this.config.getTelegramBot();
-            if (node.telegramBot) {
-                if (node.telegramBot._polling !== null || node.telegramBot._webHook !== null) {
+            let telegramBot = this.config.getTelegramBot();
+            if (telegramBot) {
+                if (telegramBot._polling !== null || telegramBot._webHook !== null) {
                     node.status({
                         fill: 'green',
                         shape: 'ring',
@@ -2637,13 +2838,14 @@ module.exports = function (RED) {
             node.status({ fill: 'green', shape: 'ring', text: 'connected' });
 
             if (msg.payload) {
-                if (node.telegramBot) {
+                let telegramBot = this.config.getTelegramBot();
+                if (telegramBot) {
                     if (msg.payload.chatId) {
                         if (msg.payload.sentMessageId) {
                             let chatId = msg.payload.chatId;
                             let messageId = msg.payload.sentMessageId;
 
-                            node.telegramBot.onReplyToMessage(chatId, messageId, function (botMsg) {
+                            telegramBot.onReplyToMessage(chatId, messageId, function (botMsg) {
                                 let messageDetails = getMessageDetails(botMsg);
                                 if (messageDetails) {
                                     msg.payload = messageDetails;
@@ -2683,4 +2885,133 @@ module.exports = function (RED) {
         });
     }
     RED.nodes.registerType('telegram reply', TelegramReplyNode);
+
+    
+    // --------------------------------------------------------------------------------------------
+    // The control node can start stop a bot.
+    // The payload needs these fields
+    // command  : string 'start' 'stop' 'restart'
+    function TelegramControlNode(config) {
+        RED.nodes.createNode(this, config);
+        let node = this;
+        this.bot = config.bot;
+
+        this.start = function() {
+            node.status({
+                fill: 'green',
+                shape: 'ring',
+                text: 'connected',
+            });
+        };
+
+        this.stop = function() {
+            node.status({
+                fill: 'red',
+                shape: 'ring',
+                text: 'disconnected',
+            });
+        };
+        
+        this.config = RED.nodes.getNode(this.bot);
+        if (this.config) {
+
+            node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
+            node.onStatusChanged = function (status, nodeStatus) {
+                node.status(nodeStatus);
+                switch(status){
+                    case 'started':
+                        node.start();
+                        break;
+                    case 'stopped':
+                        node.stop();
+                        break;
+                    default:
+                        break;
+                }
+            };
+            node.config.addListener('status', node.onStatusChanged);
+
+            let telegramBot = node.config.getTelegramBot();
+            if (telegramBot) {
+                node.status({
+                    fill: 'green',
+                    shape: 'ring',
+                    text: 'connected',
+                });
+            } else {
+                node.warn('bot not initialized.');
+                node.status({
+                    fill: 'red',
+                    shape: 'ring',
+                    text: 'bot not initialized',
+                });
+            }
+        } else {
+            node.warn('config node failed to initialize.');
+            node.status({
+                fill: 'red',
+                shape: 'ring',
+                text: 'config node failed to initialize',
+            });
+        }
+
+        this.on('input', function (msg, nodeSend, nodeDone) {
+            nodeSend =
+                nodeSend ||
+                function () {
+                    node.send.apply(node, arguments);
+                };
+
+            node.status({ fill: 'green', shape: 'ring', text: 'connected' });
+
+            if (msg.payload) {
+                let command = msg.payload.command;
+                switch(command){
+                    case 'stop':
+                        node.config.stop('by control node', function () {
+                            node.send(msg);
+                        });
+                        break;
+                    case 'start':
+                        node.config.start('by control node', function () {
+                            node.send(msg);
+                        });
+                        break;
+                    case 'restart':
+                        node.config.stop('by control node', function () {
+                            let delay = msg.payload.delay;
+                            if(delay !== undefined && delay > 0){
+                                setTimeout(function() {
+                                    node.config.start('by control node', function () {
+                                        node.send(msg);
+                                    });
+                                }, delay);
+                            }
+                            else {
+                                node.config.start('by control node', function () {
+                                    node.send(msg);
+                                });
+                            }
+                            node.send(msg);
+                        });
+                        break;
+
+                    default:
+                        break;
+                }
+            } else {
+                node.warn('msg.payload is empty');
+            }
+        });
+
+        this.on('close', function (removed, done) {
+            if (node.onStatusChanged) {
+                node.config.removeListener('status', node.onStatusChanged);
+            }
+
+            node.status({});
+            done();
+        });
+    }
+    RED.nodes.registerType('telegram control', TelegramControlNode);
 };

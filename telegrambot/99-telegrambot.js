@@ -38,7 +38,7 @@ module.exports = function (RED) {
         this.tokenRegistered = false;
 
         // first of all check if the token is used twice: in this case we abort
-        if(this.credentials !== undefined && this.credentials.token !== undefined) {
+        if (this.credentials !== undefined && this.credentials.token !== undefined) {
             this.token = this.credentials.token;
             let configNodeId = botsByToken[this.token];
             if (configNodeId === undefined) {
@@ -54,12 +54,10 @@ module.exports = function (RED) {
                     return;
                 }
             }
-        }
-        else {
+        } else {
             self.warn('Aborting: Token of ' + n.botname + ' is not set');
             return;
         }
-
 
         // see https://github.com/windkh/node-red-contrib-telegrambot/issues/198
         self.setMaxListeners(0);
@@ -504,7 +502,6 @@ module.exports = function (RED) {
         });
 
         this.abortBot = function (hint, done) {
-
             self.status = 'disconnecting';
 
             function setStatusDisconnected() {
@@ -535,21 +532,20 @@ module.exports = function (RED) {
         };
 
         // stops the bot if not already stopped
-        this.stop  = function (hint, done) {
-            if(self.telegramBot !== null && self.status === 'connected'){
+        this.stop = function (hint, done) {
+            if (self.telegramBot !== null && self.status === 'connected') {
                 self.abortBot(hint, done);
-            }
-            else {
+            } else {
                 done();
             }
         };
 
         // starts the bot if not already started
-        this.start  = function (hint, done) {
-            if(self.telegramBot === null && self.status === 'disconnected'){
+        this.start = function (hint, done) {
+            if (self.telegramBot === null && self.status === 'disconnected') {
                 self.status = 'connecting';
                 self.getTelegramBot(); // trigger creation
-                if(self.telegramBot !== null) {
+                if (self.telegramBot !== null) {
                     self.status = 'connected';
                     self.setStatus('started', 'started ' + hint);
                 }
@@ -685,15 +681,14 @@ module.exports = function (RED) {
         };
 
         this.setStatus = function (status, text = {}) {
-
             let nodeStatus = {};
-            switch(status){
+            switch (status) {
                 case 'started':
                     nodeStatus = {
                         fill: 'green',
                         shape: 'ring',
                         text: text,
-                    }
+                    };
                     break;
 
                 case 'stopped':
@@ -701,15 +696,15 @@ module.exports = function (RED) {
                         fill: 'red',
                         shape: 'ring',
                         text: text,
-                    }
+                    };
                     break;
 
-                case 'info': 
+                case 'info':
                     nodeStatus = {
                         fill: 'green',
                         shape: 'ring',
                         text: 'polling',
-                    }
+                    };
                     break;
 
                 case 'error':
@@ -717,7 +712,7 @@ module.exports = function (RED) {
                         fill: 'red',
                         shape: 'ring',
                         text: text,
-                    }
+                    };
                     break;
                 default:
                     break;
@@ -1196,7 +1191,7 @@ module.exports = function (RED) {
                 };
 
                 let telegramBot = this.config.getTelegramBot();
-                
+
                 if (node.config.isAuthorized(node, chatid, userid, username)) {
                     // downloadable "blob" message?
                     if (messageDetails.blob) {
@@ -1232,11 +1227,10 @@ module.exports = function (RED) {
         // Initializes a new instance of the node:
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
-            
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
             node.onStatusChanged = function (status, nodeStatus) {
                 node.status(nodeStatus);
-                switch(status){
+                switch (status) {
                     case 'started':
                         node.start();
                         break;
@@ -1314,14 +1308,13 @@ module.exports = function (RED) {
         }
 
         this.bot = config.bot;
-        
+
         // If the command should not be registered, then we invalidate the language.
         if (!registerCommand) {
             language = undefined;
         }
 
-        this.start = function() {
-
+        this.start = function () {
             let telegramBot = this.config.getTelegramBot();
             if (telegramBot) {
                 this.config.registerCommand(node.id, command, description, language, scope, registerCommand);
@@ -1353,7 +1346,7 @@ module.exports = function (RED) {
             }
         };
 
-        this.stop = function() {
+        this.stop = function () {
             let telegramBot = this.config.getTelegramBot();
             telegramBot.off('message');
 
@@ -1483,11 +1476,10 @@ module.exports = function (RED) {
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
-
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
             node.onStatusChanged = function (status, nodeStatus) {
                 node.status(nodeStatus);
-                switch(status){
+                switch (status) {
                     case 'started':
                         node.start();
                         break;
@@ -1565,15 +1557,15 @@ module.exports = function (RED) {
             throw exception;
         };
 
-        this.start = function() {
+        this.start = function () {
             node.status({
                 fill: 'green',
                 shape: 'ring',
                 text: 'connected',
             });
         };
-        
-        this.stop = function() {
+
+        this.stop = function () {
             node.status({
                 fill: 'red',
                 shape: 'ring',
@@ -1583,11 +1575,10 @@ module.exports = function (RED) {
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
-
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
             node.onStatusChanged = function (status, nodeStatus) {
                 node.status(nodeStatus);
-                switch(status){
+                switch (status) {
                     case 'started':
                         node.start();
                         break;
@@ -1601,7 +1592,7 @@ module.exports = function (RED) {
             node.config.addListener('status', node.onStatusChanged);
 
             node.botname = this.config.botname;
-            
+
             let telegramBot = this.config.getTelegramBot();
             if (telegramBot) {
                 if (telegramBot._polling !== null || telegramBot._webHook !== null) {
@@ -1982,7 +1973,7 @@ module.exports = function (RED) {
             return hasContent;
         };
 
-        this.start = function() {
+        this.start = function () {
             node.status({
                 fill: 'green',
                 shape: 'ring',
@@ -1990,14 +1981,14 @@ module.exports = function (RED) {
             });
         };
 
-        this.stop = function() {
+        this.stop = function () {
             node.status({
                 fill: 'red',
                 shape: 'ring',
                 text: 'disconnected',
             });
         };
-        
+
         this.processError = function (exception, msg, nodeSend, nodeDone) {
             let errorMessage = 'Caught exception in sender node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.stringify(msg);
 
@@ -2029,7 +2020,7 @@ module.exports = function (RED) {
 
         this.processMessage = function (chatId, msg, nodeSend, nodeDone) {
             let telegramBot = this.config.getTelegramBot();
-                
+
             if (msg.payload.forward) {
                 // the message should be forwarded
                 let toChatId = msg.payload.forward.chatId;
@@ -2666,11 +2657,10 @@ module.exports = function (RED) {
 
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
-
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
             node.onStatusChanged = function (status, nodeStatus) {
                 node.status(nodeStatus);
-                switch(status){
+                switch (status) {
                     case 'started':
                         node.start();
                         break;
@@ -2767,7 +2757,7 @@ module.exports = function (RED) {
         let node = this;
         this.bot = config.bot;
 
-        this.start = function() {
+        this.start = function () {
             node.status({
                 fill: 'green',
                 shape: 'ring',
@@ -2775,21 +2765,20 @@ module.exports = function (RED) {
             });
         };
 
-        this.stop = function() {
+        this.stop = function () {
             node.status({
                 fill: 'red',
                 shape: 'ring',
                 text: 'disconnected',
             });
         };
-        
+
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
-
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
             node.onStatusChanged = function (status, nodeStatus) {
                 node.status(nodeStatus);
-                switch(status){
+                switch (status) {
                     case 'started':
                         node.start();
                         break;
@@ -2886,7 +2875,6 @@ module.exports = function (RED) {
     }
     RED.nodes.registerType('telegram reply', TelegramReplyNode);
 
-    
     // --------------------------------------------------------------------------------------------
     // The control node can start stop a bot.
     // The payload needs these fields
@@ -2896,7 +2884,7 @@ module.exports = function (RED) {
         let node = this;
         this.bot = config.bot;
 
-        this.start = function() {
+        this.start = function () {
             node.status({
                 fill: 'green',
                 shape: 'ring',
@@ -2904,21 +2892,20 @@ module.exports = function (RED) {
             });
         };
 
-        this.stop = function() {
+        this.stop = function () {
             node.status({
                 fill: 'red',
                 shape: 'ring',
                 text: 'disconnected',
             });
         };
-        
+
         this.config = RED.nodes.getNode(this.bot);
         if (this.config) {
-
             node.status({ fill: 'red', shape: 'ring', text: 'not connected' });
             node.onStatusChanged = function (status, nodeStatus) {
                 node.status(nodeStatus);
-                switch(status){
+                switch (status) {
                     case 'started':
                         node.start();
                         break;
@@ -2955,18 +2942,12 @@ module.exports = function (RED) {
             });
         }
 
-        this.on('input', function (msg, nodeSend, nodeDone) {
-            nodeSend =
-                nodeSend ||
-                function () {
-                    node.send.apply(node, arguments);
-                };
-
+        this.on('input', function (msg) {
             node.status({ fill: 'green', shape: 'ring', text: 'connected' });
 
             if (msg.payload) {
                 let command = msg.payload.command;
-                switch(command){
+                switch (command) {
                     case 'stop':
                         node.config.stop('by control node', function () {
                             node.send(msg);
@@ -2980,14 +2961,13 @@ module.exports = function (RED) {
                     case 'restart':
                         node.config.stop('by control node', function () {
                             let delay = msg.payload.delay;
-                            if(delay !== undefined && delay > 0){
-                                setTimeout(function() {
+                            if (delay !== undefined && delay > 0) {
+                                setTimeout(function () {
                                     node.config.start('by control node', function () {
                                         node.send(msg);
                                     });
                                 }, delay);
-                            }
-                            else {
+                            } else {
                                 node.config.start('by control node', function () {
                                     node.send(msg);
                                 });

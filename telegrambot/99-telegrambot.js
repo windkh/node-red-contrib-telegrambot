@@ -174,6 +174,7 @@ module.exports = function (RED) {
             this.socksRequest = {
                 agentClass: SocksProxyAgent,
                 agentOptions: agentOptions,
+                pool: {},
             };
         }
 

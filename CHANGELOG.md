@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [14.6.0] - 2022-10-15
+### fixed: when changing socks5 hostname you had to redeploy - [#265](https://github.com/windkh/node-red-contrib-telegrambot/issues/265) 
+
 # [14.5.0] - 2022-10-15
 ### added control node - [#228](https://github.com/windkh/node-red-contrib-telegrambot/issues/228) 
 

@@ -58,7 +58,6 @@ Watch the output in the docker console. If user name and passord are wrong the o
 
 #### 8. Enter user name and password in your node-red telegram bot configuration and you are done.
 <img src="images/TelegramBotSocks5Docker8.png" title="Enter user name and password if required." width="600" />
-Sometimes reconfiguring the socks5 configuration does not work with redeploy. In this case restart your node-red instance.
 
 
 #### 9. When the node shows status "Connected" then everything should work as expected..

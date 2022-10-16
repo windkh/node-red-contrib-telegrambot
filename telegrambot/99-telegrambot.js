@@ -31,9 +31,11 @@ module.exports = function (RED) {
             let startTime = performance.now();
 
             let result = super.getUpdates(form);
+            result.then((updates) => {
+                let endTime = performance.now();
+                this.emit('getUpdates_end', this.cycle, endTime - startTime);
+            });
 
-            let endTime = performance.now();
-            this.emit('getUpdates_end', this.cycle, endTime - startTime);
             return result;
         }
     }

@@ -9,6 +9,7 @@ module.exports = function (RED) {
     const path = require('path');
     const pump = require('pump');
     const fs = require('fs');
+
     let Promise = require('bluebird');
     Promise.config({
         cancellation: true,
@@ -16,6 +17,26 @@ module.exports = function (RED) {
 
     let telegramBot = require('node-telegram-bot-api');
     let { SocksProxyAgent } = require('socks-proxy-agent');
+
+    // Orginal class is extended to be able to emit an event when getUpdates is called.
+    class telegramBotEx extends telegramBot {
+        constructor(token, options = {}) {
+            super(token, options);
+            this.cycle = 0;
+        }
+
+        getUpdates(form = {}) {
+            this.cycle++;
+            this.emit('getUpdates_start', this.cycle);
+            let startTime = performance.now();
+
+            let result = super.getUpdates(form);
+
+            let endTime = performance.now();
+            this.emit('getUpdates_end', this.cycle, endTime - startTime);
+            return result;
+        }
+    }
 
     let botsByToken = {};
 
@@ -208,7 +229,7 @@ module.exports = function (RED) {
                 baseApiUrl: this.baseApiUrl,
                 request: this.socksRequest,
             };
-            newTelegramBot = new telegramBot(this.token, options);
+            newTelegramBot = new telegramBotEx(this.token, options);
 
             newTelegramBot.on('webhook_error', function (error) {
                 self.setStatus('error', 'webhook error');
@@ -300,7 +321,7 @@ module.exports = function (RED) {
                 baseApiUrl: this.baseApiUrl,
                 request: this.socksRequest,
             };
-            newTelegramBot = new telegramBot(this.token, options);
+            newTelegramBot = new telegramBotEx(this.token, options);
 
             self.status = 'connected';
 
@@ -368,7 +389,7 @@ module.exports = function (RED) {
                 baseApiUrl: this.baseApiUrl,
                 request: this.socksRequest,
             };
-            newTelegramBot = new telegramBot(this.token, options);
+            newTelegramBot = new telegramBotEx(this.token, options);
 
             self.status = 'send only mode';
 
@@ -1165,7 +1186,9 @@ module.exports = function (RED) {
 
         this.stop = function () {
             let telegramBot = this.config.getTelegramBot();
-            telegramBot.off('message');
+            if (telegramBot) {
+                telegramBot.off('message');
+            }
 
             node.status({
                 fill: 'red',
@@ -1349,7 +1372,9 @@ module.exports = function (RED) {
 
         this.stop = function () {
             let telegramBot = this.config.getTelegramBot();
-            telegramBot.off('message');
+            if (telegramBot) {
+                telegramBot.off('message');
+            }
 
             node.status({
                 fill: 'red',
@@ -1536,7 +1561,7 @@ module.exports = function (RED) {
     // - poll_answer
     // - my_chat_member
     // - chat_member
-    // - TODO: chat_join_request
+    // - chat_join_request
     // The message details are stored in the payload
     // chatId
     // messageId
@@ -1559,19 +1584,342 @@ module.exports = function (RED) {
         };
 
         this.start = function () {
-            node.status({
-                fill: 'green',
-                shape: 'ring',
-                text: 'connected',
-            });
+            let telegramBot = this.config.getTelegramBot();
+            if (telegramBot) {
+                if (telegramBot._polling !== null || telegramBot._webHook !== null) {
+                    node.status({
+                        fill: 'green',
+                        shape: 'ring',
+                        text: 'connected',
+                    });
+
+                    telegramBot.on(this.event, (botMsg) => this.processMessage(botMsg));
+                } else {
+                    node.status({
+                        fill: 'grey',
+                        shape: 'ring',
+                        text: 'send only mode',
+                    });
+                }
+            } else {
+                node.warn('bot not initialized.');
+                node.status({
+                    fill: 'red',
+                    shape: 'ring',
+                    text: 'bot not initialized',
+                });
+            }
         };
 
         this.stop = function () {
+            let telegramBot = this.config.getTelegramBot();
+            if (telegramBot) {
+                telegramBot.off(this.event);
+            }
+
             node.status({
                 fill: 'red',
                 shape: 'ring',
                 text: 'disconnected',
             });
+        };
+
+        this.processMessage = function (botMsg) {
+            node.status({
+                fill: 'green',
+                shape: 'ring',
+                text: 'connected',
+            });
+
+            node.status({
+                fill: 'green',
+                shape: 'ring',
+                text: 'connected',
+            });
+
+            let username;
+            let chatid;
+            let userid;
+            if (botMsg.chat) {
+                //channel
+                username = botMsg.chat.username;
+                chatid = botMsg.chat.id;
+                if (botMsg.from !== undefined) {
+                    userid = botMsg.from.id;
+                }
+            } else if (botMsg.from) {
+                //sender, group, supergroup
+                if (botMsg.message !== undefined) {
+                    chatid = botMsg.message.chat.id;
+                }
+                username = botMsg.from.username;
+                userid = botMsg.from.id;
+            } else {
+                // chatid can be null in case of polls, inline_queries,...
+            }
+
+            if (node.config.isAuthorized(node, chatid, userid, username)) {
+                let msg;
+                let messageDetails;
+                let messageId;
+                if (botMsg.message !== undefined) {
+                    messageId = botMsg.message.message_id;
+                }
+
+                switch (this.event) {
+                    case 'callback_query':
+                        messageDetails = {
+                            chatId: chatid,
+                            messageId: messageId,
+                            inlineMessageId: botMsg.inline_message_id,
+                            type: this.event,
+                            content: botMsg.data,
+                            callbackQueryId: botMsg.id,
+                            from: botMsg.from,
+                        };
+
+                        if (node.autoAnswerCallback) {
+                            telegramBot
+                                .answerCallbackQuery(botMsg.id)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg);
+                                })
+                                .then(function () {
+                                    // nothing to do here
+                                    // node.processResult(result);
+                                });
+                        }
+                        break;
+
+                    // /setinline must be set before in botfather see https://core.telegram.org/bots/inline
+                    case 'inline_query':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            content: botMsg.query,
+                            inlineQueryId: botMsg.id,
+                            offset: botMsg.offset,
+                            from: botMsg.from,
+                            location: botMsg.location, // location is only available when /setinlinegeo is set in botfather
+                        };
+                        // Right now this is not supported as a result is required!
+                        //if (node.autoAnswerCallback) {
+                        //    // result = https://core.telegram.org/bots/api#inlinequeryresult
+                        //    telegramBot.answerInlineQuery(inlineQueryId, results).then(function (result) {
+                        //        // Nothing to do here
+                        //        ;
+                        //    });
+                        //}
+                        break;
+
+                    case 'edited_message':
+                        messageDetails = {
+                            chatId: chatid,
+                            messageId: botMsg.message_id,
+                            type: this.event,
+                            content: botMsg.text,
+                            editDate: botMsg.edit_date,
+                            date: botMsg.date,
+                            from: botMsg.from,
+                            chat: botMsg.chat,
+                            location: botMsg.location, // for live location updates
+                        };
+                        break;
+
+                    // the text of an already sent message.
+                    case 'edited_message_text':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            messageId: botMsg.message_id,
+                            content: botMsg.text,
+                            editDate: botMsg.edit_date,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                        };
+                        break;
+
+                    // the caption of a document or an image ...
+                    case 'edited_message_caption':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            messageId: botMsg.message_id,
+                            content: botMsg.caption,
+                            editDate: botMsg.edit_date,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                        };
+                        break;
+
+                    case 'channel_post':
+                        messageDetails = {
+                            chatId: chatid,
+                            messageId: botMsg.message_id,
+                            type: this.event,
+                            content: botMsg.text,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                        };
+                        break;
+
+                    case 'edited_channel_post':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            messageId: botMsg.message_id,
+                            content: botMsg.text,
+                            editDate: botMsg.edit_date,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                        };
+                        break;
+
+                    case 'edited_channel_post_text':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            messageId: botMsg.message_id,
+                            content: botMsg.text,
+                            editDate: botMsg.edit_date,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                        };
+                        break;
+
+                    case 'edited_channel_post_caption':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            messageId: botMsg.message_id,
+                            content: botMsg.caption,
+                            editDate: botMsg.edit_date,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                        };
+                        break;
+
+                    case 'pre_checkout_query':
+                        messageDetails = {
+                            preCheckoutQueryId: botMsg.id,
+                            chatId: chatid,
+                            type: this.event,
+                            from: botMsg.from,
+                            currency: botMsg.currency,
+                            total_amount: botMsg.total_amount,
+                            invoice_payload: botMsg.invoice_payload,
+                            shipping_option_id: botMsg.shipping_option_id,
+                            order_info: botMsg.order_info,
+                            content: botMsg.invoice_payload,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                        };
+                        break;
+
+                    case 'shipping_query':
+                        messageDetails = {
+                            shippingQueryId: botMsg.id,
+                            chatId: chatid,
+                            type: this.event,
+                            from: botMsg.from,
+                            invoice_payload: botMsg.invoice_payload,
+                            content: botMsg.invoice_payload,
+                            shipping_address: botMsg.shipping_address,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                        };
+                        break;
+
+                    case 'chosen_inline_result':
+                        messageDetails = {
+                            result_id: botMsg.result_id,
+                            chatId: chatid,
+                            type: this.event,
+                            from: botMsg.from,
+                            location: botMsg.location,
+                            inline_message_id: botMsg.inline_message_id,
+                            query: botMsg.query,
+                            content: botMsg.result_id,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                        };
+                        break;
+
+                    case 'poll_answer':
+                        messageDetails = {
+                            poll_id: botMsg.poll_id,
+                            chatId: chatid,
+                            type: this.event,
+                            user: botMsg.user,
+                            option_ids: botMsg.option_ids,
+                            content: botMsg.user,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                        };
+                        break;
+
+                    case 'poll':
+                        messageDetails = {
+                            type: this.event,
+                            id: botMsg.id,
+                            question: botMsg.question,
+                            options: botMsg.options,
+                            total_voter_count: botMsg.total_voter_count,
+                            is_closed: botMsg.is_closed,
+                            is_anonymous: botMsg.is_anonymous,
+                            pollType: botMsg.type,
+                            allows_multiple_answers: botMsg.allows_multiple_answers,
+                            correct_option_id: botMsg.correct_option_id,
+                            explanation: botMsg.explanation,
+                            explanation_entities: botMsg.explanation_entities,
+                            open_period: botMsg.open_period,
+                            close_date: botMsg.close_date,
+                            content: botMsg.question,
+                        };
+                        break;
+
+                    case 'my_chat_member':
+                    case 'chat_member':
+                        messageDetails = {
+                            from: botMsg.from,
+                            old_chat_member: botMsg.old_chat_member,
+                            new_chat_member: botMsg.new_chat_member,
+                            invite_link: botMsg.invite_link,
+                            chatId: chatid,
+                            type: this.event,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                        };
+                        break;
+
+                    case 'chat_join_request':
+                        messageDetails = {
+                            from: botMsg.from,
+                            bio: botMsg.bio,
+                            invite_link: botMsg.invite_link,
+                            chatId: chatid,
+                            type: this.event,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                        };
+                        break;
+
+                    default:
+                }
+
+                if (messageDetails !== null) {
+                    msg = {
+                        payload: messageDetails,
+                        originalMessage: botMsg,
+                    };
+                    node.send(msg);
+                }
+            } else {
+                // ignoring unauthorized calls
+                if (node.config.verbose) {
+                    node.warn('Unauthorized incoming call from ' + username);
+                }
+            }
         };
 
         this.config = RED.nodes.getNode(this.bot);
@@ -1594,321 +1942,7 @@ module.exports = function (RED) {
 
             node.botname = this.config.botname;
 
-            let telegramBot = this.config.getTelegramBot();
-            if (telegramBot) {
-                if (telegramBot._polling !== null || telegramBot._webHook !== null) {
-                    node.status({
-                        fill: 'green',
-                        shape: 'ring',
-                        text: 'connected',
-                    });
-
-                    telegramBot.on(this.event, (botMsg) => {
-                        node.status({
-                            fill: 'green',
-                            shape: 'ring',
-                            text: 'connected',
-                        });
-
-                        let username;
-                        let chatid;
-                        let userid;
-                        if (botMsg.chat) {
-                            //channel
-                            username = botMsg.chat.username;
-                            chatid = botMsg.chat.id;
-                            if (botMsg.from !== undefined) {
-                                userid = botMsg.from.id;
-                            }
-                        } else if (botMsg.from) {
-                            //sender, group, supergroup
-                            if (botMsg.message !== undefined) {
-                                chatid = botMsg.message.chat.id;
-                            }
-                            username = botMsg.from.username;
-                            userid = botMsg.from.id;
-                        } else {
-                            // chatid can be null in case of polls, inline_queries,...
-                        }
-
-                        if (node.config.isAuthorized(node, chatid, userid, username)) {
-                            let msg;
-                            let messageDetails;
-                            let messageId;
-                            if (botMsg.message !== undefined) {
-                                messageId = botMsg.message.message_id;
-                            }
-
-                            switch (this.event) {
-                                case 'callback_query':
-                                    messageDetails = {
-                                        chatId: chatid,
-                                        messageId: messageId,
-                                        inlineMessageId: botMsg.inline_message_id,
-                                        type: this.event,
-                                        content: botMsg.data,
-                                        callbackQueryId: botMsg.id,
-                                        from: botMsg.from,
-                                    };
-
-                                    if (node.autoAnswerCallback) {
-                                        telegramBot
-                                            .answerCallbackQuery(botMsg.id)
-                                            .catch(function (ex) {
-                                                node.processError(ex, msg);
-                                            })
-                                            .then(function () {
-                                                // nothing to do here
-                                                // node.processResult(result);
-                                            });
-                                    }
-                                    break;
-
-                                // /setinline must be set before in botfather see https://core.telegram.org/bots/inline
-                                case 'inline_query':
-                                    messageDetails = {
-                                        chatId: chatid,
-                                        type: this.event,
-                                        content: botMsg.query,
-                                        inlineQueryId: botMsg.id,
-                                        offset: botMsg.offset,
-                                        from: botMsg.from,
-                                        location: botMsg.location, // location is only available when /setinlinegeo is set in botfather
-                                    };
-                                    // Right now this is not supported as a result is required!
-                                    //if (node.autoAnswerCallback) {
-                                    //    // result = https://core.telegram.org/bots/api#inlinequeryresult
-                                    //    telegramBot.answerInlineQuery(inlineQueryId, results).then(function (result) {
-                                    //        // Nothing to do here
-                                    //        ;
-                                    //    });
-                                    //}
-                                    break;
-
-                                case 'edited_message':
-                                    messageDetails = {
-                                        chatId: chatid,
-                                        messageId: botMsg.message_id,
-                                        type: this.event,
-                                        content: botMsg.text,
-                                        editDate: botMsg.edit_date,
-                                        date: botMsg.date,
-                                        from: botMsg.from,
-                                        chat: botMsg.chat,
-                                        location: botMsg.location, // for live location updates
-                                    };
-                                    break;
-
-                                // the text of an already sent message.
-                                case 'edited_message_text':
-                                    messageDetails = {
-                                        chatId: chatid,
-                                        type: this.event,
-                                        messageId: botMsg.message_id,
-                                        content: botMsg.text,
-                                        editDate: botMsg.edit_date,
-                                        date: botMsg.date,
-                                        chat: botMsg.chat,
-                                    };
-                                    break;
-
-                                // the caption of a document or an image ...
-                                case 'edited_message_caption':
-                                    messageDetails = {
-                                        chatId: chatid,
-                                        type: this.event,
-                                        messageId: botMsg.message_id,
-                                        content: botMsg.caption,
-                                        editDate: botMsg.edit_date,
-                                        date: botMsg.date,
-                                        chat: botMsg.chat,
-                                    };
-                                    break;
-
-                                case 'channel_post':
-                                    messageDetails = {
-                                        chatId: chatid,
-                                        messageId: botMsg.message_id,
-                                        type: this.event,
-                                        content: botMsg.text,
-                                        date: botMsg.date,
-                                        chat: botMsg.chat,
-                                    };
-                                    break;
-
-                                case 'edited_channel_post':
-                                    messageDetails = {
-                                        chatId: chatid,
-                                        type: this.event,
-                                        messageId: botMsg.message_id,
-                                        content: botMsg.text,
-                                        editDate: botMsg.edit_date,
-                                        date: botMsg.date,
-                                        chat: botMsg.chat,
-                                    };
-                                    break;
-
-                                case 'edited_channel_post_text':
-                                    messageDetails = {
-                                        chatId: chatid,
-                                        type: this.event,
-                                        messageId: botMsg.message_id,
-                                        content: botMsg.text,
-                                        editDate: botMsg.edit_date,
-                                        date: botMsg.date,
-                                        chat: botMsg.chat,
-                                    };
-                                    break;
-
-                                case 'edited_channel_post_caption':
-                                    messageDetails = {
-                                        chatId: chatid,
-                                        type: this.event,
-                                        messageId: botMsg.message_id,
-                                        content: botMsg.caption,
-                                        editDate: botMsg.edit_date,
-                                        date: botMsg.date,
-                                        chat: botMsg.chat,
-                                    };
-                                    break;
-
-                                case 'pre_checkout_query':
-                                    messageDetails = {
-                                        preCheckoutQueryId: botMsg.id,
-                                        chatId: chatid,
-                                        type: this.event,
-                                        from: botMsg.from,
-                                        currency: botMsg.currency,
-                                        total_amount: botMsg.total_amount,
-                                        invoice_payload: botMsg.invoice_payload,
-                                        shipping_option_id: botMsg.shipping_option_id,
-                                        order_info: botMsg.order_info,
-                                        content: botMsg.invoice_payload,
-                                        date: botMsg.date,
-                                        chat: botMsg.chat,
-                                    };
-                                    break;
-
-                                case 'shipping_query':
-                                    messageDetails = {
-                                        shippingQueryId: botMsg.id,
-                                        chatId: chatid,
-                                        type: this.event,
-                                        from: botMsg.from,
-                                        invoice_payload: botMsg.invoice_payload,
-                                        content: botMsg.invoice_payload,
-                                        shipping_address: botMsg.shipping_address,
-                                        date: botMsg.date,
-                                        chat: botMsg.chat,
-                                    };
-                                    break;
-
-                                case 'chosen_inline_result':
-                                    messageDetails = {
-                                        result_id: botMsg.result_id,
-                                        chatId: chatid,
-                                        type: this.event,
-                                        from: botMsg.from,
-                                        location: botMsg.location,
-                                        inline_message_id: botMsg.inline_message_id,
-                                        query: botMsg.query,
-                                        content: botMsg.result_id,
-                                        date: botMsg.date,
-                                        chat: botMsg.chat,
-                                    };
-                                    break;
-
-                                case 'poll_answer':
-                                    messageDetails = {
-                                        poll_id: botMsg.poll_id,
-                                        chatId: chatid,
-                                        type: this.event,
-                                        user: botMsg.user,
-                                        option_ids: botMsg.option_ids,
-                                        content: botMsg.user,
-                                        date: botMsg.date,
-                                        chat: botMsg.chat,
-                                    };
-                                    break;
-
-                                case 'poll':
-                                    messageDetails = {
-                                        type: this.event,
-                                        id: botMsg.id,
-                                        question: botMsg.question,
-                                        options: botMsg.options,
-                                        total_voter_count: botMsg.total_voter_count,
-                                        is_closed: botMsg.is_closed,
-                                        is_anonymous: botMsg.is_anonymous,
-                                        pollType: botMsg.type,
-                                        allows_multiple_answers: botMsg.allows_multiple_answers,
-                                        correct_option_id: botMsg.correct_option_id,
-                                        explanation: botMsg.explanation,
-                                        explanation_entities: botMsg.explanation_entities,
-                                        open_period: botMsg.open_period,
-                                        close_date: botMsg.close_date,
-                                        content: botMsg.question,
-                                    };
-                                    break;
-
-                                case 'my_chat_member':
-                                case 'chat_member':
-                                    messageDetails = {
-                                        from: botMsg.from,
-                                        old_chat_member: botMsg.old_chat_member,
-                                        new_chat_member: botMsg.new_chat_member,
-                                        invite_link: botMsg.invite_link,
-                                        chatId: chatid,
-                                        type: this.event,
-                                        date: botMsg.date,
-                                        chat: botMsg.chat,
-                                    };
-                                    break;
-
-                                case 'chat_join_request':
-                                    messageDetails = {
-                                        from: botMsg.from,
-                                        bio: botMsg.bio,
-                                        invite_link: botMsg.invite_link,
-                                        chatId: chatid,
-                                        type: this.event,
-                                        date: botMsg.date,
-                                        chat: botMsg.chat,
-                                    };
-                                    break;
-
-                                default:
-                            }
-
-                            if (messageDetails !== null) {
-                                msg = {
-                                    payload: messageDetails,
-                                    originalMessage: botMsg,
-                                };
-                                node.send(msg);
-                            }
-                        } else {
-                            // ignoring unauthorized calls
-                            if (node.config.verbose) {
-                                node.warn('Unauthorized incoming call from ' + username);
-                            }
-                        }
-                    });
-                } else {
-                    node.status({
-                        fill: 'grey',
-                        shape: 'ring',
-                        text: 'send only mode',
-                    });
-                }
-            } else {
-                node.warn('bot not initialized.');
-                node.status({
-                    fill: 'red',
-                    shape: 'ring',
-                    text: 'bot not initialized',
-                });
-            }
+            node.start();
         } else {
             node.warn('config node failed to initialize.');
             node.status({
@@ -1919,8 +1953,7 @@ module.exports = function (RED) {
         }
 
         this.on('close', function (removed, done) {
-            let telegramBot = this.config.getTelegramBot();
-            telegramBot.off(this.event);
+            node.stop();
 
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
@@ -2737,6 +2770,8 @@ module.exports = function (RED) {
         });
 
         this.on('close', function (removed, done) {
+            node.stop();
+
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }
@@ -2759,11 +2794,29 @@ module.exports = function (RED) {
         this.bot = config.bot;
 
         this.start = function () {
-            node.status({
-                fill: 'green',
-                shape: 'ring',
-                text: 'connected',
-            });
+            let telegramBot = this.config.getTelegramBot();
+            if (telegramBot) {
+                if (telegramBot._polling !== null || telegramBot._webHook !== null) {
+                    node.status({
+                        fill: 'green',
+                        shape: 'ring',
+                        text: 'connected',
+                    });
+                } else {
+                    node.status({
+                        fill: 'grey',
+                        shape: 'ring',
+                        text: 'send only mode',
+                    });
+                }
+            } else {
+                node.warn('bot not initialized.');
+                node.status({
+                    fill: 'red',
+                    shape: 'ring',
+                    text: 'bot not initialized',
+                });
+            }
         };
 
         this.stop = function () {
@@ -2792,29 +2845,7 @@ module.exports = function (RED) {
             };
             node.config.addListener('status', node.onStatusChanged);
 
-            let telegramBot = this.config.getTelegramBot();
-            if (telegramBot) {
-                if (telegramBot._polling !== null || telegramBot._webHook !== null) {
-                    node.status({
-                        fill: 'green',
-                        shape: 'ring',
-                        text: 'connected',
-                    });
-                } else {
-                    node.status({
-                        fill: 'grey',
-                        shape: 'ring',
-                        text: 'send only mode',
-                    });
-                }
-            } else {
-                node.warn('bot not initialized.');
-                node.status({
-                    fill: 'red',
-                    shape: 'ring',
-                    text: 'bot not initialized',
-                });
-            }
+            node.start();
         } else {
             node.warn('config node failed to initialize.');
             node.status({
@@ -2866,6 +2897,8 @@ module.exports = function (RED) {
         });
 
         this.on('close', function (removed, done) {
+            node.stop();
+
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }
@@ -2879,21 +2912,63 @@ module.exports = function (RED) {
     // --------------------------------------------------------------------------------------------
     // The control node can start stop a bot.
     // The payload needs these fields
-    // command  : string 'start' 'stop' 'restart'
+    // command : string 'start' 'stop' 'restart'
+    // delay : optional time in milliseconds for restart.
     function TelegramControlNode(config) {
         RED.nodes.createNode(this, config);
         let node = this;
         this.bot = config.bot;
 
         this.start = function () {
-            node.status({
-                fill: 'green',
-                shape: 'ring',
-                text: 'connected',
-            });
+            let telegramBot = node.config.getTelegramBot();
+            if (telegramBot) {
+                telegramBot.on('getUpdates_start', function (cycle) {
+                    node.status({
+                        fill: 'green',
+                        shape: 'ring',
+                        text: 'polling cycle ' + cycle,
+                    });
+                });
+                telegramBot.on('getUpdates_end', function (cycle, duration) {
+                    let durationMs = Math.round(duration);
+
+                    node.status({
+                        fill: 'green',
+                        shape: 'ring',
+                        text: 'polling cycle ' + cycle + ': ' + durationMs + 'ms',
+                    });
+
+                    let msg = {
+                        payload: {
+                            cycle: cycle,
+                            duration: duration,
+                        },
+                    };
+                    node.send(msg);
+                });
+
+                node.status({
+                    fill: 'green',
+                    shape: 'ring',
+                    text: 'connected',
+                });
+            } else {
+                node.warn('bot not initialized.');
+                node.status({
+                    fill: 'red',
+                    shape: 'ring',
+                    text: 'bot not initialized',
+                });
+            }
         };
 
         this.stop = function () {
+            let telegramBot = node.config.getTelegramBot();
+            if (telegramBot) {
+                telegramBot.off('getUpdates_start');
+                telegramBot.off('getUpdates_end');
+            }
+
             node.status({
                 fill: 'red',
                 shape: 'ring',
@@ -2919,21 +2994,7 @@ module.exports = function (RED) {
             };
             node.config.addListener('status', node.onStatusChanged);
 
-            let telegramBot = node.config.getTelegramBot();
-            if (telegramBot) {
-                node.status({
-                    fill: 'green',
-                    shape: 'ring',
-                    text: 'connected',
-                });
-            } else {
-                node.warn('bot not initialized.');
-                node.status({
-                    fill: 'red',
-                    shape: 'ring',
-                    text: 'bot not initialized',
-                });
-            }
+            node.start();
         } else {
             node.warn('config node failed to initialize.');
             node.status({
@@ -2986,6 +3047,8 @@ module.exports = function (RED) {
         });
 
         this.on('close', function (removed, done) {
+            node.stop();
+
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }

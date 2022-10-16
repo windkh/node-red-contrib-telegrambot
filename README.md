@@ -476,6 +476,7 @@ The `msg.payload` contains:
 
 ## Control Node
 This node can be used to stop, start, restart a bot (config node).
+It send a message to the output after every poll cycle.
 See the example flow [**control bot**](examples/control.json) in the examples folder.
 
 ### Input
@@ -484,7 +485,9 @@ The `msg.payload` contains:
 - **delay** : Optional delay (between stop and start) in milliseconds for 'restart'.
 
 ### Output
-Standard Output: Contains the msg object passed to the input.
+Standard Output: Contains the msg object passed to the input or a message with poll information:
+- **cycle** : Polling cycle number.
+- **duration** : Duration in milliseconds for the request.
 
 
 # Keyboards

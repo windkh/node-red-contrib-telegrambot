@@ -33,7 +33,7 @@ module.exports = function (RED) {
             let result = super.getUpdates(form);
             result.then((updates) => {
                 let endTime = performance.now();
-                this.emit('getUpdates_end', this.cycle, endTime - startTime);
+                this.emit('getUpdates_end', this.cycle, endTime - startTime, updates);
             });
 
             return result;
@@ -2932,6 +2932,7 @@ module.exports = function (RED) {
                     });
                 });
                 telegramBot.on('getUpdates_end', function (cycle, duration) {
+                    // Hint: 3rd argument updates is not used right now
                     let durationMs = Math.round(duration);
 
                     node.status({

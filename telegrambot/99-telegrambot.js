@@ -2931,8 +2931,7 @@ module.exports = function (RED) {
                         text: 'polling cycle ' + cycle,
                     });
                 });
-                telegramBot.on('getUpdates_end', function (cycle, duration) {
-                    // Hint: 3rd argument updates is not used right now
+                telegramBot.on('getUpdates_end', function (cycle, duration, updates) {
                     let durationMs = Math.round(duration);
 
                     node.status({
@@ -2945,6 +2944,7 @@ module.exports = function (RED) {
                         payload: {
                             cycle: cycle,
                             duration: duration,
+                            updates: updates,
                         },
                     };
                     node.send(msg);

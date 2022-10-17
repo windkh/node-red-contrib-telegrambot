@@ -10,6 +10,7 @@ module.exports = function (RED) {
     const pump = require('pump');
     const fs = require('fs');
 
+    let net = require('net');
     let Promise = require('bluebird');
     Promise.config({
         cancellation: true,
@@ -2921,6 +2922,14 @@ module.exports = function (RED) {
         let node = this;
         this.bot = config.bot;
 
+        let checkconnection = config.checkconnection;
+        if (checkconnection === undefined) {
+            checkconnection = false;
+        }
+        let hostname = config.hostname;
+        let interval = (config.interval || 10) * 1000;
+        let connectionTimeout = (config.timeout || 10) * 1000;
+
         this.start = function () {
             let telegramBot = node.config.getTelegramBot();
             if (telegramBot) {
@@ -2950,6 +2959,13 @@ module.exports = function (RED) {
                     node.send(msg);
                 });
 
+                // start supervisor
+                if (checkconnection) {
+                    node.checkConnectionTimer = setInterval(function () {
+                        node.checkConnection();
+                    }, interval);
+                }
+
                 node.status({
                     fill: 'green',
                     shape: 'ring',
@@ -2972,10 +2988,66 @@ module.exports = function (RED) {
                 telegramBot.off('getUpdates_end');
             }
 
+            if (node.checkConnectionTimer) {
+                clearTimeout(node.checkConnectionTimer);
+                node.checkConnectionTimer = null;
+            }
+
             node.status({
                 fill: 'red',
                 shape: 'ring',
                 text: 'disconnected',
+            });
+        };
+
+        this.checkConnection = function () {
+            let telegramBot = node.config.getTelegramBot();
+            if (telegramBot) {
+                let effectiveUrl = telegramBot.options.baseApiUrl;
+                if (hostname !== '') {
+                    effectiveUrl = hostname;
+                }
+                let url = new URL(effectiveUrl);
+                let host = url.hostname;
+                let port = url.port || 80;
+                let timeout = connectionTimeout;
+                node.isHostReachable(host, port, timeout).then(
+                    function () {
+                        let msg = {
+                            payload: {
+                                isOnline: true,
+                            },
+                        };
+                        node.send(msg);
+                    },
+                    function (err) {
+                        let msg = {
+                            payload: {
+                                isOnline: false,
+                                error: err,
+                            },
+                        };
+                        node.send(msg);
+                    }
+                );
+            }
+        };
+
+        this.isHostReachable = function (host, port, timeout) {
+            return new Promise(function (resolve, reject) {
+                let timer = setTimeout(function () {
+                    reject('timeout');
+                    socket.end();
+                }, timeout);
+                let socket = net.createConnection(port, host, function () {
+                    clearTimeout(timer);
+                    resolve();
+                    socket.end();
+                });
+                socket.on('error', function (err) {
+                    clearTimeout(timer);
+                    reject(err);
+                });
             });
         };
 

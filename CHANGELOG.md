@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [14.8.0] - 2022-10-17
+### control node has second output now
+
 # [14.7.0] - 2022-10-16
 ### control node sends a msg on every poll cycle
 

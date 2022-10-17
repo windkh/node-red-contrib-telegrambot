@@ -725,7 +725,13 @@
         defaults: {
             name: { value: "" },
             bot: { value: "", type: "telegram bot", required: true },
-            outputs: {value: 1}
+            outputs: {value: 1},
+
+            // only for checkconnection
+            checkconnection: { value: false, required: false },
+            hostname: { value: "", required: false },
+			interval: { value: 10, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
+        	timeout: { value: 1, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
         },
         inputs: 1,
         outputs: 1,
@@ -740,6 +746,19 @@
         },
         oneditprepare: function() {
             var that = this;
+            // checkconnection on / off
+            var checkconnection = function() {
+                var mode = $("#node-input-checkconnection").prop('checked');
+                if (mode === true) {
+                    $("#checkconnectionoptions").show();
+                    that.outputs = 2;
+                } else {
+                    $("#checkconnectionoptions").hide();
+                    that.outputs = 1;
+                }
+            };
+            checkconnection();
+            $("#node-input-checkconnection").change(checkconnection);
         }
     });
 </script>
@@ -755,6 +774,30 @@
     </div>
 
     <hr align="middle"/>
+   
+    <div class="form-row">
+        <label for="node-input-checkconnection"><i class="fa fa-paper-plane"></i> Check network connection.</label>
+        <input type="checkbox" id="node-input-checkconnection" style="display: inline-block; width: auto; vertical-align: top;">
+    </div>
+
+    <div class="form-row hidden" id="checkconnectionoptions" style="background: #fbfbfb">
+        <label style="width: auto"><i class="fa fa-cogs"></i> Check Connection Options:</label>
+   
+        <div class="form-row" style="margin-left: 20px">
+            <div class="form-row">
+                <label for="node-config-input-hostname"><i class="fa fa-server"></i> Hostname</label>
+                <input type="text" id="node-config-input-hostname" placeholder="(Optional: default: https://api.telegram.org:80")">
+            </div>
+            <div class="form-row">
+                <label for="node-config-input-interval"><i class="fa clock-o"></i> Interval (s)</label>
+                <input type="text" id="node-config-input-interval" placeholder="10">
+            </div>
+            <div class="form-row">
+                <label for="node-config-input-timeout"><i class="fa clock-o"></i> Timeout (s)</label>
+                <input type="text" id="node-config-input-timeout" placeholder="1">
+            </div>
+        </div>
+    </div>
 </script>
 
 <script type="text/x-red" data-help-name="telegram control">
@@ -762,9 +805,6 @@
 
     <h3>Inputs</h3>
     <p>1. Standard Input: receives a control command.</p>
-    
-    <h3>Outputs</h3>
-    <p>1. The result of the operation.</p>
     <h3>Details</h3>
     <p>The <code>msg.payload</code> must be an object that contains a complete command,
      at a minimum these should contain:
@@ -773,6 +813,9 @@
      <li><code>delay</code> The optional delay in milliseconds between stop and start for command restart</li>
      </ul>
 
+    <h3>Outputs</h3>
+    <p>1. The polling cycle info.</p>
+    <p>2. The check connection result.</p>
 </script>
 <!-- ------------------------------------------------------------------------------------------ -->
 

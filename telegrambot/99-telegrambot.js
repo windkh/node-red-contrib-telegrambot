@@ -29,11 +29,11 @@ module.exports = function (RED) {
         getUpdates(form = {}) {
             this.cycle++;
             this.emit('getUpdates_start', this.cycle);
-            let startTime = performance.now();
+            let startTime = new Date().getTime();
 
             let result = super.getUpdates(form);
             result.then((updates) => {
-                let endTime = performance.now();
+                let endTime = new Date().getTime();
                 this.emit('getUpdates_end', this.cycle, endTime - startTime, updates);
             });
 

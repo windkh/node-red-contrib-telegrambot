@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [14.8.3] - 2022-10-19
+### fixed answerCallbackQuery - [#278](https://github.com/windkh/node-red-contrib-telegrambot/issues/278) 
+
 # [14.8.2] - 2022-10-19
 ### fixed editmessagemedia - [#277](https://github.com/windkh/node-red-contrib-telegrambot/issues/277) 
 

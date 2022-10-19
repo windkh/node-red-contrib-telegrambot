@@ -1628,6 +1628,8 @@ module.exports = function (RED) {
         };
 
         this.processMessage = function (botMsg) {
+            let telegramBot = this.config.getTelegramBot();
+
             node.status({
                 fill: 'green',
                 shape: 'ring',

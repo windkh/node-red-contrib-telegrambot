@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [14.8.2] - 2022-10-19
+### fixed editmessagemedia - [#277](https://github.com/windkh/node-red-contrib-telegrambot/issues/277) 
+
 # [14.8.1] - 2022-10-18
 ### replaced performance.now - [#276](https://github.com/windkh/node-red-contrib-telegrambot/issues/276) 
 

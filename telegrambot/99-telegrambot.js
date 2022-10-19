@@ -2674,9 +2674,10 @@ module.exports = function (RED) {
             delete payload.media;
             delete payload.fileOptions;
 
+            let telegramBot = this.config.getTelegramBot();
+
             try {
                 const attachName = String(0);
-                let telegramBot = this.config.getTelegramBot();
                 const [formData, fileId] = telegramBot._formatSendData(attachName, media.media, media.fileOptions);
                 if (formData) {
                     opts.formData[attachName] = formData[attachName];

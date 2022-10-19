@@ -2098,6 +2098,17 @@ module.exports = function (RED) {
                     .then(function (result) {
                         node.processResult(result, msg, nodeSend, nodeDone);
                     });
+            } else if (msg.payload.getfile) {
+                let fileId = msg.payload.getFile.fileId;
+
+                telegramBot
+                    .getFile(fileId)
+                    .catch(function (ex) {
+                        node.processError(ex, msg, nodeSend, nodeDone);
+                    })
+                    .then(function (result) {
+                        node.processResult(result, msg, nodeSend, nodeDone);
+                    });
             } else {
                 if (msg.payload.type) {
                     let type = msg.payload.type;

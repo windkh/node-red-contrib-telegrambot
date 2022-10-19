@@ -1533,6 +1533,20 @@ return msg;
 See the example flow [**download file**](examples/downloadfile.json) in the examples folder.
 
 
+## Getting file information manually
+If you do not want to download a file but forward a weblink, then you can retrieve the info using getfile.
+You can also get the file information manually using a fileId by passing the following message to the sender node:
+
+```javascript
+msg.payload.getfile = { 
+  fileId : "<yourfileidhere>",
+  };
+return msg;
+```
+
+See the example flow [**download file**](examples/getfile.json) in the examples folder.
+
+
 ## Creating polls
 You can create polls, listen to poll events and even receive polls.
 A poll can be created using the following pattern:

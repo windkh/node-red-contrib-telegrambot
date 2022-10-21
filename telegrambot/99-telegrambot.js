@@ -2973,13 +2973,6 @@ module.exports = function (RED) {
                     node.send(msg);
                 });
 
-                // start supervisor
-                if (checkconnection) {
-                    node.checkConnectionTimer = setInterval(function () {
-                        node.checkConnection();
-                    }, interval);
-                }
-
                 node.status({
                     fill: 'green',
                     shape: 'ring',
@@ -3002,11 +2995,6 @@ module.exports = function (RED) {
                 telegramBot.off('getUpdates_end');
             }
 
-            if (node.checkConnectionTimer) {
-                clearTimeout(node.checkConnectionTimer);
-                node.checkConnectionTimer = null;
-            }
-
             node.status({
                 fill: 'red',
                 shape: 'ring',
@@ -3015,36 +3003,33 @@ module.exports = function (RED) {
         };
 
         this.checkConnection = function () {
-            let telegramBot = node.config.getTelegramBot();
-            if (telegramBot) {
-                let effectiveUrl = telegramBot.options.baseApiUrl;
-                if (hostname !== '') {
-                    effectiveUrl = hostname;
-                }
-                let url = new URL(effectiveUrl);
-                let host = url.hostname;
-                let port = url.port || 80;
-                let timeout = connectionTimeout;
-                node.isHostReachable(host, port, timeout).then(
-                    function () {
-                        let msg = {
-                            payload: {
-                                isOnline: true,
-                            },
-                        };
-                        node.send(msg);
-                    },
-                    function (err) {
-                        let msg = {
-                            payload: {
-                                isOnline: false,
-                                error: err,
-                            },
-                        };
-                        node.send(msg);
-                    }
-                );
+            let effectiveUrl = node.config.baseApiUrl || 'https://api.telegram.org';
+            if (hostname !== '') {
+                effectiveUrl = hostname;
             }
+            let url = new URL(effectiveUrl);
+            let host = url.hostname;
+            let port = url.port || 80;
+            let timeout = connectionTimeout;
+            node.isHostReachable(host, port, timeout).then(
+                function () {
+                    let msg = {
+                        payload: {
+                            isOnline: true,
+                        },
+                    };
+                    node.send([null, msg]);
+                },
+                function (err) {
+                    let msg = {
+                        payload: {
+                            isOnline: false,
+                            error: err,
+                        },
+                    };
+                    node.send([null, msg]);
+                }
+            );
         };
 
         this.isHostReachable = function (host, port, timeout) {
@@ -3084,6 +3069,13 @@ module.exports = function (RED) {
             node.config.addListener('status', node.onStatusChanged);
 
             node.start();
+
+            // start supervisor
+            if (checkconnection) {
+                node.checkConnectionTimer = setInterval(function () {
+                    node.checkConnection();
+                }, interval);
+            }
         } else {
             node.warn('config node failed to initialize.');
             node.status({
@@ -3136,6 +3128,12 @@ module.exports = function (RED) {
         });
 
         this.on('close', function (removed, done) {
+            // Stop supervisor
+            if (node.checkConnectionTimer) {
+                clearTimeout(node.checkConnectionTimer);
+                node.checkConnectionTimer = null;
+            }
+
             node.stop();
 
             if (node.onStatusChanged) {

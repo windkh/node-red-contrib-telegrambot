@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [14.8.6] - 2022-10-19
+### reworked offline detection in control node - [#253](https://github.com/windkh/node-red-contrib-telegrambot/issues/253) 
+
 # [14.8.5] - 2022-10-19
 ### added getfile - [#252](https://github.com/windkh/node-red-contrib-telegrambot/issues/252) 
 

@@ -2491,6 +2491,11 @@ module.exports = function (RED) {
                         case 'createChatInviteLink':
                         case 'unpinAllChatMessages':
                         case 'deleteChatPhoto':
+                        case 'getForumTopicIconStickers':
+                        case 'closeGeneralForumTopic':
+                        case 'reopenGeneralForumTopic':
+                        case 'hideGeneralForumTopic':
+                        case 'unhideGeneralForumTopic':
                             telegramBot[type](chatId, msg.payload.options || {})
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
@@ -2556,7 +2561,29 @@ module.exports = function (RED) {
                         case 'getChatMember':
                         case 'approveChatJoinRequest':
                         case 'declineChatJoinRequest':
+                        case 'pinChatMessage':
                             // The userId must be passed in msg.payload.content: note that this is is a number not the username.
+                            // Right now there is no way for resolving the user_id by username in the official API.
+                            if (this.hasContent(msg)) {
+                                telegramBot[type](chatId, msg.payload.content, msg.payload.options || {})
+                                    .catch(function (ex) {
+                                        node.processError(ex, msg, nodeSend, nodeDone);
+                                    })
+                                    .then(function (result) {
+                                        node.processResult(result, msg, nodeSend, nodeDone);
+                                    });
+                            }
+                            break;
+
+                        // 3 arguments: chatId, content, options
+                        case 'createForumTopic':
+                        case 'editForumTopic':
+                        case 'closeForumTopic':
+                        case 'reopenForumTopic':
+                        case 'deleteForumTopic':
+                        case 'unpinAllForumTopicMessages':
+                        case 'editGeneralForumTopic':
+                            // The message_thread_id must be passed in msg.payload.content: note that this is is a number not the username.
                             // Right now there is no way for resolving the user_id by username in the official API.
                             if (this.hasContent(msg)) {
                                 telegramBot[type](chatId, msg.payload.content, msg.payload.options || {})
@@ -2627,8 +2654,8 @@ module.exports = function (RED) {
 
                         // TODO:
                         // setChatPermissions
-                        // createChatInviteLink, editChatInviteLink, revokeChatInviteLink
-                        // getUserProfilePhotos, getFile,
+                        // editChatInviteLink, revokeChatInviteLink
+                        // getUserProfilePhotos,
                         // getMyCommands
                         // setChatStickerSet, deleteChatStickerSet
                         // sendGame, setGameScore, getGameHighScores

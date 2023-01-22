@@ -165,6 +165,7 @@ The following table shows the relationship between the message *type* and additi
 | **migrate_from_chat_id**| migrate_from_chat_id |  + | - | - | - | - |
 | **migrate_to_chat_id**| migrate_to_chat_id |  + | - | - | - | - |
 
+
 Legend:
 - **-** : Element is not present in `msg.payload` structure
 - **+** : Element is mandatory in `msg.payload` structure
@@ -355,6 +356,8 @@ The `msg.payload.type` needs to be set to one of the following values:
 - pinChatMessage, unpinChatMessage, unpinAllChatMessages
 - getChatAdministrators, getChatMembersCount, getChatMemberCount, getChat, getChatMember, approveChatJoinRequest, declineChatJoinRequest
 - sendInvoice, answerShippingQuery, answerPreCheckoutQuery, pre_checkout_query, answerPreCheckoutQuery, shipping_query
+- getForumTopicIconStickers, createForumTopic, editForumTopic, closeForumTopic, reopenForumTopic, deleteForumTopic
+- editGeneralForumTopic, closeGeneralForumTopic, reopenGeneralForumTopic, hideGeneralForumTopic, unhideGeneralForumTopic
 
 The content format of the command arguments (required and optional) depends on the api command.  
 See also ["available methods" in the api core description](https://core.telegram.org/bots/api#available-methods).

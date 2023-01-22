@@ -19,7 +19,7 @@
         }
     },
     "node-red": {
-        "version": ">=0.1.0",
+        "version": ">=1.3.7",
         "nodes": {
             "telegrambot": "telegrambot/99-telegrambot.js"
         }

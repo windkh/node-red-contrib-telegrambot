@@ -2561,7 +2561,6 @@ module.exports = function (RED) {
                         case 'getChatMember':
                         case 'approveChatJoinRequest':
                         case 'declineChatJoinRequest':
-                        case 'pinChatMessage':
                             // The userId must be passed in msg.payload.content: note that this is is a number not the username.
                             // Right now there is no way for resolving the user_id by username in the official API.
                             if (this.hasContent(msg)) {

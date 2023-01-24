@@ -2483,7 +2483,6 @@ module.exports = function (RED) {
 
                         // 1 argument: chatId
                         case 'getChatAdministrators':
-                        case 'getChatMembersCount':
                         case 'getChatMemberCount':
                         case 'getChat':
                         case 'leaveChat':
@@ -2553,7 +2552,6 @@ module.exports = function (RED) {
 
                         // 3 arguments: chatId, content, options
                         case 'pinChatMessage':
-                        case 'kickChatMember':
                         case 'unbanChatMember':
                         case 'banChatMember':
                         case 'restrictChatMember':

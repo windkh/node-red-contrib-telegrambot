@@ -281,15 +281,17 @@ The ***Verbose Logging*** flag should only be activated when debugging network p
 
 
 ## Receiver Node
-This node can **receive telegram messages** sent to the bot and also **receive messages from a chat**.
+This node can **receive telegram messages** sent to the bot and (under certain circumstances) also **receive messages from a chat**.
 
 ![node-appearance-receiver](images/TelegramBotNodeReceiver.png "Receiver node appearance")  
 **Fig. 6:** Receiver node appearance
 
-**Telegram messages** sent to the bot are automatically received (if not masked via the configuration node property *Users*).  
-To be able to receive **telegram chat messages**, simply invite the bot to a chat. If the configuration node property *ChatIds* is not set, all chat messages are received.
+**Telegram messages** sent directly to the bot are automatically received (if not masked via the configuration node property *Users*).  
+To be able to receive **telegram chat messages**, invite the bot to a chat (/setprivacy must be configured correctly!). If the configuration node property *ChatIds* is not set, all chat messages are received.
 
-You can control if the bot receives every message by calling **/setprivacy @botfather** (refer also to [**there**](https://core.telegram.org/bots#privacy-mode)).
+You can control if the bot receives every message by calling **/setprivacy @botfather** (refer also to [**there**](https://core.telegram.org/bots/features#privacy-mode)).
+
+Note that there are certain limitations for bots in channels, groups and super groups. You should make the bot admin or grant the rights if you discover problems. Bot to bot communication is also not allowed by telegram. Please read the telegram bot documentation.
 
 ### Configuration
 
@@ -326,6 +328,24 @@ The input `msg.payload` must contain the following elements:
 
 Additional elements are present in the `msg.payload` structure and depend on the message *type*. These additional elements are described in the table **Tab. 1** above.
 
+| *msg.payload.type* | *msg.payload.content* | *msg.payload.options* | *see also* |
+| :- | :- | :- | :- |
+| **message** | text (string) | optional arguments | https://core.telegram.org/bots/api#sendmessage |
+| **document** | document (InputFile/string) | optional arguments | https://core.telegram.org/bots/api#senddocument |
+| **photo** | photo (InputFile/string) | optional arguments | https://core.telegram.org/bots/api#sendphoto |
+| **audio** | audio (InputFile/string) | optional arguments | https://core.telegram.org/bots/api#sendaudio |
+| **video** | video (InputFile/string) | optional arguments | https://core.telegram.org/bots/api#sendvideo |
+| **animation** | animation (InputFile/string) | optional arguments | https://core.telegram.org/bots/api#sendanimation |
+| **voice** | voice (InputFile/string) | optional arguments | https://core.telegram.org/bots/api#sendvoice |
+| **video_note** | video_note (InputFile/string) | optional arguments | https://core.telegram.org/bots/api#sendvideonote |
+| **mediaGroup** | media (array of InputMediaAudio, InputMediaDocument, InputMediaPhoto and InputMediaVideo) | optional arguments | https://core.telegram.org/bots/api#sendmediagroup |
+| **poll** | { question (string), options (array of string) } | optional arguments |  |
+| **sticker** | sticker (InputFile/string) | optional arguments | https://core.telegram.org/bots/api#sendsticker |
+| **dice** | - | optional arguments | https://core.telegram.org/bots/api#senddice |
+| **venue** | { latitude (float), longitude (float), title (string), address (string) } | optional arguments | https://core.telegram.org/bots/api#sendvenue |
+| **contact** | { phone_number (string), first_name (string) } | optional arguments | https://core.telegram.org/bots/api#sendcontact |
+
+
 The content format depends on the message type. E.g. if you send a text message then the content format is a string, if you send a location, the content format is an object containing latitude and longitude. See also ["available methods" in the api core description](https://core.telegram.org/bots/api#available-methods).
 
 
@@ -345,25 +365,61 @@ Additionally to sending content, the sender node can be used to issue commands d
 
 
 The `msg.payload.type` needs to be set to one of the following values:
-- editMessageCaption, editMessageText, editMessageMedia, editMessageReplyMarkup
-- deleteMessage
-- editMessageLiveLocation, stopMessageLiveLocation
-- callback_query, answerCallbackQuery
-- inline_query, answerInlineQuery
-- answerWebAppQuery
-- action, sendChatAction
-- leaveChat, exportChatInviteLink, createChatInviteLink
-- kickChatMember, banChatMember, unbanChatMember, restrictChatMember, promoteChatMember
-- setChatPhoto, deleteChatPhoto, setChatTitle, setChatDescription
-- pinChatMessage, unpinChatMessage, unpinAllChatMessages
-- getChatAdministrators, getChatMembersCount, getChatMemberCount, getChat, getChatMember, approveChatJoinRequest, declineChatJoinRequest
-- sendInvoice, answerShippingQuery, answerPreCheckoutQuery, pre_checkout_query, answerPreCheckoutQuery, shipping_query
-- getForumTopicIconStickers, createForumTopic, editForumTopic, closeForumTopic, reopenForumTopic, deleteForumTopic
-- editGeneralForumTopic, closeGeneralForumTopic, reopenGeneralForumTopic, hideGeneralForumTopic, unhideGeneralForumTopic
+| *msg.payload.type* | *msg.payload.content* | *msg.payload.options* | *see also* |
+| :- | :- | :- | :- |
+| **editMessageCaption** | - | optional arguments | https://core.telegram.org/bots/api#editmessagecaption |
+| **editMessageText** | text (string) | optional arguments | https://core.telegram.org/bots/api#editmessagetext |
+| **editMessageReplyMarkup** | - | optional arguments | https://core.telegram.org/bots/api#editmessagereplymarkup |
+| **editMessageMedia** | media (InputMedia) | optional arguments | https://core.telegram.org/bots/api#editmessagemedia |
+| **deleteMessage** | message_id (integer) | - | https://core.telegram.org/bots/api#deletemessage |
+| **editMessageLiveLocation** | { latitude (float), longitude (float) } | optional arguments | https://core.telegram.org/bots/api#editmessagelivelocation |
+| **stopMessageLiveLocation** | - | optional arguments | https://core.telegram.org/bots/api#stopmessagelivelocation |
+| **callback_query** | url (string) | optional arguments | https://core.telegram.org/bots/api#answercallbackquery |
+| **answerCallbackQuery** | url (string) | optional arguments | https://core.telegram.org/bots/api#answercallbackquery |
+| **inline_query** | { inlineQueryId (string), results (array of InlineQueryResult) } | optional arguments | https://core.telegram.org/bots/api#answerinlinequery |
+| **answerInlineQuery** | { inlineQueryId (string), results (array of InlineQueryResult) } | optional arguments | https://core.telegram.org/bots/api#answerinlinequery |
+| **answerWebAppQuery** | { webAppQueryId (string), result (InlineQueryResult) } | - | https://core.telegram.org/bots/api#answerwebappquery |
+| **action** | action (string) | optional arguments | https://core.telegram.org/bots/api#sendchataction |
+| **sendChatAction** | action (string) | optional arguments | https://core.telegram.org/bots/api#sendchataction |
+| **leaveChat** | - | - | https://core.telegram.org/bots/api#leavechat |
+| **exportChatInviteLink** | - | - | https://core.telegram.org/bots/api#exportchatinvitelink |
+| **createChatInviteLink** | - | - | https://core.telegram.org/bots/api#createchatinvitelink |
+| **banChatMember** | { chat_id (integer/string), user_id (integer) } | optional arguments | https://core.telegram.org/bots/api#banchatmember |
+| **unbanChatMember** | { chat_id (integer/string), user_id (integer) } | optional arguments | https://core.telegram.org/bots/api#unbanchatmember |
+| **restrictChatMember** | { chat_id (integer/string), user_id (integer), permissions (ChatPermissions) } | optional arguments | https://core.telegram.org/bots/api#restrictchatmember |
+| **promoteChatMember** | { chat_id (integer/string), user_id (integer) } | optional arguments | https://core.telegram.org/bots/api#promotechatmember |
+| **setChatPhoto** | photo (InputFile) | - | https://core.telegram.org/bots/api#setchatphoto |
+| **setChatTitle** | title (string) | - | https://core.telegram.org/bots/api#setchattitle |
+| **setChatDescription** | optional arguments | optional arguments | https://core.telegram.org/bots/api#setchatdescription |
+| **pinChatMessage** | { chat_id (integer/string), message_id (integer) | optional arguments | https://core.telegram.org/bots/api#pinchatmessage |
+| **unpinChatMessage** | optional arguments | - | https://core.telegram.org/bots/api#unpinchatmessage |
+| **unpinAllChatMessages** | - | - | https://core.telegram.org/bots/api#unpinallchatmessages |
+| **getChatAdministrators** | - | - | https://core.telegram.org/bots/api#getchatadministrators |
+| **getChatMemberCount** | - | - | https://core.telegram.org/bots/api#getchatmembercount |
+| **getChat** | - | - | https://core.telegram.org/bots/api#getchat |
+| **getChatMember** | { chat_id (integer/string), user_id (integer) } | - | https://core.telegram.org/bots/api#getchatmember |
+| **approveChatJoinRequest** | { chat_id (integer/string), user_id (integer) } | - | https://core.telegram.org/bots/api#approvechatjoinrequest |
+| **declineChatJoinRequest** | { chat_id (integer/string), user_id (integer) } | - | https://core.telegram.org/bots/api#declinechatjoinrequest |
+| **sendInvoice** | { title (string), description (string), payload (string), providerToken (string), startParameter (string), currency (string), prices (string) } | optional arguments | https://core.telegram.org/bots/api#sendinvoice |
+| **answerPreCheckoutQuery** | { preCheckoutQueryId (string), ok (boolean)} | optional arguments | https://core.telegram.org/bots/api#answerprecheckoutquery |
+| **pre_checkout_query** | { preCheckoutQueryId (string), ok (boolean)} | optional arguments | https://core.telegram.org/bots/api#answerprecheckoutquery |
+| **shipping_query** | { shippingQueryId (string), ok (boolean) } | optional arguments | https://core.telegram.org/bots/api#answershippingquery |
+| **answerShippingQuery** | { shippingQueryId (string), ok (boolean) } | optional arguments | https://core.telegram.org/bots/api#answershippingquery |
+| **getForumTopicIconStickers** | - | - | https://core.telegram.org/bots/api#getforumtopiciconstickers |
+| **createForumTopic** | { chat_id (integer/string), name (string) } | optional arguments | https://core.telegram.org/bots/api#createforumtopic |
+| **editForumTopic** | { chat_id (integer/string), message_thread_id (integer), name (string) } | optional arguments | https://core.telegram.org/bots/api#editforumtopic |
+| **closeForumTopic** | { chat_id (integer/string), message_thread_id (integer) } | - | https://core.telegram.org/bots/api#closeforumtopic |
+| **reopenForumTopic** | { chat_id (integer/string), message_thread_id (integer) } | - | https://core.telegram.org/bots/api#reopenforumtopic |
+| **deleteForumTopic** | { chat_id (integer/string), message_thread_id (integer) } | - | https://core.telegram.org/bots/api#deleteforumtopic |
+| **editGeneralForumTopic** | { chat_id (integer/string), name (string) } | - | https://core.telegram.org/bots/api#editgeneralforumtopic |
+| **closeGeneralForumTopic** | { chat_id (integer/string) } | - | https://core.telegram.org/bots/api#closegeneralforumtopic |
+| **reopenGeneralForumTopic** | { chat_id (integer/string) } | - | https://core.telegram.org/bots/api#reopengeneralforumtopic |
+| **hideGeneralForumTopic** | { chat_id (integer/string) } | - | https://core.telegram.org/bots/api#hidegeneralforumtopic |
+| **unhideGeneralForumTopic** | { chat_id (integer/string) } | - | https://core.telegram.org/bots/api#unhidegeneralforumtopic |
+
 
 The content format of the command arguments (required and optional) depends on the api command.  
-See also ["available methods" in the api core description](https://core.telegram.org/bots/api#available-methods).
-
+See also ["available methods" in the api core description](https://core.telegram.org/bots/api#available-methods). 
 
 
 ## Command Node

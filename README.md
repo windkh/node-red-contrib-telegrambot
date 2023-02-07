@@ -43,6 +43,8 @@ If you want to support this free project. Any help is welcome. You can donate by
  - kickouille: for fixing the payment functions and providing the full payment example flow
  - skrashevich: for providing approveChatJoinRequest, declineChatJoinRequest
  - ShotokanZH: for providing the web app data example
+ - Dodoooh: for providing the send to topic example flow
+
  
 
 # Installation

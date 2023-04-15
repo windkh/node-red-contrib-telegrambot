@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [15.1.0] - 2023-04-15
+### fixed sendInvoice: startParameter removed - [#302](https://github.com/windkh/node-red-contrib-telegrambot/issues/302) 
+
 # [15.0.1] - 2023-01-24
 ### improved doc - [#289](https://github.com/windkh/node-red-contrib-telegrambot/issues/289) 
 ### improved doc - [#290](https://github.com/windkh/node-red-contrib-telegrambot/issues/290) 

@@ -2605,7 +2605,6 @@ module.exports = function (RED) {
                                 msg.payload.content.description,
                                 msg.payload.content.payload,
                                 msg.payload.content.providerToken,
-                                msg.payload.content.startParameter,
                                 msg.payload.content.currency,
                                 msg.payload.content.prices,
                                 msg.payload.options || {}

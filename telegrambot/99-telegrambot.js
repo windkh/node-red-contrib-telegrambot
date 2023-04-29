@@ -17,7 +17,33 @@ module.exports = function (RED) {
     });
 
     let telegramBot = require('node-telegram-bot-api');
+    let telegramBotWebHook = require('node-telegram-bot-api/src/telegramWebHook');
+
     let { SocksProxyAgent } = require('socks-proxy-agent');
+
+    // Orginal class is extended to be able to emit an event when getUpdates is called.
+    class telegramBotWebHookEx extends telegramBotWebHook {
+        constructor(bot) {
+            super(bot);
+        }
+
+        open() {
+            if (this.isOpen()) {
+                return Promise.resolve();
+            }
+            return new Promise((resolve, reject) => {
+                this._webServer.listen(this.options.port, this.options.host, () => {
+                    // debug('WebHook listening on port %s', this.options.port);
+                    this._open = true;
+                    return resolve();
+                });
+
+                this._webServer.once('error', (err) => {
+                    reject(err);
+                });
+            });
+        }
+    }
 
     // Orginal class is extended to be able to emit an event when getUpdates is called.
     class telegramBotEx extends telegramBot {
@@ -38,6 +64,18 @@ module.exports = function (RED) {
             });
 
             return result;
+        }
+
+        openWebHook() {
+            if (this.isPolling()) {
+                return Promise.reject('WebHook and Polling are mutually exclusive');
+            }
+
+            if (!this._webHook) {
+                this._webHook = new telegramBotWebHookEx(this);
+            }
+
+            return this._webHook.open();
         }
     }
 
@@ -64,6 +102,7 @@ module.exports = function (RED) {
         // first of all check if the token is used twice: in this case we abort
         if (this.credentials !== undefined && this.credentials.token !== undefined) {
             this.token = this.credentials.token;
+
             let configNodeId = botsByToken[this.token];
             if (configNodeId === undefined) {
                 botsByToken[self.token] = n.id;
@@ -207,7 +246,7 @@ module.exports = function (RED) {
             if (this.botHost && (this.sslTerminated || (this.privateKey && this.certificate))) {
                 this.useWebhook = true;
             } else {
-                self.error('Configuration data for webhook is not complete. Defaulting to polling mode.');
+                self.error('Configuration data for webhook is not complete. Defaulting to send only mode.');
             }
         }
 
@@ -220,7 +259,7 @@ module.exports = function (RED) {
             let newTelegramBot;
 
             let webHook = {
-                autoOpen: true,
+                autoOpen: false,
                 port: this.localBotPort,
             };
             if (!this.sslTerminated) {
@@ -232,7 +271,21 @@ module.exports = function (RED) {
                 baseApiUrl: this.baseApiUrl,
                 request: this.socksRequest,
             };
+
             newTelegramBot = new telegramBotEx(this.token, options);
+
+            newTelegramBot
+                .openWebHook()
+                .then(function () {
+                    // web hook listening on port, everything ok.
+                })
+                .catch(function (err) {
+                    self.warn('Opening webhook failed: ' + err);
+
+                    self.abortBot('Failed to listen on configured port', function () {
+                        self.error('Bot stopped: failed to open web hook.');
+                    });
+                });
 
             newTelegramBot.on('webhook_error', function (error) {
                 self.setStatus('error', 'webhook error');
@@ -267,7 +320,7 @@ module.exports = function (RED) {
                 }
 
                 if (success) {
-                    self.status = 'connected';
+                    self.status = 'connected'; // TODO: check if this must be SetStatus
                 } else {
                     self.abortBot('Failed to set webhook ' + botUrl, function () {
                         self.error('Bot stopped: Webhook not set.');

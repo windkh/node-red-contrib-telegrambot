@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [15.1.1] - 2023-04-29
+### fixed port conflict in webhook mode - [#303](https://github.com/windkh/node-red-contrib-telegrambot/issues/303) 
+
 # [15.1.0] - 2023-04-15
 ### fixed sendInvoice: startParameter removed - [#302](https://github.com/windkh/node-red-contrib-telegrambot/issues/302) 
 

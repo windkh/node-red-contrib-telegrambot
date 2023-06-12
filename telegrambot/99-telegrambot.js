@@ -1698,6 +1698,7 @@ module.exports = function (RED) {
             let username;
             let chatid;
             let userid;
+            let isAnonymous = false;
             if (botMsg.chat) {
                 //channel
                 username = botMsg.chat.username;
@@ -1714,9 +1715,10 @@ module.exports = function (RED) {
                 userid = botMsg.from.id;
             } else {
                 // chatid can be null in case of polls, inline_queries,...
+                isAnonymous = true;
             }
 
-            if (node.config.isAuthorized(node, chatid, userid, username)) {
+            if (isAnonymous || node.config.isAuthorized(node, chatid, userid, username)) {
                 let msg;
                 let messageDetails;
                 let messageId;

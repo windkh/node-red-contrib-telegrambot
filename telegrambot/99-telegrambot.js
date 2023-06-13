@@ -2083,6 +2083,14 @@ module.exports = function (RED) {
             });
         };
 
+        this.addChatIdToOptions = function (chatId, options) {
+            if (chatId !== undefined && options !== undefined) {
+                if (options.chat_id === undefined) {
+                    options.chat_id = chatId;
+                }
+            }
+        };
+
         this.processError = function (exception, msg, nodeSend, nodeDone) {
             let errorMessage = 'Caught exception in sender node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.stringify(msg);
 
@@ -2440,6 +2448,7 @@ module.exports = function (RED) {
 
                         case 'editMessageLiveLocation':
                             if (this.hasContent(msg)) {
+                                node.addChatIdToOptions(chatId, msg.payload.options);
                                 telegramBot
                                     .editMessageLiveLocation(msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options || {})
                                     .catch(function (ex) {
@@ -2454,6 +2463,7 @@ module.exports = function (RED) {
                         case 'stopMessageLiveLocation':
                             // This message requires the options to be set!
                             //if (this.hasContent(msg)) {
+                            node.addChatIdToOptions(chatId, msg.payload.options);
                             telegramBot
                                 .stopMessageLiveLocation(msg.payload.options)
                                 .catch(function (ex) {
@@ -2564,6 +2574,7 @@ module.exports = function (RED) {
                         case 'editMessageText':
                         case 'editMessageReplyMarkup':
                             if (this.hasContent(msg)) {
+                                node.addChatIdToOptions(chatId, msg.payload.options);
                                 telegramBot[type](msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);

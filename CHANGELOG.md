@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [15.1.4] - 2023-06-20
+### control node can execute commands - [#315](https://github.com/windkh/node-red-contrib-telegrambot/issues/315) 
+
 # [15.1.3] - 2023-06-13
 ### added chat_id in options - [#306](https://github.com/windkh/node-red-contrib-telegrambot/issues/306) 
 

@@ -862,6 +862,15 @@ module.exports = function (RED) {
             return found;
         };
 
+        this.sendToAllCommandNodes = function (botMsg, done) {
+            for (let nodeId in self.commandsByNode) {
+                let node = RED.nodes.getNode(nodeId);
+                node.processMessage(botMsg);
+            }
+
+            done();
+        };
+
         this.getBotCommands = function () {
             return self.commandsByLanguage;
         };
@@ -3180,17 +3189,19 @@ module.exports = function (RED) {
             if (msg.payload) {
                 let command = msg.payload.command;
                 switch (command) {
-                    case 'stop':
+                    case 'stop': {
                         node.config.stop('by control node', function () {
                             node.send(msg);
                         });
                         break;
-                    case 'start':
+                    }
+                    case 'start': {
                         node.config.start('by control node', function () {
                             node.send(msg);
                         });
                         break;
-                    case 'restart':
+                    }
+                    case 'restart': {
                         node.config.stop('by control node', function () {
                             let delay = msg.payload.delay;
                             if (delay !== undefined && delay > 0) {
@@ -3207,7 +3218,27 @@ module.exports = function (RED) {
                             node.send(msg);
                         });
                         break;
+                    }
+                    case 'command': {
+                        let message = msg.payload.message;
+                        if (message.from === undefined) {
+                            message.from = {
+                                id: 0,
+                                username: 'unknown',
+                            };
+                        }
 
+                        if (message.chat === undefined) {
+                            message.chat = {
+                                id: 0,
+                            };
+                        }
+
+                        node.config.sendToAllCommandNodes(message, function () {
+                            node.send(msg);
+                        });
+                        break;
+                    }
                     default:
                         break;
                 }

@@ -544,7 +544,7 @@ See the example flow [**control bot**](examples/control.json) in the examples fo
 
 ### Input
 The `msg.payload` contains:
-- **command** : 'start' | 'stop' | 'restart'
+- **command** : 'start' | 'stop' | 'restart' | 'command'
 - **delay** : Optional delay (between stop and start) in milliseconds for 'restart'.
 
 ### Output

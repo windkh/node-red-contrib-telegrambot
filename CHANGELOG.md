@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [15.1.5] - 2023-08-29
+### fixed dark theme - [#332](https://github.com/windkh/node-red-contrib-telegrambot/issues/332) 
+
 # [15.1.4] - 2023-06-20
 ### control node can execute commands - [#315](https://github.com/windkh/node-red-contrib-telegrambot/issues/315) 
 

@@ -418,6 +418,7 @@ The `msg.payload.type` needs to be set to one of the following values:
 | **reopenGeneralForumTopic** | { chat_id (integer/string) } | - | https://core.telegram.org/bots/api#reopengeneralforumtopic |
 | **hideGeneralForumTopic** | { chat_id (integer/string) } | - | https://core.telegram.org/bots/api#hidegeneralforumtopic |
 | **unhideGeneralForumTopic** | { chat_id (integer/string) } | - | https://core.telegram.org/bots/api#unhidegeneralforumtopic |
+| **stopPoll** | { chat_id (integer/string), message_id (integer) } | optional arguments | https://core.telegram.org/bots/api#stoppoll |
 
 
 The content format of the command arguments (required and optional) depends on the api command.  

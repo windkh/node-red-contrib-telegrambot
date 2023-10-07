@@ -2486,27 +2486,25 @@ module.exports = function (RED) {
 
                         case 'callback_query':
                         case 'answerCallbackQuery':
-                            if (this.hasContent(msg)) {
-                                let callbackQueryId = msg.payload.callbackQueryId;
+                            let callbackQueryId = msg.payload.callbackQueryId;
 
-                                let options = msg.payload.options;
-                                if (options === undefined) {
-                                    options = {};
-                                }
-
-                                if (options.text === undefined) {
-                                    options.text = msg.payload.content;
-                                }
-
-                                telegramBot
-                                    .answerCallbackQuery(callbackQueryId, options)
-                                    .catch(function (ex) {
-                                        node.processError(ex, msg, nodeSend, nodeDone);
-                                    })
-                                    .then(function (result) {
-                                        node.processResult(result, msg, nodeSend, nodeDone);
-                                    });
+                            let options = msg.payload.options;
+                            if (options === undefined) {
+                                options = {};
                             }
+
+                            if (options.text === undefined && msg.payload.content !== undefined) {
+                                options.text = msg.payload.content;
+                            }
+
+                            telegramBot
+                                .answerCallbackQuery(callbackQueryId, options)
+                                .catch(function (ex) {
+                                    node.processError(ex, msg, nodeSend, nodeDone);
+                                })
+                                .then(function (result) {
+                                    node.processResult(result, msg, nodeSend, nodeDone);
+                                });
                             break;
 
                         case 'inline_query':

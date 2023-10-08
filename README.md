@@ -6,7 +6,7 @@
 [![NPM](https://img.shields.io/npm/v/node-red-contrib-telegrambot?logo=npm)](https://www.npmjs.org/package/node-red-contrib-telegrambot)
 [![Known Vulnerabilities](https://snyk.io/test/npm/node-red-contrib-telegrambot/badge.svg)](https://snyk.io/test/npm/node-red-contrib-telegrambot)
 [![Telegram](https://img.shields.io/badge/Join-Telegram%20Chat-blue.svg?logo=telegram)](https://t.me/nodered_telegrambot)
-[![Package Quality](http://npm.packagequality.com/shield/node-red-contrib-telegrambot.png)](http://packagequality.com/#?package=node-red-contrib-telegrambot)
+[![Package Quality](https://packagequality.com/shield/node-red-contrib-telegrambot.svg)](https://packagequality.com/#?package=node-red-contrib-telegrambot)
 ![Build](https://img.shields.io/github/actions/workflow/status/windkh/node-red-contrib-telegrambot/node.js.yml)
 [![Open Issues](https://img.shields.io/github/issues-raw/windkh/node-red-contrib-telegrambot.svg)](https://github.com/windkh/node-red-contrib-telegrambot/issues)
 [![Closed Issues](https://img.shields.io/github/issues-closed-raw/windkh/node-red-contrib-telegrambot.svg)](https://github.com/windkh/node-red-contrib-telegrambot/issues?q=is%3Aissue+is%3Aclosed)

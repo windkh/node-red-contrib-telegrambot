@@ -45,7 +45,7 @@ If you want to support this free project. Any help is welcome. You can donate by
  - ShotokanZH: for providing the web app data example
  - Dodoooh: for providing the send to topic example flow
  - MariusSchiffer: for improving documentation
-
+ - ptath: for providing pullrequest for setChatAdministratorCustomTitle 
  
 
 # Installation

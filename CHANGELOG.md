@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [15.1.8] - 2024-01-14
+### added setChatAdministratorCustomTitle - [#351](https://github.com/windkh/node-red-contrib-telegrambot/issues/351) 
+
 # [15.1.7] - 2023-08-29
 ### answerCallbackQuery text is now optional - [#339](https://github.com/windkh/node-red-contrib-telegrambot/issues/339) 
 

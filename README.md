@@ -392,6 +392,7 @@ The `msg.payload.type` needs to be set to one of the following values:
 | **unbanChatMember** | user_id (integer)  | optional arguments | https://core.telegram.org/bots/api#unbanchatmember |
 | **restrictChatMember** | user_id (integer) | { permissions (ChatPermissions) } | https://core.telegram.org/bots/api#restrictchatmember |
 | **promoteChatMember** | user_id (integer)  | optional arguments | https://core.telegram.org/bots/api#promotechatmember |
+| **setChatAdministratorCustomTitle** | user_id (integer)  | custom title as string | https://core.telegram.org/bots/api#setchatadministratorcustomtitle |
 | **setChatPhoto** | photo (InputFile) | - | https://core.telegram.org/bots/api#setchatphoto |
 | **setChatTitle** | title (string) | - | https://core.telegram.org/bots/api#setchattitle |
 | **setChatDescription** | optional arguments | optional arguments | https://core.telegram.org/bots/api#setchatdescription |

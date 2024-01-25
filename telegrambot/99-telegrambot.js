@@ -2179,6 +2179,7 @@ module.exports = function (RED) {
                         node.processError(ex, msg, nodeSend, nodeDone);
                     })
                     .then(function (result) {
+                        msg.weblink = `https://api.telegram.org/file/bot${this.token}/${result.file_path}`;
                         node.processResult(result, msg, nodeSend, nodeDone);
                     });
             } else {

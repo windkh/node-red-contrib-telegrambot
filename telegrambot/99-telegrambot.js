@@ -2170,7 +2170,7 @@ module.exports = function (RED) {
                     .then(function (result) {
                         node.processResult(result, msg, nodeSend, nodeDone);
                     });
-            } else if (msg.payload.getfile) {
+            } else if (msg.payload.getFile) {
                 let fileId = msg.payload.getFile.fileId;
 
                 telegramBot

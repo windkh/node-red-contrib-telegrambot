@@ -2179,8 +2179,14 @@ module.exports = function (RED) {
                         node.processError(ex, msg, nodeSend, nodeDone);
                     })
                     .then(function (result) {
-                        msg.weblink = `https://api.telegram.org/file/bot${this.token}/${result.file_path}`;
-                        node.processResult(result, msg, nodeSend, nodeDone);
+                        telegramBot.getFileLink(fileId)
+                        .catch(function (ex) {
+                            node.processError(ex, msg, nodeSend, nodeDone);
+                        })
+                        .then(function (weblink) {
+                            msg.weblink = weblink;
+                            node.processResult(result, msg, nodeSend, nodeDone);
+                        });
                     });
             } else {
                 if (msg.payload.type) {

@@ -46,7 +46,8 @@ If you want to support this free project. Any help is welcome. You can donate by
  - Dodoooh: for providing the send to topic example flow
  - MariusSchiffer: for improving documentation
  - ptath: for providing pullrequest for setChatAdministratorCustomTitle 
- 
+ - gmag11: for providing pullrequest for enhancing getFile
+  
 
 # Installation
 [![NPM](https://nodei.co/npm/node-red-contrib-telegrambot.png?downloads=true)](https://nodei.co/npm/node-red-contrib-telegrambot/)

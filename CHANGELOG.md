@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [15.1.9] - 2024-01-30
+### Added full weblink in response message of getfile. 
+- see also - [#357](https://github.com/windkh/node-red-contrib-telegrambot/pull/357) 
+
 # [15.1.8] - 2024-01-14
 ### added setChatAdministratorCustomTitle - [#351](https://github.com/windkh/node-red-contrib-telegrambot/issues/351) 
 

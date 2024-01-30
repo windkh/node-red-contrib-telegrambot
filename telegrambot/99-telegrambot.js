@@ -2171,7 +2171,7 @@ module.exports = function (RED) {
                         node.processResult(result, msg, nodeSend, nodeDone);
                     });
             } else if (msg.payload.getfile) {
-                let fileId = msg.payload.getFile.fileId;
+                let fileId = msg.payload.getfile.fileId;
 
                 telegramBot
                     .getFile(fileId)
@@ -2179,7 +2179,14 @@ module.exports = function (RED) {
                         node.processError(ex, msg, nodeSend, nodeDone);
                     })
                     .then(function (result) {
-                        node.processResult(result, msg, nodeSend, nodeDone);
+                        telegramBot.getFileLink(fileId)
+                        .catch(function (ex) {
+                            node.processError(ex, msg, nodeSend, nodeDone);
+                        })
+                        .then(function (weblink) {
+                            msg.weblink = weblink;
+                            node.processResult(result, msg, nodeSend, nodeDone);
+                        });
                     });
             } else {
                 if (msg.payload.type) {

@@ -2179,14 +2179,15 @@ module.exports = function (RED) {
                         node.processError(ex, msg, nodeSend, nodeDone);
                     })
                     .then(function (result) {
-                        telegramBot.getFileLink(fileId)
-                        .catch(function (ex) {
-                            node.processError(ex, msg, nodeSend, nodeDone);
-                        })
-                        .then(function (weblink) {
-                            msg.weblink = weblink;
-                            node.processResult(result, msg, nodeSend, nodeDone);
-                        });
+                        telegramBot
+                            .getFileLink(fileId)
+                            .catch(function (ex) {
+                                node.processError(ex, msg, nodeSend, nodeDone);
+                            })
+                            .then(function (weblink) {
+                                msg.weblink = weblink;
+                                node.processResult(result, msg, nodeSend, nodeDone);
+                            });
                     });
             } else {
                 if (msg.payload.type) {

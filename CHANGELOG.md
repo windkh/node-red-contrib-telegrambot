@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [15.1.11] - 2024-06-14
+### added option for enabling test environment - [#380](https://github.com/windkh/node-red-contrib-telegrambot/issues/380) 
+
 # [15.1.9] - 2024-01-30
 ### Added full weblink in response message of getfile. 
 - see also - [#357](https://github.com/windkh/node-red-contrib-telegrambot/pull/357) 

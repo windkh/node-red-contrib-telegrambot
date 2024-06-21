@@ -181,6 +181,7 @@ module.exports = function (RED) {
         this.verbose = n.verboselogging;
 
         this.baseApiUrl = n.baseapiurl;
+        this.testEnvironment = n.testenvironment;
 
         this.updateMode = n.updatemode;
         if (!this.updateMode) {
@@ -269,6 +270,7 @@ module.exports = function (RED) {
             const options = {
                 webHook: webHook,
                 baseApiUrl: this.baseApiUrl,
+                testEnvironment: this.testEnvironment,
                 request: this.socksRequest,
             };
 
@@ -375,6 +377,7 @@ module.exports = function (RED) {
             const options = {
                 polling: polling,
                 baseApiUrl: this.baseApiUrl,
+                testEnvironment: this.testEnvironment,
                 request: this.socksRequest,
             };
             newTelegramBot = new telegramBotEx(this.token, options);
@@ -443,6 +446,7 @@ module.exports = function (RED) {
 
             const options = {
                 baseApiUrl: this.baseApiUrl,
+                testEnvironment: this.testEnvironment,
                 request: this.socksRequest,
             };
             newTelegramBot = new telegramBotEx(this.token, options);
@@ -2171,7 +2175,7 @@ module.exports = function (RED) {
                         node.processResult(result, msg, nodeSend, nodeDone);
                     });
             } else if (msg.payload.getfile) {
-                let fileId = msg.payload.getfile.fileId;
+                let fileId = msg.payload.getFile.fileId;
 
                 telegramBot
                     .getFile(fileId)
@@ -2179,15 +2183,7 @@ module.exports = function (RED) {
                         node.processError(ex, msg, nodeSend, nodeDone);
                     })
                     .then(function (result) {
-                        telegramBot
-                            .getFileLink(fileId)
-                            .catch(function (ex) {
-                                node.processError(ex, msg, nodeSend, nodeDone);
-                            })
-                            .then(function (weblink) {
-                                msg.weblink = weblink;
-                                node.processResult(result, msg, nodeSend, nodeDone);
-                            });
+                        node.processResult(result, msg, nodeSend, nodeDone);
                     });
             } else {
                 if (msg.payload.type) {
@@ -2642,7 +2638,6 @@ module.exports = function (RED) {
                         case 'getChatMember':
                         case 'approveChatJoinRequest':
                         case 'declineChatJoinRequest':
-                        case 'setChatAdministratorCustomTitle':
                         case 'stopPoll':
                             // The userId must be passed in msg.payload.content: note that this is is a number not the username.
                             // Right now there is no way for resolving the user_id by username in the official API.

@@ -246,6 +246,12 @@ This is the server url of the telegram server (https://api.telegram.org). If you
 Typically this field is left blank.
 
 
+### Configuration property *Test Environment*
+This enables the test environment see: (https://core.telegram.org/bots/features#testing-your-bot). 
+
+Typically this checkbox is unchecked.
+
+
 ### Configuration property *Update Mode*
 The update mode can be chosen from *Polling* or *Webhook*.
 

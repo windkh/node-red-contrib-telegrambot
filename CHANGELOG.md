@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [16.0.0] - 2024-06-14
+### updated to 0.66.0, removed dependancies to deprectated request, updated sock agent
+
 # [15.1.11] - 2024-06-14
 ### added option for enabling test environment - [#380](https://github.com/windkh/node-red-contrib-telegrambot/issues/380) 
 

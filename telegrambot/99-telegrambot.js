@@ -404,23 +404,9 @@ module.exports = function (RED) {
                 if (error.message === 'ETELEGRAM: 401 Unauthorized') {
                     hint = 'Please check if the bot token is valid: ' + self.credentials.token;
                     stopPolling = true;
-                } else if (error.message.startsWith('EFATAL: Error: connect ETIMEDOUT')) {
-                    hint = 'Timeout connecting to server. Maybe proxy blocked polling. Trying again.';
-                } else if (error.message.startsWith('EFATAL: Error: read ECONNRESET')) {
-                    hint = 'Network connection may be down. Trying again.';
-                } else if (error.message.startsWith('EFATAL: Error: getaddrinfo EAI_AGAIN')) {
-                    hint = 'Network connection may be down. Trying again.';
-                } else if (error.message.startsWith('EFATAL: Error: getaddrinfo ENOTFOUND')) {
-                    hint = 'Network connection may be down. Trying again.';
-                } else if (error.message.startsWith('EFATAL: Error: SOCKS connection failed. Connection refused.')) {
-                    hint = 'Username or password may be be wrong or connection is down. Aborting.';
-                } else if (error.message.startsWith('EFATAL: Error: Client network socket disconnected before secure TLS connection was established')) {
-                    hint = 'Maybe SOCKS proxy refused connection.';
-                } else if (error.message.startsWith('EFATAL: Error: certificate has expired')) {
-                    hint = 'Maybe SOCKS proxy refused connection.';
                 } else {
                     // unknown error occured... we simply ignore it.
-                    hint = 'Unknown error. Trying again.';
+                    hint = error.message + ' --> Trying again.';
                 }
 
                 if (stopPolling) {

@@ -62,7 +62,7 @@ Note that the minimum node-red version 1.3.7 and minimum nodejs version is 12.x.
 
 
 # Dependencies
-The nodes are tested with `Node.js v16.6.0` and `Node-RED v2.0.5`.
+The nodes are tested with `Node.js v18.20.0` and `Node-RED v3.1.9`.
  - [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
  - [socks-proxy-agent](https://www.npmjs.com/package/socks-proxy-agent)
 

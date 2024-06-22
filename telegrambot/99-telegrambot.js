@@ -406,7 +406,7 @@ module.exports = function (RED) {
                     stopPolling = true;
                 } else {
                     // unknown error occured... we simply ignore it.
-                    hint = error.message + ' --> Trying again.';
+                    hint = 'Polling error --> Trying again.';
                 }
 
                 if (stopPolling) {
@@ -2161,7 +2161,7 @@ module.exports = function (RED) {
                         node.processResult(result, msg, nodeSend, nodeDone);
                     });
             } else if (msg.payload.getfile) {
-                let fileId = msg.payload.getFile.fileId;
+                let fileId = msg.payload.getfile.fileId;
 
                 telegramBot
                     .getFile(fileId)
@@ -2624,6 +2624,7 @@ module.exports = function (RED) {
                         case 'getChatMember':
                         case 'approveChatJoinRequest':
                         case 'declineChatJoinRequest':
+                        case 'setChatAdministratorCustomTitle':
                         case 'stopPoll':
                             // The userId must be passed in msg.payload.content: note that this is is a number not the username.
                             // Right now there is no way for resolving the user_id by username in the official API.

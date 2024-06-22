@@ -1,10 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# [16.0.0] - 2024-06-14
+# [16.0.0] - 2024-06-22
+### fixed getFile typo - [#381](https://github.com/windkh/node-red-contrib-telegrambot/issues/381) 
+
+# [16.0.0] - 2024-06-21
 ### updated to 0.66.0, removed dependancies to deprectated request, updated sock agent
 
-# [15.1.11] - 2024-06-14
+# [15.1.11] - 2024-06-20
 ### added option for enabling test environment - [#380](https://github.com/windkh/node-red-contrib-telegrambot/issues/380) 
 
 # [15.1.9] - 2024-01-30

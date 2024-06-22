@@ -429,6 +429,7 @@ The `msg.payload.type` needs to be set to one of the following values:
 | **hideGeneralForumTopic** | - | - | https://core.telegram.org/bots/api#hidegeneralforumtopic |
 | **unhideGeneralForumTopic** | - | - | https://core.telegram.org/bots/api#unhidegeneralforumtopic |
 | **stopPoll** | message_id (integer) | optional arguments | https://core.telegram.org/bots/api#stoppoll |
+| **setChatAdministratorCustomTitle** | message_id (integer) | optional arguments | https://core.telegram.org/bots/api#setchatadministratorcustomtitle |
 
 
 The content format of the command arguments (required and optional) depends on the api command.  

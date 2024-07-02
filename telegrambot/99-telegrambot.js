@@ -1635,7 +1635,12 @@ module.exports = function (RED) {
         this.processError = function (exception, msg) {
             let errorMessage = 'Caught exception in event node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.stringify(msg);
             node.error(errorMessage, msg);
-            throw exception;
+
+            node.status({
+                fill: 'red',
+                shape: 'ring',
+                text: exception.message,
+            });
         };
 
         this.start = function () {
@@ -2093,18 +2098,23 @@ module.exports = function (RED) {
         this.processError = function (exception, msg, nodeSend, nodeDone) {
             let errorMessage = 'Caught exception in sender node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.stringify(msg);
 
+            node.status({
+                fill: 'red',
+                shape: 'ring',
+                text: exception.message,
+            });
+
             if (haserroroutput) {
                 let sendMessage = RED.util.cloneMessage(msg);
                 sendMessage.error = errorMessage;
                 nodeSend([null, sendMessage]);
             } else {
                 if (nodeDone) {
+                    node.error(errorMessage, msg);
                     nodeDone(errorMessage);
                 } else {
                     node.error(errorMessage, msg);
                 }
-
-                throw exception;
             }
         };
 
@@ -2114,6 +2124,7 @@ module.exports = function (RED) {
                 msg.payload.sentMessageId = result.message_id;
                 nodeSend(msg);
             }
+
             if (nodeDone) {
                 nodeDone();
             }

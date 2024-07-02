@@ -1,7 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# [16.0.0] - 2024-06-22
+# [16.0.2] - 2024-07-02
+### tried to fix unhandled exception in sender node - [#377](https://github.com/windkh/node-red-contrib-telegrambot/issues/377) 
+
+# [16.0.1] - 2024-06-22
 ### fixed getFile typo - [#381](https://github.com/windkh/node-red-contrib-telegrambot/issues/381) 
 
 # [16.0.0] - 2024-06-21

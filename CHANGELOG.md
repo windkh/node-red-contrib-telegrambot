@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [16.1.0] - 2024-09-15
+### IP address family can be configured now - [#343](https://github.com/windkh/node-red-contrib-telegrambot/issues/343) 
+
 # [16.0.2] - 2024-07-02
 ### tried to fix unhandled exception in sender node - [#377](https://github.com/windkh/node-red-contrib-telegrambot/issues/377) 
 

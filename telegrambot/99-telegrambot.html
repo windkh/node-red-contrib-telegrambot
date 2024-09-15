@@ -13,6 +13,7 @@
             testenvironment: { value: false, required: false },
             
             updatemode: { value: "polling", required: true },
+            addressfamily : { value: "", required: false },
 
             // only for polling mode
             pollinterval: { value: 300, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
@@ -62,7 +63,14 @@
                 }
             };
             updateOptions();
-            $("#node-config-input-updatemode").change(updateOptions);
+            $("#node-config-input-addressfamily").change(updateOptions);
+
+            // IP address family
+            var updateAddressFamily = function() {
+                var mode = $("#node-config-input-addressfamily").val();
+            };
+            updateAddressFamily();
+            $("#node-config-input-addressfamily").change(updateAddressFamily);
 
             // sslTerminated on / off
             var sslTerminated = function() {
@@ -132,6 +140,15 @@
                 <option value="polling">Polling</option>
                 <option value="webhook">Webhook</option>
                 <option value="none">None</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-config-input-addressfamily"><i class="fa fa-link"></i> IP Address Family</label>
+            <select id="node-config-input-addressfamily">
+                <option value="4">IPv4</option>
+                <option value="6">IPv6</option>
+                <option value="">Any</option>
             </select>
         </div>
 

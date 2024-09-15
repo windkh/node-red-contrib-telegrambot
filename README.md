@@ -279,6 +279,13 @@ The *None* method may be chosen to avoid traffic due to polling or incoming webh
 You can only send messages using the sender node but you can not receive any data.
 
 
+### Configuration property *IP address family*
+You can force a certain IP version to be used when making requests to the telegram server.
+Normally this is up to the operating system und you can just keep the default setting "Any".
+If you discover problems e.g. the telegram server is unreachable. Then you can try to force
+using IPv4 or IPv6.
+
+
 ### Configuration property flag *Use SOCKS*
 SOCKS4/5 proxy support is optional when running behind a SOCKS4/5 proxy that requires authentication. In this case, additional configuration properties have to be set in the configuration node.
 

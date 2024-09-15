@@ -188,6 +188,8 @@ module.exports = function (RED) {
             this.updateMode = 'polling';
         }
 
+        this.addressFamily = parseInt(n.addressfamily);
+
         // 1. optional when polling mode is used
         this.pollInterval = parseInt(n.pollinterval);
         if (isNaN(this.pollInterval)) {
@@ -235,10 +237,27 @@ module.exports = function (RED) {
                 agentOptions.password = n.sockspassword;
             }
 
-            this.socksRequest = {
+            if (!isNaN(this.addressFamily)) {
+                agentOptions.family = this.addressFamily;
+            }
+
+            this.request = {
                 agentClass: SocksProxyAgent,
                 agentOptions: agentOptions,
                 pool: {},
+            };
+        }
+        else {
+            let agentOptions = {
+                keepAlive: true
+            };
+
+            if (!isNaN(this.addressFamily)) {
+                agentOptions.family = this.addressFamily;
+            }
+
+            this.request = {
+                agentOptions: agentOptions,
             };
         }
 
@@ -271,7 +290,7 @@ module.exports = function (RED) {
                 webHook: webHook,
                 baseApiUrl: this.baseApiUrl,
                 testEnvironment: this.testEnvironment,
-                request: this.socksRequest,
+                request: this.request,
             };
 
             newTelegramBot = new telegramBotEx(this.token, options);
@@ -378,7 +397,7 @@ module.exports = function (RED) {
                 polling: polling,
                 baseApiUrl: this.baseApiUrl,
                 testEnvironment: this.testEnvironment,
-                request: this.socksRequest,
+                request: this.request,
             };
             newTelegramBot = new telegramBotEx(this.token, options);
 
@@ -433,7 +452,7 @@ module.exports = function (RED) {
             const options = {
                 baseApiUrl: this.baseApiUrl,
                 testEnvironment: this.testEnvironment,
-                request: this.socksRequest,
+                request: this.request,
             };
             newTelegramBot = new telegramBotEx(this.token, options);
 

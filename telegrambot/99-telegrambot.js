@@ -21,6 +21,9 @@ module.exports = function (RED) {
 
     let { SocksProxyAgent } = require('socks-proxy-agent');
 
+    const pkg = require('./../package.json');
+    RED.log.info('node-red-contrib-telegrambot version: v' + pkg.version);
+
     // Orginal class is extended to be able to emit an event when getUpdates is called.
     class telegramBotWebHookEx extends telegramBotWebHook {
         constructor(bot) {

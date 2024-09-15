@@ -246,10 +246,9 @@ module.exports = function (RED) {
                 agentOptions: agentOptions,
                 pool: {},
             };
-        }
-        else {
+        } else {
             let agentOptions = {
-                keepAlive: true
+                keepAlive: true,
             };
 
             if (!isNaN(this.addressFamily)) {

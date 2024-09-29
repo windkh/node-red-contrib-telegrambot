@@ -191,7 +191,7 @@ module.exports = function (RED) {
             this.updateMode = 'polling';
         }
 
-        this.addressFamily = parseInt(n.addressfamily);
+        this.addressFamily = parseInt(n.addressfamily) || 0;
 
         // 1. optional when polling mode is used
         this.pollInterval = parseInt(n.pollinterval);

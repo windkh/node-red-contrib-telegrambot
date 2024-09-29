@@ -63,7 +63,7 @@
                 }
             };
             updateOptions();
-            $("#node-config-input-addressfamily").change(updateOptions);
+            $("#node-config-input-updatemode").change(updateOptions);
 
             // IP address family
             var updateAddressFamily = function() {
@@ -148,7 +148,7 @@
             <select id="node-config-input-addressfamily">
                 <option value="4">IPv4</option>
                 <option value="6">IPv6</option>
-                <option value="">Any</option>
+                <option value="0">Any</option>
             </select>
         </div>
 

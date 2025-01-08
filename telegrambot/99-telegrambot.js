@@ -323,11 +323,29 @@ module.exports = function (RED) {
                 // });
             });
 
-            let botUrl = 'https://' + this.botHost + ':' + this.publicBotPort + '/';
-            if (this.botPath !== '') {
-                botUrl += this.botPath + '/';
+            const protocol = 'https://';
+            let tempUrl = this.botHost;
+            if(!tempUrl.startsWith(protocol)){
+                 tempUrl = protocol + tempUrl;
             }
-            botUrl += this.token;
+            const parsed = new URL(tempUrl);
+
+            if(parsed.port == ''){
+                parsed.port = this.publicBotPort;
+            }
+            parsed.port = 80;
+
+            if(parsed.pathname == ''){
+                parsed.pathname = this.botPath;
+            } 
+            else {
+                if(parsed.botPath != ''){
+                    parsed.pathname = parsed.pathname +  '/' + this.botPath;    
+                } 
+            }
+            
+            let botUrl = parsed.href;
+            botUrl +=  '/' + this.token;
 
             let setWebHookOptions;
             if (!this.sslTerminated && this.useSelfSignedCertificate) {

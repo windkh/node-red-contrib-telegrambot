@@ -30,7 +30,7 @@
             bothost: { value: "", required: false },
 			botpath: { value: "", required: false },
             localbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
-            publicbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
+            publicbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && ((v == 80) || (v == 88) || (v == 443) || (v == 8443)))) }},
             
             // only for webhook and certificate
             privatekey: { value: "", required: false },
@@ -204,7 +204,7 @@
                     <input type="checkbox" id="node-config-input-sslterminated" style="display: inline-block; width: auto; vertical-align: top;">
                 </div>
 
-                <div class="form-tips" style="width: auto"><b>Tip:</b> Webhook mode requires a HTTPS certificate. The certificate can also be a self-signed (=custom) one. If any of the host, key, certificate properties is left blank the bot will default to send only mode. If SSL termination is already handled by reverse proxy, key and certificate is not required.</div>
+                <div class="form-tips" style="width: auto"><b>Tip:</b> Webhook mode requires a HTTPS certificate. The certificate can also be a self-signed (=custom) one. If any of the host, key, certificate properties is left blank the bot will default to send only mode. If SSL termination is already handled by reverse proxy, key and certificate is not required. Port must be one of 80, 88, 443, 8443.</div>
             </div>
         </div>
 

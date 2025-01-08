@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [16.1.2] - 2025-01-08
+### webhook url parsing improved - [#398](https://github.com/windkh/node-red-contrib-telegrambot/issues/398) 
+
 # [16.1.1] - 2024-09-29
 ### IP address family any is 0 now - [#343](https://github.com/windkh/node-red-contrib-telegrambot/issues/343) 
 

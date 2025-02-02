@@ -214,9 +214,9 @@ module.exports = function (RED) {
             this.localBotPort = this.publicBotPort;
         }
 
-        this.localBotHost = n.localbothost ?? '0.0.0.0';
+        this.localBotHost = n.localbothost || '0.0.0.0';
         if (this.localBotHost == '') {
-            this.localBotHost = '0.0.0.0'
+            this.localBotHost = '0.0.0.0';
         }
 
         // 3. optional when webhook and self signed certificate is used

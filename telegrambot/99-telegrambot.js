@@ -36,7 +36,7 @@ module.exports = function (RED) {
             }
             return new Promise((resolve, reject) => {
                 this._webServer.listen(this.options.port, this.options.host, () => {
-                    // debug('WebHook listening on port %s', this.options.port);
+                    RED.log.info('node-red-contrib-telegrambot: WebHook listening on ' + this.options.host + ':' + this.options.port);
                     this._open = true;
                     return resolve();
                 });
@@ -214,6 +214,11 @@ module.exports = function (RED) {
             this.localBotPort = this.publicBotPort;
         }
 
+        this.localBotHost = n.localbothost ?? '0.0.0.0';
+        if (this.localBotHost == '') {
+            this.localBotHost = '0.0.0.0'
+        }
+
         // 3. optional when webhook and self signed certificate is used
         this.privateKey = n.privatekey;
         this.certificate = n.certificate;
@@ -283,6 +288,7 @@ module.exports = function (RED) {
             let webHook = {
                 autoOpen: false,
                 port: this.localBotPort,
+                host: this.localBotHost,
             };
             if (!this.sslTerminated) {
                 webHook.key = this.privateKey;

@@ -29,6 +29,7 @@
             // only for webhook mode
             bothost: { value: "", required: false },
 			botpath: { value: "", required: false },
+            localbothost:{ value: "0.0.0.0", required: false },
             localbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
             publicbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && ((v == 80) || (v == 88) || (v == 443) || (v == 8443)))) }},
             
@@ -185,6 +186,10 @@
                 <div class="form-row">
                     <label for="node-config-input-localbotport"><i class="fa fa-random"></i> Local Bot Port</label>
                     <input type="text" id="node-config-input-localbotport" placeholder="(Optional local port for your bot when using webhook. The default is 8443.)">
+                </div>
+                <div class="form-row">
+                    <label for="node-config-input-localbothost"><i class="fa fa-desktop"></i> Host</label>
+                    <input type="text" id="node-config-input-localbothost" placeholder="(Optional local host IP your bot is listening. The default is 0.0.0.0)">
                 </div>
 
                 <div class="form-row">

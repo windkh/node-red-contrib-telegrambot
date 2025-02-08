@@ -330,26 +330,36 @@ module.exports = function (RED) {
             });
 
             const protocol = 'https://';
+
+            // 1, check if the botHost contains a full path begining with https://
             let tempUrl = this.botHost;
             if (!tempUrl.startsWith(protocol)) {
                 tempUrl = protocol + tempUrl;
             }
-            const parsed = new URL(tempUrl);
 
+            // 2. check if the botHost contains a port; if not add publicBotPort
+            const parsed = new URL(tempUrl);
             if (parsed.port == '') {
                 parsed.port = this.publicBotPort;
             }
 
-            if (parsed.pathname == '') {
+            // 3. check if the botHost contains a subpath: if not then add the botPath
+            if (parsed.pathname == '' || parsed.pathname == '/') {
                 parsed.pathname = this.botPath;
             } else {
-                if (parsed.botPath != '') {
+                if (this.botPath != '') {
                     parsed.pathname = parsed.pathname + '/' + this.botPath;
                 }
             }
 
+            // 4. create the url from the patsed parts.
             let botUrl = parsed.href;
-            botUrl += '/' + this.token;
+
+            if (!botUrl.endsWith('/')) {
+                botUrl += '/';
+            }
+
+            botUrl += this.token;
 
             let setWebHookOptions;
             if (!this.sslTerminated && this.useSelfSignedCertificate) {

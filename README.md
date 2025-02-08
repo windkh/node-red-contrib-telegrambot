@@ -47,6 +47,7 @@ If you want to support this free project. Any help is welcome. You can donate by
  - MariusSchiffer: for improving documentation
  - ptath: for providing pullrequest for setChatAdministratorCustomTitle 
  - gmag11: for providing pullrequest for enhancing getFile
+ - ivanjh: for providing the patch for improving output of polling errors
   
 
 # Installation

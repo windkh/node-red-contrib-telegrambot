@@ -24,6 +24,20 @@ module.exports = function (RED) {
     const pkg = require('./../package.json');
     RED.log.info('node-red-contrib-telegrambot version: v' + pkg.version);
 
+    // patch see #345
+    // must be removed when https://github.com/yagop/node-telegram-bot-api/pull/1257 is merged into release
+    let tgbe = require('node-telegram-bot-api/src/errors');
+    class FatalError extends tgbe.BaseError {
+        constructor(data) {
+            const error = typeof data === 'string' ? null : data;
+            const message = error ? error.message : data;
+            super('SLIGHTLYBETTEREFATAL', message);
+            if (error) this.stack = error.stack;
+            if (error) this.cause = error;
+        }
+    }
+    tgbe.FatalError = FatalError;
+
     // Orginal class is extended to be able to emit an event when getUpdates is called.
     class telegramBotWebHookEx extends telegramBotWebHook {
         constructor(bot) {
@@ -450,6 +464,9 @@ module.exports = function (RED) {
 
                 if (self.verbose) {
                     self.warn(error.message);
+
+                    // patch see #345
+                    self.warn(require('node:util').inspect(error, { depth: 5 }));
                 }
 
                 let stopPolling = false;

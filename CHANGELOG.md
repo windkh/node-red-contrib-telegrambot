@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [16.2.0] - 2025-02-08
+### fixed previous commit - [#402](https://github.com/windkh/node-red-contrib-telegrambot/issues/402) 
+
 # [16.1.3] - 2025-01-08
 ### webhook local listening host is now configurable - [#396](https://github.com/windkh/node-red-contrib-telegrambot/issues/396) 
 

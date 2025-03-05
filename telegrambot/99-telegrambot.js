@@ -2613,7 +2613,7 @@ module.exports = function (RED) {
                         case 'action':
                             if (this.hasContent(msg)) {
                                 telegramBot
-                                    .sendChatAction(chatId, msg.payload.content)
+                                    .sendChatAction(chatId, msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(ex, msg, nodeSend, nodeDone);
                                     })
@@ -2707,6 +2707,7 @@ module.exports = function (RED) {
                         case 'declineChatJoinRequest':
                         case 'setChatAdministratorCustomTitle':
                         case 'stopPoll':
+                        case 'setMessageReaction':
                             // The userId must be passed in msg.payload.content: note that this is is a number not the username.
                             // Right now there is no way for resolving the user_id by username in the official API.
                             if (this.hasContent(msg)) {
@@ -2806,7 +2807,21 @@ module.exports = function (RED) {
                         // getStickerSet, uploadStickerFile, createNewStickerSet, addStickerToSet, setStickerPositionInSet, deleteStickerFromSet
 
                         default:
-                        // unknown type nothing to send.
+                            // unknown type we try the unthinkable.
+                            if (type in telegramBot) {
+                                if (this.hasContent(msg)) {
+                                    telegramBot[type](chatId, msg.payload.content, msg.payload.options || {})
+                                        .catch(function (ex) {
+                                            node.processError(ex, msg, nodeSend, nodeDone);
+                                        })
+                                        .then(function (result) {
+                                            node.processResult(result, msg, nodeSend, nodeDone);
+                                        });
+                                }
+                            } else {
+                                // type is not supported.
+                                node.warn('msg.payload.type is not supported');
+                            }
                     }
                 } else {
                     node.warn('msg.payload.type is empty');

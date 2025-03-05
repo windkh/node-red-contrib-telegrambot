@@ -391,6 +391,7 @@ The `msg.payload.type` needs to be set to one of the following values:
 | **editMessageReplyMarkup** | - | optional arguments | https://core.telegram.org/bots/api#editmessagereplymarkup |
 | **editMessageMedia** | media (InputMedia) | optional arguments | https://core.telegram.org/bots/api#editmessagemedia |
 | **deleteMessage** | message_id (integer) | - | https://core.telegram.org/bots/api#deletemessage |
+| **setMessageReaction** | message_id (integer) | optional arguments | https://core.telegram.org/bots/api#setmessagereaction |
 | **editMessageLiveLocation** | { latitude (float), longitude (float) } | optional arguments | https://core.telegram.org/bots/api#editmessagelivelocation |
 | **stopMessageLiveLocation** | - | optional arguments | https://core.telegram.org/bots/api#stopmessagelivelocation |
 | **callback_query** | url (string) | optional arguments | https://core.telegram.org/bots/api#answercallbackquery |

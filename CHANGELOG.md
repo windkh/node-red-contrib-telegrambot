@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [16.3.0] - 2025-03-05
+### added setMessageReaction - [#404](https://github.com/windkh/node-red-contrib-telegrambot/issues/404) 
+
 # [16.2.0] - 2025-02-08
 ### fixed previous commit - [#402](https://github.com/windkh/node-red-contrib-telegrambot/issues/402) 
 

@@ -1334,9 +1334,16 @@ module.exports = function (RED) {
             let chatid = botMsg.chat.id;
             let messageDetails = getMessageDetails(botMsg);
             if (messageDetails) {
+                let botDetails = {
+                    botname: this.config.botname,
+                    testEnvironment: this.config.testEnvironment,
+                    baseApiUrl: this.config.telegramBot.options.baseApiUrl,
+                };
+
                 let msg = {
                     payload: messageDetails,
                     originalMessage: botMsg,
+                    telegramBot: botDetails,
                 };
 
                 let telegramBot = this.config.getTelegramBot();
@@ -1521,6 +1528,12 @@ module.exports = function (RED) {
             if (node.config.isAuthorized(node, chatid, userid, username)) {
                 let msg;
                 let messageDetails;
+                let botDetails = {
+                    botname: this.config.botname,
+                    testEnvironment: this.config.testEnvironment,
+                    baseApiUrl: this.config.telegramBot.options.baseApiUrl,
+                };
+
                 if (botMsg.text) {
                     let message = botMsg.text;
                     let tokens = message.split(' ');
@@ -1579,9 +1592,11 @@ module.exports = function (RED) {
                             type: 'message',
                             content: remainingText,
                         };
+
                         msg = {
                             payload: messageDetails,
                             originalMessage: botMsg,
+                            telegramBot: botDetails,
                         };
 
                         if (hasresponse) {
@@ -1605,6 +1620,7 @@ module.exports = function (RED) {
                                     msg = {
                                         payload: messageDetails,
                                         originalMessage: botMsg,
+                                        telegramBot: botDetails,
                                     };
                                     node.send([null, msg]);
                                     node.config.resetCommandPending(command1, username, chatid);
@@ -1795,6 +1811,12 @@ module.exports = function (RED) {
             if (isAnonymous || node.config.isAuthorized(node, chatid, userid, username)) {
                 let msg;
                 let messageDetails;
+                let botDetails = {
+                    botname: this.config.botname,
+                    testEnvironment: this.config.testEnvironment,
+                    baseApiUrl: this.config.telegramBot.options.baseApiUrl,
+                };
+
                 let messageId;
                 if (botMsg.message !== undefined) {
                     messageId = botMsg.message.message_id;
@@ -2045,6 +2067,7 @@ module.exports = function (RED) {
                     msg = {
                         payload: messageDetails,
                         originalMessage: botMsg,
+                        telegramBot: botDetails,
                     };
                     node.send(msg);
                 }

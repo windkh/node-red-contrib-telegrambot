@@ -90,6 +90,9 @@ The *Telegram receiver* node receives messages from the bot and sends a message 
 
 `msg.originalMessage` contains the original message object from the underlying [**node-telegram-bot-api**](https://github.com/yagop/node-telegram-bot-api) lib.
 
+`msg.telegramBot` contains the bot details object which can be used inside the flow to find out what bot received the message`.
+
+
 The *Telegram sender* node sends the content to a specified username or chat. The node's input `msg` object is similar to the output `msg` object of the *Telegram receiver* node. Some of the additional elements are mandatory and some are optional (see table below).
 
 A simple echo flow looks like:

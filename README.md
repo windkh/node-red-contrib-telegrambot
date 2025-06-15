@@ -48,6 +48,7 @@ If you want to support this free project. Any help is welcome. You can donate by
  - ptath: for providing pullrequest for setChatAdministratorCustomTitle 
  - gmag11: for providing pullrequest for enhancing getFile
  - ivanjh: for providing the patch for improving output of polling errors
+ - GrimbiXcode: for replacing pump with pipeline
   
 
 # Installation

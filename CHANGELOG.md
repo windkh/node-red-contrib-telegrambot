@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# [unreleased] - 2025-xx-xx
+# [16.3.2] - 2025-06-15
 ### replaced the pump module with the newer stream pipe to support newer nodejs versions natively
 
 # [16.3.1] - 2025-03-30

@@ -7,7 +7,7 @@ module.exports = function (RED) {
     'use strict';
 
     const path = require('path');
-    const pump = require('pump');
+    const { pipeline } = require('stream');
     const fs = require('fs');
 
     let net = require('net');
@@ -2870,7 +2870,7 @@ module.exports = function (RED) {
                 }
 
                 const filePath = path.join(downloadDir, fileName);
-                pump(fileStream, fs.createWriteStream(filePath), (error) => {
+                pipeline(fileStream, fs.createWriteStream(filePath), (error) => {
                     if (!error) {
                         return resolve(filePath);
                     } else {

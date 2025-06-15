@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [unreleased] - 2025-xx-xx
+### replaced the pump module with the newer stream pipe to support newer nodejs versions natively
+
 # [16.3.1] - 2025-03-30
 ### added setMessageReaction - [#407](https://github.com/windkh/node-red-contrib-telegrambot/issues/407) 
 
@@ -29,7 +32,7 @@ All notable changes to this project will be documented in this file.
 ### fixed getFile typo - [#381](https://github.com/windkh/node-red-contrib-telegrambot/issues/381) 
 
 # [16.0.0] - 2024-06-21
-### updated to 0.66.0, removed dependancies to deprectated request, updated sock agent
+### updated to 0.66.0, removed dependencies to deprecated request, updated sock agent
 
 # [15.1.11] - 2024-06-20
 ### added option for enabling test environment - [#380](https://github.com/windkh/node-red-contrib-telegrambot/issues/380) 

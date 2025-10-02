@@ -2659,10 +2659,12 @@ module.exports = function (RED) {
                         case 'unpinAllChatMessages':
                         case 'deleteChatPhoto':
                         case 'getForumTopicIconStickers':
+                        case 'getChatMenuButton':
                         case 'closeGeneralForumTopic':
                         case 'reopenGeneralForumTopic':
                         case 'hideGeneralForumTopic':
                         case 'unhideGeneralForumTopic':
+                        case 'deleteChatStickerSet':
                             telegramBot[type](chatId, msg.payload.options || {})
                                 .catch(function (ex) {
                                     node.processError(ex, msg, nodeSend, nodeDone);
@@ -2706,6 +2708,8 @@ module.exports = function (RED) {
                         case 'setChatTitle':
                         case 'setChatPhoto':
                         case 'setChatDescription':
+                        case 'setChatMenuButton':
+                        case 'setChatStickerSet':
                         case 'unpinChatMessage':
                         case 'deleteMessage':
                             if (this.hasContent(msg)) {
@@ -2825,9 +2829,8 @@ module.exports = function (RED) {
                         // editChatInviteLink, revokeChatInviteLink
                         // getUserProfilePhotos,
                         // getMyCommands
-                        // setChatStickerSet, deleteChatStickerSet
                         // sendGame, setGameScore, getGameHighScores
-                        // getStickerSet, uploadStickerFile, createNewStickerSet, addStickerToSet, setStickerPositionInSet, deleteStickerFromSet
+                        // uploadStickerFile, createNewStickerSet, addStickerToSet, setStickerPositionInSet, deleteStickerFromSet
 
                         default:
                             // unknown type we try the unthinkable.

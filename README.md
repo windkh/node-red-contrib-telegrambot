@@ -415,10 +415,14 @@ The `msg.payload.type` needs to be set to one of the following values:
 | **setChatAdministratorCustomTitle** | user_id (integer)  | custom title as string | https://core.telegram.org/bots/api#setchatadministratorcustomtitle |
 | **setChatPhoto** | photo (InputFile) | - | https://core.telegram.org/bots/api#setchatphoto |
 | **setChatTitle** | title (string) | - | https://core.telegram.org/bots/api#setchattitle |
-| **setChatDescription** | optional arguments | optional arguments | https://core.telegram.org/bots/api#setchatdescription |
+| **setChatDescription** | description (string) |- | https://core.telegram.org/bots/api#setchatdescription |
+| **setChatMenuButton** | menue button (MenuButton) | - | https://core.telegram.org/bots/api#setchatmenubutton |
+| **setChatStickerSet** | sticker set name (string) | - | https://core.telegram.org/bots/api#setchatstickerset |
+| **deleteChatStickerSet** | - | - | https://core.telegram.org/bots/api#deleteChatStickerSet |
 | **pinChatMessage** | message_id (integer)  | optional arguments | https://core.telegram.org/bots/api#pinchatmessage |
 | **unpinChatMessage** | optional arguments | - | https://core.telegram.org/bots/api#unpinchatmessage |
 | **unpinAllChatMessages** | - | - | https://core.telegram.org/bots/api#unpinallchatmessages |
+| **deleteChatPhoto** | - | - | https://core.telegram.org/bots/api#deletechatphoto |
 | **getChatAdministrators** | - | - | https://core.telegram.org/bots/api#getchatadministrators |
 | **getChatMemberCount** | - | - | https://core.telegram.org/bots/api#getchatmembercount |
 | **getChat** | - | - | https://core.telegram.org/bots/api#getchat |
@@ -431,12 +435,14 @@ The `msg.payload.type` needs to be set to one of the following values:
 | **shipping_query** | { shippingQueryId (string), ok (boolean) } | optional arguments | https://core.telegram.org/bots/api#answershippingquery |
 | **answerShippingQuery** | { shippingQueryId (string), ok (boolean) } | optional arguments | https://core.telegram.org/bots/api#answershippingquery |
 | **getForumTopicIconStickers** | - | - | https://core.telegram.org/bots/api#getforumtopiciconstickers |
+| **getChatMenuButton** | - | - | https://core.telegram.org/bots/api#getchatmenubutton |
 | **createForumTopic** | name (string) | optional arguments | https://core.telegram.org/bots/api#createforumtopic |
 | **editForumTopic** | message_thread_id (integer) | optional arguments | https://core.telegram.org/bots/api#editforumtopic |
 | **closeForumTopic** | message_thread_id (integer) | - | https://core.telegram.org/bots/api#closeforumtopic |
 | **reopenForumTopic** | message_thread_id (integer) | - | https://core.telegram.org/bots/api#reopenforumtopic |
 | **deleteForumTopic** | message_thread_id (integer) | - | https://core.telegram.org/bots/api#deleteforumtopic |
 | **editGeneralForumTopic** | name (string) | - | https://core.telegram.org/bots/api#editgeneralforumtopic |
+| **unpinAllForumTopicMessages** | name (string) | - | https://core.telegram.org/bots/api#unpinallforumtopicmessages |
 | **closeGeneralForumTopic** | - | - | https://core.telegram.org/bots/api#closegeneralforumtopic |
 | **reopenGeneralForumTopic** | - | - | https://core.telegram.org/bots/api#reopengeneralforumtopic |
 | **hideGeneralForumTopic** | - | - | https://core.telegram.org/bots/api#hidegeneralforumtopic |

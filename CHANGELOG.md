@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [16.3.3] - 2025-10-02
+### added further commands - [#412](https://github.com/windkh/node-red-contrib-telegrambot/issues/412) 
+
 # [16.3.2] - 2025-06-15
 ### replaced the pump module with the newer stream pipe to support newer nodejs versions natively
 

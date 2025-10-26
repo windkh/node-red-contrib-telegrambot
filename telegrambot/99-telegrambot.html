@@ -291,7 +291,6 @@
 </script>
 
 
-
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
     RED.nodes.registerType('telegram receiver', {
@@ -518,7 +517,6 @@
 </script>
 
 
-
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
     RED.nodes.registerType('telegram event', {
@@ -557,8 +555,7 @@
         <div style="display: inline-block; position: relative; width: 70%; height: 19.1333px;">
         <div style="position: absolute; left: 0; right: 0;">
           <select id="node-input-event" style="width:100%">
-              <option value="callback_query">Callback Query</option>
-              <option value="inline_query">Inline Query</option>
+              <option value="message">Message</option>
               <option value="edited_message">Edited Message</option>
               <option value="edited_message_text">Edited Message Text</option>
               <option value="edited_message_caption">Edited Message Caption</option>
@@ -566,14 +563,24 @@
               <option value="edited_channel_post">Edited Channel Post</option>
               <option value="edited_channel_post_text">Edited Channel Post Text</option>
               <option value="edited_channel_post_caption">Edited Channel Post Caption</option>
-              <option value="pre_checkout_query">Pre Checkout Query</option>
-              <option value="shipping_query">Shipping Query</option>
+              <option value="business_connection">Business Connection</option>
+              <option value="business_message">Business Message</option>
+              <option value="edited_business_message">Edited Business Message</option>
+              <option value="deleted_business_messages">Deleted Business Messages</option>
+              <option value="message_reaction">Message Reaction</option>
+              <option value="message_reaction_count">Message Reaction Count</option>
+              <option value="inline_query">Inline Query</option>
               <option value="chosen_inline_result">Chosen Inline Result</option>
+              <option value="callback_query">Callback Query</option>
+              <option value="shipping_query">Shipping Query</option>
+              <option value="pre_checkout_query">Pre Checkout Query</option>
+              <!-- purchased_paid_media not supported yet -->
               <option value="poll">Poll</option>
               <option value="poll_answer">Poll Answer</option>
               <option value="my_chat_member">My Chat Member</option>
-              <!-- <option value="chat_member">Chat Member</option> -->
-              <option value="chat_join_request">Chat Join Request</option>
+              <option value="chat_member">Chat Member</option>
+              <option value="chat_boost">Chat Boost</option>
+              <option value="removed_chat_boost">Removed Chat Boost</option>
           </select>
         </div>
         </div>
@@ -606,7 +613,6 @@
       <p>The autoanswer checkbox can be set for callback_query.</p> 
       <p>Then you won't have to send an explicit answer to the bot on your own.</p> 
 </script>
-
 
 
 <!-- ------------------------------------------------------------------------------------------ -->

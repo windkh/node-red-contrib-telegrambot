@@ -94,6 +94,24 @@ module.exports = function (RED) {
 
             return this._webHook.open();
         }
+
+        _request(_path, options = {}) {
+
+            let result;
+            if(_path !== 'getUpdates') {
+
+                // TODO: add catch and retry later here 
+                result = super._request(_path, options);
+                // result.catch(function (err) {
+                //     ;
+                // });
+            }
+            else {
+                result = super._request(_path, options); // no special handling for polling updates. 
+            }
+
+            return result;
+        }       
     }
 
     let botsByToken = {};
@@ -420,7 +438,8 @@ module.exports = function (RED) {
                 params: {
                     timeout: this.pollTimeout,
                 },
-                // this is used when chat_member should be received.
+                // These events can be used https://core.telegram.org/bots/api#update
+                // see event node: e.g.
                 // params: {
                 //     allowed_updates: [
                 //         'update_id',
@@ -1687,22 +1706,56 @@ module.exports = function (RED) {
     // The input node receives an event from the chat. See https://core.telegram.org/bots/api#update
     // The type of event can be configured:
     // - edited_message
-    // - edited_message_text
-    // - edited_message_caption
     // - channel_post
     // - edited_channel_post
-    // - edited_channel_post_text
-    // - edited_channel_post_caption
+    // -  business_connection
+    // -  business_message	
+    // -  edited_business_message
+    // -  deleted_business_messages
+    // -  message_reaction
+    // -  message_reaction_count
     // - inline_query
     // - chosen_inline_result
     // - callback_query
     // - shipping_query
     // - pre_checkout_query
+    // -  purchased_paid_media (not available)
     // - poll
     // - poll_answer
     // - my_chat_member
     // - chat_member
     // - chat_join_request
+    // -  chat_boost
+    // -  removed_chat_boost
+
+    // Only the following are supported by see telegram.js processUpdate
+    // - message
+    // - edited_message
+    // - channel_post;
+    // - edited_channel_post;
+    // - business_connection;
+    // - business_message;
+    // - edited_business_message;
+    // - update.deleted_business_messages;
+    // - message_reaction;
+    // - message_reaction_count;
+    // - inline_query;
+    // - chosen_inline_result;
+    // - callback_query;
+    // - shipping_query;
+    // - pre_checkout_query;
+    // - poll;
+    // - poll_answer;
+    // - my_chat_member;
+    // - chat_member;
+    // - chat_join_request;
+    // - chat_boost;
+    // - removed_chat_boost;
+
+    // - edited_message_text
+    // - edited_message_caption
+    // - edited_channel_post_text
+    // - edited_channel_post_caption
     // The message details are stored in the payload
     // chatId
     // messageId
@@ -1823,6 +1876,21 @@ module.exports = function (RED) {
                 }
 
                 switch (this.event) {
+                    // Messages are handled using the receiver node.
+                    // https://core.telegram.org/bots/api#message
+                    case 'message':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            messageId: botMsg.message_id,
+                            content: botMsg.text,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                            from: botMsg.from,
+                        };
+                        break;
+
+                    // https://core.telegram.org/bots/api#callbackquery
                     case 'callback_query':
                         messageDetails = {
                             chatId: chatid,
@@ -1847,6 +1915,7 @@ module.exports = function (RED) {
                         }
                         break;
 
+                    // https://core.telegram.org/bots/api#inlinequery
                     // /setinline must be set before in botfather see https://core.telegram.org/bots/inline
                     case 'inline_query':
                         messageDetails = {
@@ -1868,7 +1937,8 @@ module.exports = function (RED) {
                         //}
                         break;
 
-                    case 'edited_message':
+                   // https://core.telegram.org/bots/api#message
+                     case 'edited_message':
                         messageDetails = {
                             chatId: chatid,
                             messageId: botMsg.message_id,
@@ -1883,6 +1953,7 @@ module.exports = function (RED) {
                         break;
 
                     // the text of an already sent message.
+                    // not official
                     case 'edited_message_text':
                         messageDetails = {
                             chatId: chatid,
@@ -1896,6 +1967,7 @@ module.exports = function (RED) {
                         break;
 
                     // the caption of a document or an image ...
+                    // not official
                     case 'edited_message_caption':
                         messageDetails = {
                             chatId: chatid,
@@ -1908,6 +1980,7 @@ module.exports = function (RED) {
                         };
                         break;
 
+                    // https://core.telegram.org/bots/api#message
                     case 'channel_post':
                         messageDetails = {
                             chatId: chatid,
@@ -1919,6 +1992,7 @@ module.exports = function (RED) {
                         };
                         break;
 
+                    // https://core.telegram.org/bots/api#message
                     case 'edited_channel_post':
                         messageDetails = {
                             chatId: chatid,
@@ -1931,6 +2005,7 @@ module.exports = function (RED) {
                         };
                         break;
 
+                    // not official 
                     case 'edited_channel_post_text':
                         messageDetails = {
                             chatId: chatid,
@@ -1943,6 +2018,7 @@ module.exports = function (RED) {
                         };
                         break;
 
+                    // not official
                     case 'edited_channel_post_caption':
                         messageDetails = {
                             chatId: chatid,
@@ -1955,6 +2031,84 @@ module.exports = function (RED) {
                         };
                         break;
 
+                    // https://core.telegram.org/bots/api#businessconnection
+                    case 'business_connection':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            id: botMsg.id,
+                            user: botMsg.user,
+                            userChatId: botMsg.user_chat_id,
+                            date: botMsg.date,
+                            rights: botMsg.rights,
+                            isEnabled: botMsg.is_enabled,
+                        };
+                        break;
+
+                    // https://core.telegram.org/bots/api#message
+                    case 'business_message':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            messageId: botMsg.message_id,
+                            content: botMsg.text, // TODO: this needs to be checked
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                            from: botMsg.from,
+                        };
+                        break;
+    
+                    // https://core.telegram.org/bots/api#message
+                    case 'edited_business_message':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            messageId: botMsg.message_id,
+                            content: botMsg.text, // TODO: this needs to be checked
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                            from: botMsg.from,
+                        };
+                        break;
+    
+                    // https://core.telegram.org/bots/api#businessmessagesdeleted
+                    case 'deleted_business_messages':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            messageIds: botMsg.message_ids,
+                            businessConnectionId: botMsg.business_connection_id,
+                            chat: botMsg.chat,
+                        };
+                        break;
+                        
+                    // https://core.telegram.org/bots/api#messagereactionupdated
+                    case 'message_reaction':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            messageId: botMsg.message_id,
+                            user: botMsg.user,
+                            actorChat: botMsg.actor_chat,
+                            date: botMsg.date,
+                            oldReaction: botMsg.old_reaction,
+                            newReaction: botMsg.new_reaction,
+                        };
+                        break;
+                    
+                    // https://core.telegram.org/bots/api#messagereactioncountupdated
+                    case 'message_reaction_count':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            messageId: botMsg.message_id,
+                            date: botMsg.date,
+                            chat: botMsg.chat,
+                            reactions: botMsg.reactions,
+                        };
+                        break;
+    
+                    // https://core.telegram.org/bots/api#precheckoutquery
                     case 'pre_checkout_query':
                         messageDetails = {
                             preCheckoutQueryId: botMsg.id,
@@ -1972,6 +2126,7 @@ module.exports = function (RED) {
                         };
                         break;
 
+                    // https://core.telegram.org/bots/api#shippingquery
                     case 'shipping_query':
                         messageDetails = {
                             shippingQueryId: botMsg.id,
@@ -1986,6 +2141,7 @@ module.exports = function (RED) {
                         };
                         break;
 
+                    // https://core.telegram.org/bots/api#choseninlineresult
                     case 'chosen_inline_result':
                         messageDetails = {
                             result_id: botMsg.result_id,
@@ -2001,6 +2157,17 @@ module.exports = function (RED) {
                         };
                         break;
 
+                    // https://core.telegram.org/bots/api#paidmediapurchased
+                    case 'purchased_paid_media':
+                       messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            from: botMsg.from,
+                            paidMediaPayload: botMsg.paid_media_payload,
+                        };
+                        break;
+
+                    // https://core.telegram.org/bots/api#pollanswer
                     case 'poll_answer':
                         messageDetails = {
                             poll_id: botMsg.poll_id,
@@ -2014,6 +2181,7 @@ module.exports = function (RED) {
                         };
                         break;
 
+                    // https://core.telegram.org/bots/api#poll
                     case 'poll':
                         messageDetails = {
                             type: this.event,
@@ -2034,6 +2202,7 @@ module.exports = function (RED) {
                         };
                         break;
 
+                    // https://core.telegram.org/bots/api#chatmemberupdated
                     case 'my_chat_member':
                     case 'chat_member':
                         messageDetails = {
@@ -2048,6 +2217,7 @@ module.exports = function (RED) {
                         };
                         break;
 
+                    // https://core.telegram.org/bots/api#chatjoinrequest
                     case 'chat_join_request':
                         messageDetails = {
                             from: botMsg.from,
@@ -2060,6 +2230,27 @@ module.exports = function (RED) {
                         };
                         break;
 
+                    // https://core.telegram.org/bots/api#chatboostupdated
+                    case 'chat_boost':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            chat: botMsg.chat,
+                            boost: botMsg.boost,
+                        };
+                        break;
+
+                    // https://core.telegram.org/bots/api#chatboostremoved
+                    case 'removed_chat_boost':
+                        messageDetails = {
+                            chatId: chatid,
+                            type: this.event,
+                            chat: botMsg.chat,
+                            boostId: botMsg.boost_id,
+                            removeDate: botMsg.remove_date,
+                            source: botMsg.source,
+                        };
+                        break;
                     default:
                 }
 

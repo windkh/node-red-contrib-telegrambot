@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [16.4.0] - 2025-10-26
+### added new events to event node - [Dicsussion #401](https://github.com/windkh/node-red-contrib-telegrambot/discussions/401) 
+
 # [16.3.3] - 2025-10-02
 ### added further commands - [#412](https://github.com/windkh/node-red-contrib-telegrambot/issues/412) 
 

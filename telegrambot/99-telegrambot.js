@@ -96,22 +96,19 @@ module.exports = function (RED) {
         }
 
         _request(_path, options = {}) {
-
             let result;
-            if(_path !== 'getUpdates') {
-
-                // TODO: add catch and retry later here 
+            if (_path !== 'getUpdates') {
+                // TODO: add catch and retry later here.
                 result = super._request(_path, options);
                 // result.catch(function (err) {
                 //     ;
                 // });
-            }
-            else {
-                result = super._request(_path, options); // no special handling for polling updates. 
+            } else {
+                result = super._request(_path, options); // no special handling for polling updates.
             }
 
             return result;
-        }       
+        }
     }
 
     let botsByToken = {};
@@ -1709,7 +1706,7 @@ module.exports = function (RED) {
     // - channel_post
     // - edited_channel_post
     // -  business_connection
-    // -  business_message	
+    // -  business_message
     // -  edited_business_message
     // -  deleted_business_messages
     // -  message_reaction
@@ -1937,8 +1934,8 @@ module.exports = function (RED) {
                         //}
                         break;
 
-                   // https://core.telegram.org/bots/api#message
-                     case 'edited_message':
+                    // https://core.telegram.org/bots/api#message
+                    case 'edited_message':
                         messageDetails = {
                             chatId: chatid,
                             messageId: botMsg.message_id,
@@ -2005,7 +2002,7 @@ module.exports = function (RED) {
                         };
                         break;
 
-                    // not official 
+                    // not official
                     case 'edited_channel_post_text':
                         messageDetails = {
                             chatId: chatid,
@@ -2057,7 +2054,7 @@ module.exports = function (RED) {
                             from: botMsg.from,
                         };
                         break;
-    
+
                     // https://core.telegram.org/bots/api#message
                     case 'edited_business_message':
                         messageDetails = {
@@ -2070,7 +2067,7 @@ module.exports = function (RED) {
                             from: botMsg.from,
                         };
                         break;
-    
+
                     // https://core.telegram.org/bots/api#businessmessagesdeleted
                     case 'deleted_business_messages':
                         messageDetails = {
@@ -2081,7 +2078,7 @@ module.exports = function (RED) {
                             chat: botMsg.chat,
                         };
                         break;
-                        
+
                     // https://core.telegram.org/bots/api#messagereactionupdated
                     case 'message_reaction':
                         messageDetails = {
@@ -2095,7 +2092,7 @@ module.exports = function (RED) {
                             newReaction: botMsg.new_reaction,
                         };
                         break;
-                    
+
                     // https://core.telegram.org/bots/api#messagereactioncountupdated
                     case 'message_reaction_count':
                         messageDetails = {
@@ -2107,7 +2104,7 @@ module.exports = function (RED) {
                             reactions: botMsg.reactions,
                         };
                         break;
-    
+
                     // https://core.telegram.org/bots/api#precheckoutquery
                     case 'pre_checkout_query':
                         messageDetails = {
@@ -2159,7 +2156,7 @@ module.exports = function (RED) {
 
                     // https://core.telegram.org/bots/api#paidmediapurchased
                     case 'purchased_paid_media':
-                       messageDetails = {
+                        messageDetails = {
                             chatId: chatid,
                             type: this.event,
                             from: botMsg.from,

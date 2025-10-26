@@ -50,6 +50,14 @@ If you want to support this free project. Any help is welcome. You can donate by
  - ivanjh: for providing the patch for improving output of polling errors
  - GrimbiXcode: for replacing pump with pipeline
   
+# 👥 Contributors
+
+  <p align="center">
+    <a href="https://github.com/windkh/node-red-contrib-telegrambot/graphs/contributors">
+      <img src="https://contrib.rocks/image?repo=windkh/node-red-contrib-telegrambot" />
+    </a>
+  </p>
+
 
 # Installation
 [![NPM](https://nodei.co/npm/node-red-contrib-telegrambot.png?downloads=true)](https://nodei.co/npm/node-red-contrib-telegrambot/)

@@ -3,7 +3,7 @@
 
 name: Node.js Package
 permissions:
-  contents: read
+  contents: read-all
 
 on:
   release:

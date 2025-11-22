@@ -49,7 +49,9 @@ module.exports = function(RED) {
                             text: 'connected',
                         });
 
-                        telegramBot.on('message', (botMsg) => this.processMessage(botMsg));
+                        telegramBot.on('message', (botMsg) => this.processMessage('message',botMsg));
+
+                        // TODO: implement further here see #420
                     } else {
                         node.status({
                             fill: 'grey',
@@ -81,7 +83,7 @@ module.exports = function(RED) {
             });
         };
 
-        this.processMessage = function (botMsg) {
+        this.processMessage = function (type, botMsg) {
             node.status({
                 fill: 'green',
                 shape: 'ring',
@@ -91,7 +93,7 @@ module.exports = function(RED) {
             let username = botMsg.from.username;
             let userid = botMsg.from.id;
             let chatid = botMsg.chat.id;
-            let messageDetails = converter.getMessageDetails(botMsg);
+            let messageDetails = converter.convertMessage(type, botMsg);
             if (messageDetails) {
                 let botDetails = {
                     botname: this.config.botname,

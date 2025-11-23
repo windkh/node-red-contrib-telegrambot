@@ -300,7 +300,9 @@
             name: { value: "" },
             bot: { value:"", type: "telegram bot", required: true },
             saveDataDir: { value: "" },
-            filterCommands: { value: false }
+            filterCommands: { value: false },
+            hasinput: { value: false, required: false },
+            inputs: {value: 0}
         },
         inputs: 0,
         outputs: 2,
@@ -313,6 +315,18 @@
             return this.name?"node_label_italic":"";
         },
         oneditprepare: function() {
+            var that = this;
+            // hasinput on / off
+            var hasinput = function() {
+                var mode = $("#node-input-hasinput").prop('checked');
+                if (mode === true) {
+                    that.inputs = 1;
+                } else {
+                    that.inputs = 0;
+                }
+            };
+            hasinput();
+            $("#node-input-hasinput").change(hasinput);
         }
     });
 </script>
@@ -333,6 +347,11 @@
     <div class="form-row">
         <label for="node-input-filterCommands"><i class="fa fa-filter"></i> Filter</label>
         <input type="checkbox" id="node-input-filterCommands" style="display: inline-block; width: auto; vertical-align: top;"> commands (from configured command nodes)
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-hasinput"><i class="fa fa-envelope"></i> Message Input</label>
+        <input type="checkbox" id="node-input-hasinput" style="display: inline-block; width: auto; vertical-align: top;"> receive updates from external sources
     </div>
 </script>
 

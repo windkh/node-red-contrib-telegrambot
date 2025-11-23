@@ -15,6 +15,8 @@ module.exports = function(RED) {
     // The message ist send to output 1 if the message is from an authorized user
     // and to output2 if the message is not from an authorized user.
     //
+    // Messages can be injected via the input if an external receiver is used.
+    //
     // message : content string
     // photo   : content file_id of first image in array
     // audio   : content file_id
@@ -29,6 +31,8 @@ module.exports = function(RED) {
         let node = this;
         this.bot = config.bot;
         node.filterCommands = config.filterCommands || false;
+
+        let hasInput = config.hasinput || false;
 
         this.start = function () {
             let telegramBot = this.config.getTelegramBot();
@@ -48,10 +52,6 @@ module.exports = function(RED) {
                             shape: 'ring',
                             text: 'connected',
                         });
-
-                        telegramBot.on('message', (botMsg) => this.processMessage('message',botMsg));
-
-                        // TODO: implement further here see #420
                     } else {
                         node.status({
                             fill: 'grey',
@@ -59,6 +59,8 @@ module.exports = function(RED) {
                             text: 'send only mode',
                         });
                     }
+
+                    telegramBot.on('message', (botMsg) => this.processMessage('message',botMsg));
                 }
             } else {
                 node.warn('bot not initialized.');
@@ -167,6 +169,54 @@ module.exports = function(RED) {
                 fill: 'red',
                 shape: 'ring',
                 text: 'config node failed to initialize',
+            });
+        }
+
+        if (hasInput) {
+            // Receives messages from external input like external webhooks.
+            this.on('input', function (msg, nodeSend, nodeDone) {
+
+                if (msg.payload) {
+                    let telegramBot = this.config.getTelegramBot();
+                    if (telegramBot) {
+                        
+                        let updates;
+                        // Check if the result comes from a http node otherwise msg.payload is directly used.
+                        if (msg.payload.ok ) {
+                            if (msg.payload.ok === true) {
+                                updates = msg.payload.result;
+                            }
+                        }
+                        else
+                        {
+                            updates = msg.payload;
+                        }
+
+                        if (updates) {                
+                            if(Array.isArray(updates)) {
+                                updates.forEach(update => {
+                                    telegramBot.processUpdate(update);
+                                });
+                            }
+                            else {
+                                telegramBot.processUpdate(update);
+                            }
+                        } 
+                        else {
+                             node.warn('msg.payload is invalid');
+                        }
+
+                    } else {
+                        node.warn('bot not initialized.');
+                        node.status({
+                            fill: 'red',
+                            shape: 'ring',
+                            text: 'bot not initialized',
+                        });
+                    }
+                } else {
+                    node.warn('msg.payload is empty');
+                }
             });
         }
 

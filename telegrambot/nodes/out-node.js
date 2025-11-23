@@ -25,10 +25,7 @@ module.exports = function(RED) {
         let node = this;
         this.bot = config.bot;
 
-        let haserroroutput = config.haserroroutput;
-        if (haserroroutput === undefined) {
-            haserroroutput = false;
-        }
+        let haserroroutput = config.haserroroutput || false;
 
         this.hasContent = function (msg) {
             let hasContent;

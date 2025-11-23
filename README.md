@@ -49,6 +49,7 @@ If you want to support this free project. Any help is welcome. You can donate by
  - gmag11: for providing pullrequest for enhancing getFile
  - ivanjh: for providing the patch for improving output of polling errors
  - GrimbiXcode: for replacing pump with pipeline
+ - y8: for providing ideas for improving receiver node
   
 # 👥 Contributors
 
@@ -333,6 +334,41 @@ In addition to that the message object may contain the direct download link in t
 Normally, a receiver node receives all content that is sent to the bot. However if you have command nodes next to a receiver you can enable the *commands* flag in the configuration property ***Filter*** so that commands meant for a command node will not be handled by the receiver node.  
 I.e. the command message then only appears in the configured command node and not in this node.
 
+#### Configuration property *Message Input*
+Enable this checkbox if you want to receive updates from telegram using an external source (like http node, mqtt). The format must match the one provided by telegram. It is recommended to disable webhook and polling in config node when providing updates from external sources via this input.
+
+See the example flow [**control bot**](examples/externalreceiverl.json) in the examples folder.
+<details>
+  <summary>Click to expand code snippet for <em><b>message</b></em> example</summary>
+
+```javascript
+{
+  update_id: 276165414,
+  message: {
+    message_id: 6196,
+    from: {
+      id: 1234,
+      is_bot: false,
+      first_name: "Bigfoot",
+      last_name: "VLOG",
+      username: "Bigfoot",
+      language_code: "de",
+    },
+    chat: {
+      id: 1234,
+      first_name: "Bigfoot",
+      last_name: "VLOG",
+      username: "Bigfoot",
+      type: "private",
+    },
+    date: 1763891508,
+    text: "Hello guys!",
+  },
+}
+```
+</details>
+
+See the example flow [**control bot**](examples/externalreceiver2.json) in the examples folder.
 
 ### Outputs
 The original message from the underlying node library is stored in `msg.originalMessage`. The `msg.payload` contains the most important data like **chatId**, **type** and **content**. Additional elements are present in the `msg.payload` structure and depend on the message *type*. These additional elements are described in the table **Tab. 1** above.

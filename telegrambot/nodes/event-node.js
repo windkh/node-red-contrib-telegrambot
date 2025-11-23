@@ -172,7 +172,7 @@ module.exports = function(RED) {
                     messageId = botMsg.message.message_id;
                 }
 
-                let messageDetails =    converter.convertMessage(this.event, botMsg);
+                let messageDetails = converter.convertMessage(this.event, botMsg);
                 if (messageDetails) {
 
                     // sepcial callback query handling.

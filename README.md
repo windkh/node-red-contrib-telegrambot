@@ -337,7 +337,7 @@ I.e. the command message then only appears in the configured command node and no
 #### Configuration property *Message Input*
 Enable this checkbox if you want to receive updates from telegram using an external source (like http node, mqtt). The format must match the one provided by telegram. It is recommended to disable webhook and polling in config node when providing updates from external sources via this input.
 
-See the example flow [**control bot**](examples/externalreceiverl.json) in the examples folder.
+See the example flow [**inject message**](examples/externalreceiverl.json) in the examples folder.
 <details>
   <summary>Click to expand code snippet for <em><b>message</b></em> example</summary>
 
@@ -368,7 +368,7 @@ See the example flow [**control bot**](examples/externalreceiverl.json) in the e
 ```
 </details>
 
-See the example flow [**control bot**](examples/externalreceiver2.json) in the examples folder.
+See the example flow [**external http node**](examples/externalreceiver2.json) in the examples folder.
 
 ### Outputs
 The original message from the underlying node library is stored in `msg.originalMessage`. The `msg.payload` contains the most important data like **chatId**, **type** and **content**. Additional elements are present in the `msg.payload` structure and depend on the message *type*. These additional elements are described in the table **Tab. 1** above.

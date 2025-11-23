@@ -90,7 +90,7 @@ module.exports = function(RED) {
                     if (handleAllUpdates) {
                         events.forEach(event => {
                             telegramBot.on(event, (botMsg) => this.processMessage(event, botMsg));
-                         });
+                        });
                     }
                 }
             } else {
@@ -107,6 +107,12 @@ module.exports = function(RED) {
             let telegramBot = this.config.getTelegramBot();
             if (telegramBot) {
                 telegramBot.off('message');
+
+                if (handleAllUpdates) {
+                    events.forEach(event => {
+                        telegramBot.off(event);
+                    });
+                }
             }
 
             node.status({

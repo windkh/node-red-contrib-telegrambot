@@ -199,11 +199,11 @@ module.exports = function(RED) {
                                 });
                             }
                             else {
-                                telegramBot.processUpdate(update);
+                                telegramBot.processUpdate(updates);
                             }
                         } 
                         else {
-                             node.warn('msg.payload is invalid');
+                            node.warn('msg.payload is invalid');
                         }
 
                     } else {

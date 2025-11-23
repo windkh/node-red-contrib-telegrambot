@@ -123,9 +123,12 @@ module.exports = function(RED) {
                 text: 'connected',
             });
 
-            let username = botMsg.from.username;
-            let userid = botMsg.from.id;
-            let chatid = botMsg.chat.id;
+            let userInfo = converter.getUserInfo(botMsg);
+            let username = userInfo.username;
+            let isAnonymous = userInfo.isAnonymous;
+            let chatid = userInfo.chatid;
+            let userid = userInfo.userid;
+
             let messageDetails = converter.convertMessage(type, chatid, botMsg);
             if (messageDetails) {
                 let botDetails = {
@@ -142,7 +145,7 @@ module.exports = function(RED) {
 
                 let telegramBot = this.config.getTelegramBot();
 
-                if (node.config.isAuthorized(node, chatid, userid, username)) {
+                if (isAnonymous || node.config.isAuthorized(node, chatid, userid, username)) {
                     // downloadable "blob" message?
                     if (messageDetails.blob) {
                         let fileId = msg.payload.content;

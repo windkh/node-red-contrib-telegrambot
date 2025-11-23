@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.0.3] - 2025-11-23
+### fixed receiving events - [#416](https://github.com/windkh/node-red-contrib-telegrambot/discussions/416) 
+
 # [17.0.2] - 2025-11-23
 ### added events to receiver node - [#420](https://github.com/windkh/node-red-contrib-telegrambot/discussions/420) 
 

@@ -1,6 +1,8 @@
 module.exports = function(RED) {
         
-        // --------------------------------------------------------------------------------------------
+    const converter = require("../lib/converter.js");
+
+    // --------------------------------------------------------------------------------------------
     // The input node receives an event from the chat. See https://core.telegram.org/bots/api#update
     // The type of event can be configured:
     // - edited_message
@@ -136,29 +138,12 @@ module.exports = function(RED) {
                 text: 'connected',
             });
 
-            let username;
-            let chatid;
-            let userid;
-            let isAnonymous = false;
-            if (botMsg.chat) {
-                //channel
-                username = botMsg.chat.username;
-                chatid = botMsg.chat.id;
-                if (botMsg.from !== undefined) {
-                    userid = botMsg.from.id;
-                }
-            } else if (botMsg.from) {
-                //sender, group, supergroup
-                if (botMsg.message !== undefined) {
-                    chatid = botMsg.message.chat.id;
-                }
-                username = botMsg.from.username;
-                userid = botMsg.from.id;
-            } else {
-                // chatid can be null in case of polls, inline_queries,...
-                isAnonymous = true;
-            }
-
+            let userInfo = converter.getUserInfo(botMsg);
+            let username = userInfo.username;
+            let isAnonymous = userInfo.isAnonymous;
+            let chatid = userInfo.chatid;
+            let userid = userInfo.userid;
+            
             if (isAnonymous || node.config.isAuthorized(node, chatid, userid, username)) {
                 let msg;
                 let botDetails = {

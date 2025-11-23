@@ -13,6 +13,49 @@ function getPhotoIndexWithHighestResolution(photoArray) {
     return photoIndex;
 }
 
+// tries to get the user name, id and so on, from any message, event...
+function getUserInfo(botMsg) {
+    let username;
+    let isAnonymous = false;
+    let chatid;
+    let userid;
+
+    // let userid = botMsg.from.id;
+    // let chatid = botMsg.chat.id;
+    // let username = botMsg.from.username;
+
+    if (botMsg.chat) {
+        //channel
+        username = botMsg.chat.username;
+        chatid = botMsg.chat.id;
+        if (botMsg.from !== undefined) {
+            userid = botMsg.from.id;
+        }
+    } else if (botMsg.from) {
+        //sender, group, supergroup
+        if (botMsg.message !== undefined) {
+            chatid = botMsg.message.chat.id;
+        }
+        username = botMsg.from.username;
+        userid = botMsg.from.id;
+    } else {
+        // chatid can be null in case of polls, inline_queries,...
+        isAnonymous = true;
+    }
+
+    // Events like channel_post do not provide any user id.
+    if(username === undefined || userid === undefined) {
+        isAnonymous = true;
+    }
+
+    return { 
+        chatid : chatid,
+        username : username,
+        userid : userid,
+        isAnonymous : isAnonymous
+    }
+}
+
 // creates the message details object from the original message
 function getMessageDetails(botMsg) {
     // Note that photos and videos can be sent as media group. The bot will receive the contents as single messages.
@@ -670,5 +713,6 @@ function convertMessage(type, chatId, botMsg){
 
 module.exports = {
     convertMessage,
-    getMessageDetails
+    getMessageDetails,
+    getUserInfo
 };

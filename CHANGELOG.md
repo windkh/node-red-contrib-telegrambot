@@ -1,8 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.0.2] - 2025-11-23
+### added events to receiver node - [#420](https://github.com/windkh/node-red-contrib-telegrambot/discussions/420) 
+
 # [17.0.1] - 2025-11-23
-### added external input to receiver node - [Dicsussion #421](https://github.com/windkh/node-red-contrib-telegrambot/discussions/421) 
+### added external input to receiver node - [#421](https://github.com/windkh/node-red-contrib-telegrambot/discussions/421) 
 
 # [17.0.0] - 2025-11-22
 ### moved nodes to separate files in order to be able to refactor.

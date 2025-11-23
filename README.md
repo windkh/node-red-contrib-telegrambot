@@ -330,6 +330,9 @@ Note that there are certain limitations for bots in channels, groups and super g
 When the receiver node receives data like videos, documents and so on, the file is downloaded automatically to the local harddisc when the node's property ***Download Directory*** is set in the configuration node. The directory may also be part of the message payload: `msg.payload.path`.
 In addition to that the message object may contain the direct download link in the payload: `msg.payload.weblink`.
 
+#### Configuration property *Events*
+Next to messages the bot receives a number of events which can be received using the event node. By activating this flag all events are handled by the receiver node, too.
+
 #### Configuration property *Filter*
 Normally, a receiver node receives all content that is sent to the bot. However if you have command nodes next to a receiver you can enable the *commands* flag in the configuration property ***Filter*** so that commands meant for a command node will not be handled by the receiver node.  
 I.e. the command message then only appears in the configured command node and not in this node.
@@ -337,7 +340,7 @@ I.e. the command message then only appears in the configured command node and no
 #### Configuration property *Message Input*
 Enable this checkbox if you want to receive updates from telegram using an external source (like http node, mqtt). The format must match the one provided by telegram. It is recommended to disable webhook and polling in config node when providing updates from external sources via this input.
 
-See the example flow [**inject message**](examples/externalreceiverl.json) in the examples folder.
+See the example flow [**control bot**](examples/externalreceiverl.json) in the examples folder.
 <details>
   <summary>Click to expand code snippet for <em><b>message</b></em> example</summary>
 
@@ -368,7 +371,7 @@ See the example flow [**inject message**](examples/externalreceiverl.json) in th
 ```
 </details>
 
-See the example flow [**external http node**](examples/externalreceiver2.json) in the examples folder.
+See the example flow [**control bot**](examples/externalreceiver2.json) in the examples folder.
 
 ### Outputs
 The original message from the underlying node library is stored in `msg.originalMessage`. The `msg.payload` contains the most important data like **chatId**, **type** and **content**. Additional elements are present in the `msg.payload` structure and depend on the message *type*. These additional elements are described in the table **Tab. 1** above.

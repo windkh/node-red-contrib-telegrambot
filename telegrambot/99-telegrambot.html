@@ -302,7 +302,8 @@
             saveDataDir: { value: "" },
             filterCommands: { value: false },
             hasinput: { value: false, required: false },
-            inputs: {value: 0}
+            inputs: {value: 0},
+            handleallupdates: { value: false },
         },
         inputs: 0,
         outputs: 2,
@@ -344,11 +345,14 @@
         <label for="node-input-saveDataDir"><i class="fa fa-hdd-o"></i> Download Directory</label>
         <input type="text" id="node-input-saveDataDir" placeholder="Download directory">
     </div>
+        <div class="form-row">
+        <label for="node-input-handleallupdates"><i class="fa fa-rss"></i> Events</label>
+        <input type="checkbox" id="node-input-handleallupdates" style="display: inline-block; width: auto; vertical-align: top;"> output all events (not only messages)
+    </div>
     <div class="form-row">
         <label for="node-input-filterCommands"><i class="fa fa-filter"></i> Filter</label>
-        <input type="checkbox" id="node-input-filterCommands" style="display: inline-block; width: auto; vertical-align: top;"> commands (from configured command nodes)
+        <input type="checkbox" id="node-input-filterCommands" style="display: inline-block; width: auto; vertical-align: top;"> filter commands (from configured command nodes)
     </div>
-
     <div class="form-row">
         <label for="node-input-hasinput"><i class="fa fa-envelope"></i> Message Input</label>
         <input type="checkbox" id="node-input-hasinput" style="display: inline-block; width: auto; vertical-align: top;"> receive updates from external sources
@@ -598,6 +602,7 @@
               <option value="poll_answer">Poll Answer</option>
               <option value="my_chat_member">My Chat Member</option>
               <option value="chat_member">Chat Member</option>
+              <option value="chat_join_request">Chat Join Request</option>
               <option value="chat_boost">Chat Boost</option>
               <option value="removed_chat_boost">Removed Chat Boost</option>
           </select>

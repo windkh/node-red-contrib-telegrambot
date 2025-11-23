@@ -6,25 +6,25 @@ module.exports = function(RED) {
     // - edited_message
     // - channel_post
     // - edited_channel_post
-    // -  business_connection
-    // -  business_message
-    // -  edited_business_message
-    // -  deleted_business_messages
-    // -  message_reaction
-    // -  message_reaction_count
+    // - business_connection
+    // - business_message
+    // - edited_business_message
+    // - deleted_business_messages
+    // - message_reaction
+    // - message_reaction_count
     // - inline_query
     // - chosen_inline_result
     // - callback_query
     // - shipping_query
     // - pre_checkout_query
-    // -  purchased_paid_media (not available)
+    // - purchased_paid_media (not available)
     // - poll
     // - poll_answer
     // - my_chat_member
     // - chat_member
     // - chat_join_request
-    // -  chat_boost
-    // -  removed_chat_boost
+    // - chat_boost
+    // - removed_chat_boost
 
     // Only the following are supported by see telegram.js processUpdate
     // - message
@@ -167,12 +167,7 @@ module.exports = function(RED) {
                     baseApiUrl: this.config.telegramBot.options.baseApiUrl,
                 };
 
-                let messageId;
-                if (botMsg.message !== undefined) {
-                    messageId = botMsg.message.message_id;
-                }
-
-                let messageDetails = converter.convertMessage(this.event, botMsg);
+                let messageDetails = converter.convertMessage(this.event, chatid, botMsg);
                 if (messageDetails) {
 
                     // sepcial callback query handling.

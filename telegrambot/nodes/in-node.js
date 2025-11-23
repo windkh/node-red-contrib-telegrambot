@@ -33,6 +33,31 @@ module.exports = function(RED) {
         node.filterCommands = config.filterCommands || false;
 
         let hasInput = config.hasinput || false;
+        let handleAllUpdates = config.handleallupdates || false;
+
+        const events = [
+            "edited_message",
+            "channel_post",
+            "edited_channel_post",
+            "business_connection",
+            "business_message",
+            "edited_business_message",
+            "deleted_business_messages",
+            "message_reaction",
+            "message_reaction_count",
+            "inline_query",
+            "chosen_inline_result",
+            "callback_query",
+            "shipping_query",
+            "pre_checkout_query",
+            "poll",
+            "poll_answer",
+            "my_chat_member",
+            "chat_member",
+            "chat_join_request",
+            "chat_boost",
+            "removed_chat_boost",
+        ];
 
         this.start = function () {
             let telegramBot = this.config.getTelegramBot();
@@ -61,6 +86,12 @@ module.exports = function(RED) {
                     }
 
                     telegramBot.on('message', (botMsg) => this.processMessage('message',botMsg));
+
+                    if (handleAllUpdates) {
+                        events.forEach(event => {
+                            telegramBot.on(event, (botMsg) => this.processMessage(event, botMsg));
+                         });
+                    }
                 }
             } else {
                 node.warn('bot not initialized.');
@@ -95,7 +126,7 @@ module.exports = function(RED) {
             let username = botMsg.from.username;
             let userid = botMsg.from.id;
             let chatid = botMsg.chat.id;
-            let messageDetails = converter.convertMessage(type, botMsg);
+            let messageDetails = converter.convertMessage(type, chatid, botMsg);
             if (messageDetails) {
                 let botDetails = {
                     botname: this.config.botname,
@@ -203,7 +234,7 @@ module.exports = function(RED) {
                             }
                         } 
                         else {
-                            node.warn('msg.payload is invalid');
+                             node.warn('msg.payload is invalid');
                         }
 
                     } else {

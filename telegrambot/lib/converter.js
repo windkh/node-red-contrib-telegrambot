@@ -1,5 +1,3 @@
-
-
 function getPhotoIndexWithHighestResolution(photoArray) {
     let photoIndex = 0;
     let highestResolution = 0;
@@ -288,7 +286,7 @@ function getMessageDetails(botMsg) {
 }
 
 // converts the function by message type.
-function convertMessage(type, botMsg){
+function convertMessage(type, chatId, botMsg){
 
     let messageDetails;
     switch (type) {
@@ -300,8 +298,13 @@ function convertMessage(type, botMsg){
 
         // https://core.telegram.org/bots/api#callbackquery
         case 'callback_query':
+            let messageId;
+                if (botMsg.message !== undefined) {
+                    messageId = botMsg.message.message_id;
+                }
+
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 messageId: messageId,
                 inlineMessageId: botMsg.inline_message_id,
                 type: type,
@@ -336,7 +339,7 @@ function convertMessage(type, botMsg){
         // https://core.telegram.org/bots/api#message
         case 'edited_message':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 messageId: botMsg.message_id,
                 type: type,
                 content: botMsg.text,
@@ -352,7 +355,7 @@ function convertMessage(type, botMsg){
         // not official
         case 'edited_message_text':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 messageId: botMsg.message_id,
                 content: botMsg.text,
@@ -366,7 +369,7 @@ function convertMessage(type, botMsg){
         // not official
         case 'edited_message_caption':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 messageId: botMsg.message_id,
                 content: botMsg.caption,
@@ -379,7 +382,7 @@ function convertMessage(type, botMsg){
         // https://core.telegram.org/bots/api#message
         case 'channel_post':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 messageId: botMsg.message_id,
                 type: type,
                 content: botMsg.text,
@@ -391,7 +394,7 @@ function convertMessage(type, botMsg){
         // https://core.telegram.org/bots/api#message
         case 'edited_channel_post':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 messageId: botMsg.message_id,
                 content: botMsg.text,
@@ -404,7 +407,7 @@ function convertMessage(type, botMsg){
         // not official
         case 'edited_channel_post_text':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 messageId: botMsg.message_id,
                 content: botMsg.text,
@@ -417,7 +420,7 @@ function convertMessage(type, botMsg){
         // not official
         case 'edited_channel_post_caption':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 messageId: botMsg.message_id,
                 content: botMsg.caption,
@@ -430,7 +433,7 @@ function convertMessage(type, botMsg){
         // https://core.telegram.org/bots/api#businessconnection
         case 'business_connection':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 id: botMsg.id,
                 user: botMsg.user,
@@ -444,7 +447,7 @@ function convertMessage(type, botMsg){
         // https://core.telegram.org/bots/api#message
         case 'business_message':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 messageId: botMsg.message_id,
                 content: botMsg.text, // TODO: this needs to be checked
@@ -457,7 +460,7 @@ function convertMessage(type, botMsg){
         // https://core.telegram.org/bots/api#message
         case 'edited_business_message':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 messageId: botMsg.message_id,
                 content: botMsg.text, // TODO: this needs to be checked
@@ -470,7 +473,7 @@ function convertMessage(type, botMsg){
         // https://core.telegram.org/bots/api#businessmessagesdeleted
         case 'deleted_business_messages':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 messageIds: botMsg.message_ids,
                 businessConnectionId: botMsg.business_connection_id,
@@ -481,7 +484,7 @@ function convertMessage(type, botMsg){
         // https://core.telegram.org/bots/api#messagereactionupdated
         case 'message_reaction':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 messageId: botMsg.message_id,
                 user: botMsg.user,
@@ -495,7 +498,7 @@ function convertMessage(type, botMsg){
         // https://core.telegram.org/bots/api#messagereactioncountupdated
         case 'message_reaction_count':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 messageId: botMsg.message_id,
                 date: botMsg.date,
@@ -508,7 +511,7 @@ function convertMessage(type, botMsg){
         case 'pre_checkout_query':
             messageDetails = {
                 preCheckoutQueryId: botMsg.id,
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 from: botMsg.from,
                 currency: botMsg.currency,
@@ -526,7 +529,7 @@ function convertMessage(type, botMsg){
         case 'shipping_query':
             messageDetails = {
                 shippingQueryId: botMsg.id,
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 from: botMsg.from,
                 invoice_payload: botMsg.invoice_payload,
@@ -541,7 +544,7 @@ function convertMessage(type, botMsg){
         case 'chosen_inline_result':
             messageDetails = {
                 result_id: botMsg.result_id,
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 from: botMsg.from,
                 location: botMsg.location,
@@ -556,7 +559,7 @@ function convertMessage(type, botMsg){
         // https://core.telegram.org/bots/api#paidmediapurchased
         case 'purchased_paid_media':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 from: botMsg.from,
                 paidMediaPayload: botMsg.paid_media_payload,
@@ -567,7 +570,7 @@ function convertMessage(type, botMsg){
         case 'poll_answer':
             messageDetails = {
                 poll_id: botMsg.poll_id,
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 user: botMsg.user,
                 option_ids: botMsg.option_ids,
@@ -605,7 +608,7 @@ function convertMessage(type, botMsg){
                 old_chat_member: botMsg.old_chat_member,
                 new_chat_member: botMsg.new_chat_member,
                 invite_link: botMsg.invite_link,
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 date: botMsg.date,
                 chat: botMsg.chat,
@@ -618,7 +621,7 @@ function convertMessage(type, botMsg){
                 old_chat_member: botMsg.old_chat_member,
                 new_chat_member: botMsg.new_chat_member,
                 invite_link: botMsg.invite_link,
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 date: botMsg.date,
                 chat: botMsg.chat,
@@ -631,7 +634,7 @@ function convertMessage(type, botMsg){
                 from: botMsg.from,
                 bio: botMsg.bio,
                 invite_link: botMsg.invite_link,
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 date: botMsg.date,
                 chat: botMsg.chat,
@@ -641,7 +644,7 @@ function convertMessage(type, botMsg){
         // https://core.telegram.org/bots/api#chatboostupdated
         case 'chat_boost':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 chat: botMsg.chat,
                 boost: botMsg.boost,
@@ -651,7 +654,7 @@ function convertMessage(type, botMsg){
         // https://core.telegram.org/bots/api#chatboostremoved
         case 'removed_chat_boost':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 chat: botMsg.chat,
                 boostId: botMsg.boost_id,

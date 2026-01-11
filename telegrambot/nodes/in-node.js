@@ -1,6 +1,6 @@
 module.exports = function (RED) {
     const fs = require('fs');
-    const converter = require('../lib/converter.js<');
+    const converter = require('../lib/converter.js');
 
     // --------------------------------------------------------------------------------------------
     // The input node receives messages from the chat.

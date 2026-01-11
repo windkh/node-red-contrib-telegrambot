@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.0.5] - 2026-01-11
+### fix typo - [#423](https://github.com/windkh/node-red-contrib-telegrambot/discussions/423) 
+
 # [17.0.4] - 2026-01-11
 ### lint - [#422](https://github.com/windkh/node-red-contrib-telegrambot/discussions/422) 
 

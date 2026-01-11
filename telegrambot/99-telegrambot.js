@@ -1,15 +1,13 @@
 // Created by Karl-Heinz Wind
 
-// Avoid that node-telegram-bot-api will enable automatci promise cancellation (fix for 0.30.0 api)
-process.env['NTBA_FIX_319'] = 1;
+// Avoid that node-telegram-bot-api will enable automatic promise cancellation (fix for 0.30.0 api)
+process.env['NTBA_FIX_319'] = '1';
+
+const Bluebird = require('bluebird');
+Bluebird.config({ cancellation: true });
 
 module.exports = function (RED) {
     'use strict';
-
-    let Promise = require('bluebird');
-    Promise.config({
-        cancellation: true,
-    });
 
     const pkg = require('./../package.json');
     RED.log.info('node-red-contrib-telegrambot version: v' + pkg.version);

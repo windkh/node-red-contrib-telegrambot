@@ -1,6 +1,5 @@
-module.exports = function(RED) {
-           
-    const converter = require("../lib/converter.js");
+module.exports = function (RED) {
+    const converter = require('../lib/converter.js');
 
     // --------------------------------------------------------------------------------------------
     // The output node receices the reply for a specified message and passes the msg through.
@@ -127,6 +126,6 @@ module.exports = function(RED) {
             done();
         });
     }
-    
+
     return TelegramReplyNode;
 };

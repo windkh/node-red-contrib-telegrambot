@@ -1,6 +1,5 @@
-module.exports = function(RED) {
-        
-     // --------------------------------------------------------------------------------------------
+module.exports = function (RED) {
+    // --------------------------------------------------------------------------------------------
     // The input node receives a command from the chat.
     // The message details are stored in the payload
     // chatId

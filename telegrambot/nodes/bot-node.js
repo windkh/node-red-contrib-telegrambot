@@ -1,5 +1,4 @@
-module.exports = function(RED) {
-    
+module.exports = function (RED) {
     let telegramBot = require('node-telegram-bot-api');
     let telegramBotWebHook = require('node-telegram-bot-api/src/telegramWebHook');
 

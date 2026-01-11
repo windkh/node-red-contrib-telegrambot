@@ -1,6 +1,9 @@
-module.exports = function(RED) {
-        
-     // --------------------------------------------------------------------------------------------
+module.exports = function (RED) {
+    const path = require('path');
+    const { pipeline } = require('stream');
+    const fs = require('fs');
+
+    // --------------------------------------------------------------------------------------------
     // The output node sends to the chat and passes the msg through.
     // The payload needs three fields
     // chatId  : string destination chat
@@ -77,7 +80,7 @@ module.exports = function(RED) {
             msg.payload.options = options;
 
             return msg;
-        }
+        };
 
         this.processError = function (exception, msg, nodeSend, nodeDone) {
             let errorMessage = 'Caught exception in sender node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.stringify(msg);

@@ -1,7 +1,6 @@
-module.exports = function(RED) {
-        
+module.exports = function (RED) {
     const fs = require('fs');
-    const converter = require("../lib/converter.js");
+    const converter = require('../lib/converter.js<');
 
     // --------------------------------------------------------------------------------------------
     // The input node receives messages from the chat.
@@ -36,27 +35,27 @@ module.exports = function(RED) {
         let handleAllUpdates = config.handleallupdates || false;
 
         const events = [
-            "edited_message",
-            "channel_post",
-            "edited_channel_post",
-            "business_connection",
-            "business_message",
-            "edited_business_message",
-            "deleted_business_messages",
-            "message_reaction",
-            "message_reaction_count",
-            "inline_query",
-            "chosen_inline_result",
-            "callback_query",
-            "shipping_query",
-            "pre_checkout_query",
-            "poll",
-            "poll_answer",
-            "my_chat_member",
-            "chat_member",
-            "chat_join_request",
-            "chat_boost",
-            "removed_chat_boost",
+            'edited_message',
+            'channel_post',
+            'edited_channel_post',
+            'business_connection',
+            'business_message',
+            'edited_business_message',
+            'deleted_business_messages',
+            'message_reaction',
+            'message_reaction_count',
+            'inline_query',
+            'chosen_inline_result',
+            'callback_query',
+            'shipping_query',
+            'pre_checkout_query',
+            'poll',
+            'poll_answer',
+            'my_chat_member',
+            'chat_member',
+            'chat_join_request',
+            'chat_boost',
+            'removed_chat_boost',
         ];
 
         this.start = function () {
@@ -85,10 +84,10 @@ module.exports = function(RED) {
                         });
                     }
 
-                    telegramBot.on('message', (botMsg) => this.processMessage('message',botMsg));
+                    telegramBot.on('message', (botMsg) => this.processMessage('message', botMsg));
 
                     if (handleAllUpdates) {
-                        events.forEach(event => {
+                        events.forEach((event) => {
                             telegramBot.on(event, (botMsg) => this.processMessage(event, botMsg));
                         });
                     }
@@ -109,7 +108,7 @@ module.exports = function(RED) {
                 telegramBot.off('message');
 
                 if (handleAllUpdates) {
-                    events.forEach(event => {
+                    events.forEach((event) => {
                         telegramBot.off(event);
                     });
                 }
@@ -214,38 +213,32 @@ module.exports = function(RED) {
 
         if (hasInput) {
             // Receives messages from external input like external webhooks.
-            this.on('input', function (msg, nodeSend, nodeDone) {
-
+            // note that the nodeSend, nodeDone arguments are not used!
+            this.on('input', function (msg) {
                 if (msg.payload) {
                     let telegramBot = this.config.getTelegramBot();
                     if (telegramBot) {
-                        
                         let updates;
                         // Check if the result comes from a http node otherwise msg.payload is directly used.
-                        if (msg.payload.ok ) {
+                        if (msg.payload.ok) {
                             if (msg.payload.ok === true) {
                                 updates = msg.payload.result;
                             }
-                        }
-                        else
-                        {
+                        } else {
                             updates = msg.payload;
                         }
 
-                        if (updates) {                
-                            if(Array.isArray(updates)) {
-                                updates.forEach(update => {
+                        if (updates) {
+                            if (Array.isArray(updates)) {
+                                updates.forEach((update) => {
                                     telegramBot.processUpdate(update);
                                 });
-                            }
-                            else {
+                            } else {
                                 telegramBot.processUpdate(updates);
                             }
-                        } 
-                        else {
-                             node.warn('msg.payload is invalid');
+                        } else {
+                            node.warn('msg.payload is invalid');
                         }
-
                     } else {
                         node.warn('bot not initialized.');
                         node.status({

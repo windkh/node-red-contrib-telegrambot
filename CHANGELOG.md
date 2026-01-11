@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.0.4] - 2026-01-11
+### lint - [#422](https://github.com/windkh/node-red-contrib-telegrambot/discussions/422) 
+
 # [17.0.3] - 2025-11-23
 ### fixed receiving events - [#416](https://github.com/windkh/node-red-contrib-telegrambot/discussions/416) 
 

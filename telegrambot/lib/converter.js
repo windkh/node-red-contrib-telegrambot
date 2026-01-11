@@ -44,16 +44,16 @@ function getUserInfo(botMsg) {
     }
 
     // Events like channel_post do not provide any user id.
-    if(username === undefined || userid === undefined) {
+    if (username === undefined || userid === undefined) {
         isAnonymous = true;
     }
 
-    return { 
-        chatid : chatid,
-        username : username,
-        userid : userid,
-        isAnonymous : isAnonymous
-    }
+    return {
+        chatid: chatid,
+        username: username,
+        userid: userid,
+        isAnonymous: isAnonymous,
+    };
 }
 
 // creates the message details object from the original message
@@ -329,8 +329,7 @@ function getMessageDetails(botMsg) {
 }
 
 // converts the function by message type.
-function convertMessage(type, chatId, botMsg){
-
+function convertMessage(type, chatId, botMsg) {
     let messageDetails;
     switch (type) {
         // Messages are handled using the receiver node.
@@ -341,27 +340,29 @@ function convertMessage(type, chatId, botMsg){
 
         // https://core.telegram.org/bots/api#callbackquery
         case 'callback_query':
-            let messageId;
+            {
+                let messageId;
                 if (botMsg.message !== undefined) {
                     messageId = botMsg.message.message_id;
                 }
 
-            messageDetails = {
-                chatId: chatId,
-                messageId: messageId,
-                inlineMessageId: botMsg.inline_message_id,
-                type: type,
-                content: botMsg.data,
-                callbackQueryId: botMsg.id,
-                from: botMsg.from,
-            };
+                messageDetails = {
+                    chatId: chatId,
+                    messageId: messageId,
+                    inlineMessageId: botMsg.inline_message_id,
+                    type: type,
+                    content: botMsg.data,
+                    callbackQueryId: botMsg.id,
+                    from: botMsg.from,
+                };
+            }
             break;
 
         // https://core.telegram.org/bots/api#inlinequery
         // /setinline must be set before in botfather see https://core.telegram.org/bots/inline
         case 'inline_query':
             messageDetails = {
-                chatId: chatid,
+                chatId: chatId,
                 type: type,
                 content: botMsg.query,
                 inlineQueryId: botMsg.id,
@@ -714,5 +715,5 @@ function convertMessage(type, chatId, botMsg){
 module.exports = {
     convertMessage,
     getMessageDetails,
-    getUserInfo
+    getUserInfo,
 };

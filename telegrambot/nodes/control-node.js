@@ -1,6 +1,6 @@
-    
-module.exports = function(RED) {
-        
+module.exports = function (RED) {
+    let net = require('net');
+
     // --------------------------------------------------------------------------------------------
     // The control node can start stop a bot.
     // The payload needs these fields
@@ -241,6 +241,6 @@ module.exports = function(RED) {
             done();
         });
     }
-        
+
     return TelegramControlNode;
 };

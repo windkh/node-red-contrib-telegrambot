@@ -1,6 +1,5 @@
-module.exports = function(RED) {
-        
-    const converter = require("../lib/converter.js");
+module.exports = function (RED) {
+    const converter = require('../lib/converter.js');
 
     // --------------------------------------------------------------------------------------------
     // The input node receives an event from the chat. See https://core.telegram.org/bots/api#update
@@ -143,7 +142,7 @@ module.exports = function(RED) {
             let isAnonymous = userInfo.isAnonymous;
             let chatid = userInfo.chatid;
             let userid = userInfo.userid;
-            
+
             if (isAnonymous || node.config.isAuthorized(node, chatid, userid, username)) {
                 let msg;
                 let botDetails = {
@@ -154,9 +153,8 @@ module.exports = function(RED) {
 
                 let messageDetails = converter.convertMessage(this.event, chatid, botMsg);
                 if (messageDetails) {
-
                     // sepcial callback query handling.
-                    if(this.event === 'callback_query') {
+                    if (this.event === 'callback_query') {
                         if (node.autoAnswerCallback) {
                             telegramBot
                                 .answerCallbackQuery(botMsg.id)

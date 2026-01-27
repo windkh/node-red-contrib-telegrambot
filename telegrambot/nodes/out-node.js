@@ -6,9 +6,9 @@ JSON.safeStringify = (obj, indent = 2) => {
         (key, value) =>
             typeof value === 'object' && value !== null
                 ? cache.includes(value)
-                ? undefined // Duplicate reference found, discard key
-            : cache.push(value) && value // Store value in our collection
-            : value,
+                    ? undefined // Duplicate reference found, discard key
+                        : cache.push(value) && value // Store value in our collection
+                    : value,
         indent
     );
     cache = null;

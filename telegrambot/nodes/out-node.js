@@ -1,3 +1,20 @@
+// safely handles circular references
+JSON.safeStringify = (obj, indent = 2) => {
+    let cache = [];
+    const retVal = JSON.stringify(
+        obj,
+        (key, value) =>
+            typeof value === 'object' && value !== null
+                ? cache.includes(value)
+                    ? undefined // Duplicate reference found, discard key
+                    : cache.push(value) && value // Store value in our collection
+                : value,
+        indent
+    );
+    cache = null;
+    return retVal;
+};
+
 module.exports = function (RED) {
     const path = require('path');
     const { pipeline } = require('stream');
@@ -83,7 +100,7 @@ module.exports = function (RED) {
         };
 
         this.processError = function (exception, msg, nodeSend, nodeDone) {
-            let errorMessage = 'Caught exception in sender node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.stringify(msg);
+            let errorMessage = 'Caught exception in sender node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.safeStringify(msg);
 
             node.status({
                 fill: 'red',

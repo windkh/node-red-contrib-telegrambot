@@ -627,6 +627,7 @@ module.exports = function (RED) {
                         case 'approveChatJoinRequest':
                         case 'declineChatJoinRequest':
                         case 'setChatAdministratorCustomTitle':
+                        case 'setChatMemberTag':
                         case 'stopPoll':
                         case 'setMessageReaction':
                             // The userId must be passed in msg.payload.content: note that this is is a number not the username.

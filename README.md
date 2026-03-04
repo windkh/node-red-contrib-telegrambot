@@ -50,7 +50,8 @@ If you want to support this free project. Any help is welcome. You can donate by
  - ivanjh: for providing the patch for improving output of polling errors
  - GrimbiXcode: for replacing pump with pipeline
  - y8: for providing ideas for improving receiver node
-  
+ - ptath: for providing setChatMemberTag
+
 # 👥 Contributors
 
   <p align="center">

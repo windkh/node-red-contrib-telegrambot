@@ -42,7 +42,7 @@ module.exports = function (RED) {
         this.enqueueMessage = function (chatId, msg, nodeSend, nodeDone) {
             node.queueManager.enqueue(chatId, function () {
                 node.processMessage(chatId, msg, nodeSend, nodeDone);
-            })
+            });
         };
         // ------------------------------------------------------------------
 
@@ -99,7 +99,6 @@ module.exports = function (RED) {
         };
 
         this.processError = function (chatId, exception, msg, nodeSend, nodeDone) {
-
             let retry = false;
             let retryAfter = 10;
             let retryReason = 'ERROR';
@@ -108,37 +107,31 @@ module.exports = function (RED) {
                 retryReason = 'FLOODING';
                 retryAfter = exception.response.body.parameters.retry_after || node.retryDelayError429;
                 retry = true;
-            }
-            else {
+            } else {
                 let errorNotFound = String(exception).includes('ENOTFOUND');
                 if (errorNotFound) {
                     retryReason = 'ENOTFOUND';
                     retryAfter = node.retryDelayErrorNoConnection;
                     retry = true;
-                }
-                else {
+                } else {
                     let errorConnectionReset = String(exception).includes('ECONNRESET');
                     if (errorConnectionReset) {
                         retryReason = 'ECONNRESET';
                         retryAfter = node.retryDelayErrorNoConnection;
                         retry = true;
-                    }    
-                }    
+                    }
+                }
             }
 
-            if(!retry) {
-                let errorMessage =
-                    'Caught exception in sender node:\r\n' +
-                    exception +
-                    '\r\nwhen processing message: \r\n' +
-                    JSON.stringify(msg);
+            if (!retry) {
+                let errorMessage = 'Caught exception in sender node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.stringify(msg);
 
                 node.status({
                     fill: 'red',
                     shape: 'ring',
                     text: exception.message,
                 });
-                
+
                 if (haserroroutput) {
                     let sendMessage = RED.util.cloneMessage(msg);
                     sendMessage.error = errorMessage;
@@ -151,8 +144,7 @@ module.exports = function (RED) {
                         node.error(errorMessage, msg);
                     }
                 }
-            }
-            else {
+            } else {
                 let errorMessage = retryReason + ': retrying in ' + retryAfter + 's';
                 node.status({
                     fill: 'red',
@@ -167,10 +159,10 @@ module.exports = function (RED) {
         this.processResult = function (chatId, result, msg, nodeSend, nodeDone) {
             node.messagesProcessed++;
             node.status({
-                    fill: 'green',
-                    shape: 'ring',
-                    text: 'messages sent: ' + node.messagesProcessed,
-                });
+                fill: 'green',
+                shape: 'ring',
+                text: 'messages sent: ' + node.messagesProcessed,
+            });
 
             if (result !== undefined) {
                 msg.payload.content = result;

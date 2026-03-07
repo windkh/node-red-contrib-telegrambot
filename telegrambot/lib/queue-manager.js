@@ -1,6 +1,6 @@
 class QueueManager {
     constructor() {
-        this.queues = new Map();   // chatId -> [funcs]
+        this.queues = new Map(); // chatId -> [funcs]
         this.processing = new Map(); // chatId -> boolean
     }
 
@@ -15,11 +15,11 @@ class QueueManager {
 
         // wenn nichts läuft -> starten
         if (!this.processing.get(chatId)) {
-            this._processCurrent(chatId);
+            this.processCurrent(chatId);
         }
     }
 
-    async _processCurrent(chatId) {
+    processCurrent(chatId) {
         const queue = this.queues.get(chatId);
         if (!queue || queue.length === 0) {
             this.processing.set(chatId, false);
@@ -29,12 +29,7 @@ class QueueManager {
         this.processing.set(chatId, true);
 
         const func = queue[0];
-
-        try {
-            func();
-        } catch (err) {
-            console.error("Queue function error:", err);
-        }
+        func();
     }
 
     processNext(chatId) {
@@ -50,7 +45,7 @@ class QueueManager {
             return;
         }
 
-        this._processCurrent(chatId);
+        this.processCurrent(chatId);
     }
 
     // delay in seconds.
@@ -61,7 +56,7 @@ class QueueManager {
         }
 
         setTimeout(() => {
-            this._processCurrent(chatId);
+            this.processCurrent(chatId);
         }, delay * 1000);
     }
 

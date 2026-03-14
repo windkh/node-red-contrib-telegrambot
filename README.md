@@ -51,6 +51,7 @@ If you want to support this free project. Any help is welcome. You can donate by
  - GrimbiXcode: for replacing pump with pipeline
  - y8: for providing ideas for improving receiver node
  - ptath: for providing setChatMemberTag
+ - MK-2001: for providing pullrequest with safe stringify
 
 # 👥 Contributors
 

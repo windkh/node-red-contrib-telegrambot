@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.1.1] - 2026-03-14
+### handling circular references - [#425](https://github.com/windkh/node-red-contrib-telegrambot/pull/425) 
+
 # [17.1.0] - 2026-03-07
 ### Error 429 is handled using a retry now - [#413](https://github.com/windkh/node-red-contrib-telegrambot/pull/413)
 ### Message will be sent when connection is back - [#300](https://github.com/windkh/node-red-contrib-telegrambot/pull/300)

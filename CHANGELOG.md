@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.1.0] - 2026-03-07
+### Error 429 is handled using a retry now - [#413](https://github.com/windkh/node-red-contrib-telegrambot/pull/413)
+### Message will be sent when connection is back - [#300](https://github.com/windkh/node-red-contrib-telegrambot/pull/300)
+ 
+# [17.0.6] - 2026-03-04
+### added setChatmemberTag - [#428](https://github.com/windkh/node-red-contrib-telegrambot/pull/428) 
+
 # [17.0.5] - 2026-01-11
 ### fix typo - [#423](https://github.com/windkh/node-red-contrib-telegrambot/discussions/423) 
 

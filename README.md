@@ -620,6 +620,8 @@ The `msg.payload` contains:
 
 ## Control Node
 This node can be used to stop, start, restart a bot (config node).
+It can inject a command message to all command nodes.
+It can detect if a specified server in the internet can be reached (online/offline)
 It send a message to the output after every poll cycle.
 See the example flow [**control bot**](examples/control.json) in the examples folder.
 

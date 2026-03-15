@@ -19,6 +19,8 @@ module.exports = function (RED) {
         let interval = (config.interval || 10) * 1000;
         let connectionTimeout = (config.timeout || 10) * 1000;
 
+        let isOnline = undefined;
+
         this.start = function () {
             let telegramBot = node.config.getTelegramBot();
             if (telegramBot) {
@@ -88,21 +90,29 @@ module.exports = function (RED) {
             let timeout = connectionTimeout;
             node.isHostReachable(host, port, timeout).then(
                 function () {
-                    let msg = {
-                        payload: {
-                            isOnline: true,
-                        },
-                    };
-                    node.send([null, msg]);
+                    if(node.isOnline != true) {
+                        node.isOnline = true;
+                            
+                        let msg = {
+                            payload: {
+                                isOnline: true,
+                            },
+                        };
+                        node.send([null, msg]);
+                    }
                 },
                 function (err) {
-                    let msg = {
-                        payload: {
-                            isOnline: false,
-                            error: err,
-                        },
-                    };
-                    node.send([null, msg]);
+                    if(node.isOnline != false) {
+                        node.isOnline = false;
+
+                        let msg = {
+                            payload: {
+                                isOnline: false,
+                                error: err,
+                            },
+                        };
+                        node.send([null, msg]);
+                    }
                 }
             );
         };

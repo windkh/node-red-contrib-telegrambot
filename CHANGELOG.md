@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.1.2] - 2026-03-15
+### Improved control node and example - [#391](https://github.com/windkh/node-red-contrib-telegrambot/issues/391)
+
 # [17.1.1] - 2026-03-14
 ### handling circular references - [#425](https://github.com/windkh/node-red-contrib-telegrambot/pull/425) 
 

@@ -19,7 +19,7 @@ module.exports = function (RED) {
         let interval = (config.interval || 10) * 1000;
         let connectionTimeout = (config.timeout || 10) * 1000;
 
-        let isOnline = undefined;
+        node.isOnline = undefined; // see checkConnection function.
 
         this.start = function () {
             let telegramBot = node.config.getTelegramBot();
@@ -90,9 +90,8 @@ module.exports = function (RED) {
             let timeout = connectionTimeout;
             node.isHostReachable(host, port, timeout).then(
                 function () {
-                    if(node.isOnline != true) {
+                    if (node.isOnline != true) {
                         node.isOnline = true;
-                            
                         let msg = {
                             payload: {
                                 isOnline: true,
@@ -102,9 +101,8 @@ module.exports = function (RED) {
                     }
                 },
                 function (err) {
-                    if(node.isOnline != false) {
+                    if (node.isOnline != false) {
                         node.isOnline = false;
-
                         let msg = {
                             payload: {
                                 isOnline: false,

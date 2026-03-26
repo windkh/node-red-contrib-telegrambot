@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.1.3] - 2026-03-26
+### receiver node can output raw updates now - [#433](https://github.com/windkh/node-red-contrib-telegrambot/discussions/433)
+
 # [17.1.2] - 2026-03-15
 ### Improved control node and example - [#391](https://github.com/windkh/node-red-contrib-telegrambot/issues/391)
 
@@ -8,8 +11,8 @@ All notable changes to this project will be documented in this file.
 ### handling circular references - [#425](https://github.com/windkh/node-red-contrib-telegrambot/pull/425) 
 
 # [17.1.0] - 2026-03-07
-### Error 429 is handled using a retry now - [#413](https://github.com/windkh/node-red-contrib-telegrambot/pull/413)
-### Message will be sent when connection is back - [#300](https://github.com/windkh/node-red-contrib-telegrambot/pull/300)
+### Error 429 is handled using a retry now - [#413](https://github.com/windkh/node-red-contrib-telegrambot/issues/413)
+### Message will be sent when connection is back - [#300](https://github.com/windkh/node-red-contrib-telegrambot/issues/300)
  
 # [17.0.6] - 2026-03-04
 ### added setChatmemberTag - [#428](https://github.com/windkh/node-red-contrib-telegrambot/pull/428) 

@@ -33,6 +33,7 @@ module.exports = function (RED) {
 
         let hasInput = config.hasinput || false;
         let handleAllUpdates = config.handleallupdates || false;
+        let handleProcessUpdates = config.handleprocessupdates || false;
 
         const events = [
             'edited_message',
@@ -81,6 +82,27 @@ module.exports = function (RED) {
                             fill: 'grey',
                             shape: 'ring',
                             text: 'send only mode',
+                        });
+                    }
+
+                    if (handleProcessUpdates) {
+                        telegramBot.on('update', (botMsg) => {
+                            let botDetails = {
+                                botname: this.config.botname,
+                                testEnvironment: this.config.testEnvironment,
+                                baseApiUrl: this.config.telegramBot.options.baseApiUrl,
+                            };
+
+                            let payload = {
+                                type: 'update',
+                                content: botMsg,
+                            };
+
+                            let msg = {
+                                payload: payload,
+                                telegramBot: botDetails,
+                            };
+                            node.send([msg, null]);
                         });
                     }
 

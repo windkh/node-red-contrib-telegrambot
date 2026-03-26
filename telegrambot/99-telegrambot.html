@@ -304,6 +304,7 @@
             hasinput: { value: false, required: false },
             inputs: {value: 0},
             handleallupdates: { value: false },
+            handleprocessupdates: { value: false },
         },
         inputs: 0,
         outputs: 2,
@@ -348,6 +349,11 @@
         <div class="form-row">
         <label for="node-input-handleallupdates"><i class="fa fa-rss"></i> Events</label>
         <input type="checkbox" id="node-input-handleallupdates" style="display: inline-block; width: auto; vertical-align: top;"> output all events (not only messages)
+    </div>
+    </div>
+        <div class="form-row">
+        <label for="node-input-handleprocessupdates"><i class="fa fa-telegram"></i> Updates</label>
+        <input type="checkbox" id="node-input-handleprocessupdates" style="display: inline-block; width: auto; vertical-align: top;"> output all updates (raw incoming data from telegram server)
     </div>
     <div class="form-row">
         <label for="node-input-filterCommands"><i class="fa fa-filter"></i> Filter</label>

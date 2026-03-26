@@ -63,6 +63,11 @@ module.exports = function (RED) {
             return result;
         }
 
+        processUpdate(update) {
+            this.emit('update', update);
+            super.processUpdate(update);
+        }
+
         openWebHook() {
             if (this.isPolling()) {
                 return Promise.reject('WebHook and Polling are mutually exclusive');

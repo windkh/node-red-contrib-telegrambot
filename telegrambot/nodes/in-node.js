@@ -176,19 +176,29 @@ module.exports = function (RED) {
                     // downloadable "blob" message?
                     if (messageDetails.blob) {
                         let fileId = msg.payload.content;
-                        telegramBot.getFileLink(fileId).then(function (weblink) {
-                            msg.payload.weblink = weblink;
+                        telegramBot
+                            .getFileLink(fileId)
+                            .then(function (weblink) {
+                                msg.payload.weblink = weblink;
 
-                            // download and provide with path
-                            if (config.saveDataDir) {
-                                telegramBot.downloadFile(fileId, config.saveDataDir).then(function (path) {
-                                    msg.payload.path = path;
+                                // download and provide with path
+                                if (config.saveDataDir) {
+                                    telegramBot
+                                        .downloadFile(fileId, config.saveDataDir)
+                                        .then(function (path) {
+                                            msg.payload.path = path;
+                                            node.send([msg, null]);
+                                        })
+                                        .catch(function (err) {
+                                            node.error('Failed to download file: ' + err, msg);
+                                        });
+                                } else {
                                     node.send([msg, null]);
-                                });
-                            } else {
-                                node.send([msg, null]);
-                            }
-                        });
+                                }
+                            })
+                            .catch(function (err) {
+                                node.error('Failed to get file link: ' + err, msg);
+                            });
                         // vanilla message
                     } else if (node.filterCommands && node.config.isCommandRegistered(messageDetails.content)) {
                         // Do nothing

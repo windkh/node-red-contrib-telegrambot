@@ -55,10 +55,14 @@ module.exports = function (RED) {
             let startTime = new Date().getTime();
 
             let result = super.getUpdates(form);
-            result.then((updates) => {
-                let endTime = new Date().getTime();
-                this.emit('getUpdates_end', this.cycle, endTime - startTime, updates);
-            });
+            result
+                .then((updates) => {
+                    let endTime = new Date().getTime();
+                    this.emit('getUpdates_end', this.cycle, endTime - startTime, updates);
+                })
+                .catch(() => {
+                    // Errors from getUpdates are handled by the caller; suppress unhandled rejection here.
+                });
 
             return result;
         }
@@ -383,21 +387,33 @@ module.exports = function (RED) {
                     certificate: options.webHook.cert,
                 };
             }
-            newTelegramBot.setWebHook(botUrl, setWebHookOptions).then(function (success) {
-                if (self.verbose) {
-                    newTelegramBot.getWebHookInfo().then(function (result) {
-                        self.log('Webhook enabled: ' + JSON.stringify(result));
-                    });
-                }
+            newTelegramBot
+                .setWebHook(botUrl, setWebHookOptions)
+                .then(function (success) {
+                    if (self.verbose) {
+                        newTelegramBot
+                            .getWebHookInfo()
+                            .then(function (result) {
+                                self.log('Webhook enabled: ' + JSON.stringify(result));
+                            })
+                            .catch(function (err) {
+                                self.warn('Failed to get webhook info: ' + err);
+                            });
+                    }
 
-                if (success) {
-                    self.status = 'connected'; // TODO: check if this must be SetStatus
-                } else {
-                    self.abortBot('Failed to set webhook ' + botUrl, function () {
+                    if (success) {
+                        self.status = 'connected'; // TODO: check if this must be SetStatus
+                    } else {
+                        self.abortBot('Failed to set webhook ' + botUrl, function () {
+                            self.error('Bot stopped: Webhook not set.');
+                        });
+                    }
+                })
+                .catch(function (err) {
+                    self.abortBot('Failed to set webhook ' + botUrl + ': ' + err, function () {
                         self.error('Bot stopped: Webhook not set.');
                     });
-                }
-            });
+                });
 
             return newTelegramBot;
         };

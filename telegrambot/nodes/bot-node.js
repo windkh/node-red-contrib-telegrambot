@@ -555,8 +555,8 @@ module.exports = function (RED) {
         };
 
         // Activates the bot or returns the already activated bot.
-        this.getTelegramBot = function () {
-            if (!this.telegramBot) {
+        this.getTelegramBot = function (createIfMissing = true) {
+            if (createIfMissing && !this.telegramBot) {
                 if (this.credentials) {
                     this.token = this.getBotToken(this.credentials.token);
                     if (this.token) {

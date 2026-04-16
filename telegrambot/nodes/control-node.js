@@ -66,7 +66,7 @@ module.exports = function (RED) {
         };
 
         this.stop = function () {
-            let telegramBot = node.config.getTelegramBot();
+            let telegramBot = node.config.getTelegramBot(false);
             if (telegramBot) {
                 telegramBot.off('getUpdates_start');
                 telegramBot.off('getUpdates_end');

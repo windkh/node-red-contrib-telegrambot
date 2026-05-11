@@ -138,12 +138,6 @@ module.exports = function (RED) {
                 text: 'connected',
             });
 
-            node.status({
-                fill: 'green',
-                shape: 'ring',
-                text: 'connected',
-            });
-
             let userInfo = converter.getUserInfo(botMsg);
             let username = userInfo.username;
             let isAnonymous = userInfo.isAnonymous;

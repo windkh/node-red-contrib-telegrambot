@@ -130,6 +130,11 @@ module.exports = function (RED) {
                     // check if this is a command at all first
                     let commandToken = tokens[0];
                     let isCommandMessage = commandToken.startsWith('/');
+                    // Negative chat IDs cover groups, supergroups AND channels (the latter use a
+                    // -100... prefix). All three are handled the same way: when `strict` is set
+                    // the command must address this bot explicitly via @botname, otherwise any
+                    // /command in the chat would also fire for unrelated bots that share the
+                    // same command verb.
                     let isGroupChat = chatid < 0;
                     let toBot = '@' + node.botname;
 

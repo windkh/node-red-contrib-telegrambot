@@ -1,4 +1,6 @@
 module.exports = function (RED) {
+    const converter = require('../lib/converter.js');
+
     // --------------------------------------------------------------------------------------------
     // The input node receives a command from the chat.
     // The message details are stored in the payload
@@ -104,10 +106,15 @@ module.exports = function (RED) {
                 text: 'connected',
             });
 
-            let username = botMsg.from.username;
-            let chatid = botMsg.chat.id;
-            let userid = botMsg.from.id;
-            if (node.config.isAuthorized(node, chatid, userid, username)) {
+            // Use the shared converter so that anonymous-admin commands and channel-post
+            // commands (both of which can arrive without botMsg.from) do not crash on
+            // botMsg.from.username / botMsg.from.id.
+            let userInfo = converter.getUserInfo(botMsg);
+            let username = userInfo.username;
+            let chatid = userInfo.chatid;
+            let userid = userInfo.userid;
+            let isAnonymous = userInfo.isAnonymous;
+            if (isAnonymous || node.config.isAuthorized(node, chatid, userid, username)) {
                 let msg;
                 let messageDetails;
                 let botDetails = {

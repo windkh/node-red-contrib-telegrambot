@@ -814,8 +814,12 @@ module.exports = function (RED) {
             } // forward
         };
 
-        // Derived from original code but with optional fileName
+        // Derived from original code but with optional fileName and a hard timeout.
+        // Without the timeout, a stalled CDN connection (no 'info' event and no 'error'
+        // event) would keep the promise pending forever, leaking the captured nodeDone
+        // and stalling Node-RED's in-flight tracking.
         this.downloadFile = function (fileId, downloadDir, fileName) {
+            const downloadTimeoutMs = 60 * 1000;
             let resolve;
             let reject;
             const promise = new Promise((a, b) => {
@@ -826,6 +830,25 @@ module.exports = function (RED) {
             let form = {};
             let telegramBot = this.config.getTelegramBot();
             const fileStream = telegramBot.getFileStream(fileId, form);
+            let settled = false;
+            const settleResolve = function (value) {
+                if (!settled) {
+                    settled = true;
+                    clearTimeout(timeoutTimer);
+                    resolve(value);
+                }
+            };
+            const settleReject = function (err) {
+                if (!settled) {
+                    settled = true;
+                    clearTimeout(timeoutTimer);
+                    fileStream.destroy();
+                    reject(err);
+                }
+            };
+            const timeoutTimer = setTimeout(function () {
+                settleReject(new Error('Download timed out after ' + downloadTimeoutMs + 'ms (fileId ' + fileId + ')'));
+            }, downloadTimeoutMs);
             fileStream.on('info', (info) => {
                 if (fileName === undefined) {
                     fileName = info.uri.slice(info.uri.lastIndexOf('/') + 1);
@@ -834,14 +857,14 @@ module.exports = function (RED) {
                 const filePath = path.join(downloadDir, fileName);
                 pipeline(fileStream, fs.createWriteStream(filePath), (error) => {
                     if (!error) {
-                        return resolve(filePath);
+                        settleResolve(filePath);
                     } else {
-                        return reject(error);
+                        settleReject(error);
                     }
                 });
             });
             fileStream.on('error', (err) => {
-                reject(err);
+                settleReject(err);
             });
             return promise;
         };

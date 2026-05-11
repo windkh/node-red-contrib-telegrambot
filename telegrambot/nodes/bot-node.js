@@ -4,8 +4,12 @@ module.exports = function (RED) {
 
     let { SocksProxyAgent } = require('socks-proxy-agent');
 
-    // patch see #345
-    // must be removed when https://github.com/yagop/node-telegram-bot-api/pull/1257 is merged into release
+    // Override upstream's FatalError so the underlying cause is preserved on the thrown
+    // error (upstream copies error.stack but not error itself). PR #1257, which originally
+    // added FatalError to node-telegram-bot-api, has long since been merged, so the class
+    // exists upstream - we only keep the override for the `this.cause = error` line. The
+    // 'SLIGHTLYBETTEREFATAL' code marks the patched form so it is distinguishable in logs
+    // from the stock 'EFATAL' string. Original context: issue #345.
     let tgbe = require('node-telegram-bot-api/src/errors');
     class FatalError extends tgbe.BaseError {
         constructor(data) {

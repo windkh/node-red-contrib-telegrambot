@@ -1,7 +1,8 @@
 // Created by Karl-Heinz Wind
 
-// Avoid that node-telegram-bot-api will enable automatic promise cancellation (fix for 0.30.0 api)
-process.env['NTBA_FIX_319'] = '1';
+// NTBA_FIX_319 was an opt-in flag node-telegram-bot-api once consulted to disable automatic
+// Bluebird promise cancellation (introduced for the 0.30.0 API). Upstream stopped reading the
+// flag well before 0.66.0, so setting it here is a no-op - removed.
 
 const Bluebird = require('bluebird');
 Bluebird.config({ cancellation: true });

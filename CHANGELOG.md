@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.2.0] - 2026-05-11
+### Removed eval() from token/usernames/chatids fields - expressions are now parsed safely and only the documented context lookups (flow.get, global.get, context.get, context.flow.get, context.global.get, env.get, plus .keys()) are accepted
+### Bumped engines.node from >=12.0.0 to >=14.0.0 to match socks-proxy-agent
+
 # [17.1.3] - 2026-03-26
 ### receiver node can output raw updates now - [#433](https://github.com/windkh/node-red-contrib-telegrambot/discussions/433)
 

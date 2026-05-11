@@ -102,6 +102,97 @@ module.exports = function (RED) {
 
     // --------------------------------------------------------------------------------------------
 
+    // Parses a comma-separated list of single- or double-quoted string literals.
+    // Returns the array of decoded strings, or null if the input is not a valid list of string literals.
+    function parseStringArgList(input) {
+        const args = [];
+        let ok = true;
+        let i = 0;
+        const skipWs = function () {
+            while (i < input.length && /\s/.test(input[i])) i++;
+        };
+        skipWs();
+        while (ok && i < input.length) {
+            const quote = input[i];
+            if (quote !== '"' && quote !== "'") {
+                ok = false;
+            } else {
+                i++;
+                let val = '';
+                while (i < input.length && input[i] !== quote) {
+                    if (input[i] === '\\' && i + 1 < input.length) {
+                        const next = input[i + 1];
+                        val += next === 'n' ? '\n' : next === 't' ? '\t' : next === 'r' ? '\r' : next;
+                        i += 2;
+                    } else {
+                        val += input[i++];
+                    }
+                }
+                if (input[i] !== quote) {
+                    ok = false;
+                } else {
+                    i++;
+                    args.push(val);
+                    skipWs();
+                    if (i < input.length) {
+                        if (input[i] !== ',') {
+                            ok = false;
+                        } else {
+                            i++;
+                            skipWs();
+                        }
+                    }
+                }
+            }
+        }
+        return ok ? args : null;
+    }
+
+    // Safely evaluates the small subset of expressions allowed in token / usernames / chatids fields.
+    // Supported forms (see README):
+    //   flow.get("key"[, "store"])     flow.keys()
+    //   global.get("key"[, "store"])   global.keys()
+    //   context.get("key"[, "store"])  context.keys()
+    //   context.flow.get(...)          context.global.get(...)
+    //   env.get("VAR")
+    // Anything else evaluates to undefined.
+    function evalContextExpression(node, expression) {
+        let result;
+        const trimmed = String(expression).trim();
+        const match = trimmed.match(/^(flow|global|context|env)(?:\.(flow|global))?\.(get|keys)\s*\(([\s\S]*)\)\s*$/);
+        if (match) {
+            const [, scope, subScope, method, argsRaw] = match;
+            const args = parseStringArgList(argsRaw);
+            if (args !== null) {
+                if (scope === 'env') {
+                    if (!subScope && method === 'get' && args.length === 1) {
+                        try {
+                            result = node._flow.getSetting(args[0]);
+                        } catch (e) {
+                            // ignore — result stays undefined
+                        }
+                    }
+                } else {
+                    let target;
+                    const ctx = node.context();
+                    if (scope === 'context') {
+                        target = subScope ? ctx[subScope] : ctx;
+                    } else if (!subScope) {
+                        target = ctx[scope];
+                    }
+                    if (target && typeof target[method] === 'function') {
+                        try {
+                            result = target[method](...args);
+                        } catch (e) {
+                            // ignore — result stays undefined
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
     let botsByToken = {};
 
     // --------------------------------------------------------------------------------------------
@@ -147,49 +238,6 @@ module.exports = function (RED) {
 
         // see https://github.com/windkh/node-red-contrib-telegrambot/issues/198
         self.setMaxListeners(0);
-
-        // this sandbox is a lightweight copy of the sandbox in the function node to be as compatible as possible to the syntax allowed there.
-        let sandbox = {
-            node: {},
-
-            context: {
-                get: function () {
-                    return sandbox.node.context().get.apply(sandbox.node, arguments);
-                },
-                keys: function () {
-                    return sandbox.node.context().keys.apply(sandbox.node, arguments);
-                },
-                get global() {
-                    return sandbox.node.context().global;
-                },
-                get flow() {
-                    return sandbox.node.context().flow;
-                },
-            },
-            flow: {
-                get: function () {
-                    return sandbox.node.context().flow.get.apply(sandbox.node, arguments);
-                },
-                keys: function () {
-                    return sandbox.node.context().flow.keys.apply(sandbox.node, arguments);
-                },
-            },
-            global: {
-                get: function () {
-                    return sandbox.node.context().global.get.apply(sandbox.node, arguments);
-                },
-                keys: function () {
-                    return sandbox.node.context().global.keys.apply(sandbox.node, arguments);
-                },
-            },
-            env: {
-                get: function (envVar) {
-                    let flow = sandbox.node._flow;
-                    return flow.getSetting(envVar);
-                },
-            },
-        };
-        sandbox.node = this;
 
         this.pendingCommands = {}; // dictionary that contains all pending comands.
         this.commandsByNode = {}; // contains all configured command infos (command, description) by node.
@@ -717,13 +765,7 @@ module.exports = function (RED) {
 
                 if (botToken.startsWith('{') && botToken.endsWith('}')) {
                     let expression = botToken.substr(1, botToken.length - 2);
-                    let code = `sandbox.${expression};`;
-
-                    try {
-                        botToken = eval(code);
-                    } catch (e) {
-                        botToken = undefined;
-                    }
+                    botToken = evalContextExpression(self, expression);
                 }
             }
 
@@ -736,16 +778,8 @@ module.exports = function (RED) {
                 let trimmedUsernames = self.config.usernames.trim();
                 if (trimmedUsernames.startsWith('{') && trimmedUsernames.endsWith('}')) {
                     let expression = trimmedUsernames.substr(1, trimmedUsernames.length - 2);
-                    let code = `sandbox.${expression};`;
-
-                    try {
-                        usernames = eval(code);
-                        if (usernames === undefined) {
-                            usernames = [];
-                        }
-                    } catch (e) {
-                        usernames = [];
-                    }
+                    let result = evalContextExpression(self, expression);
+                    usernames = result === undefined ? [] : result;
                 } else {
                     usernames = self.config.usernames.split(',');
                 }
@@ -760,16 +794,8 @@ module.exports = function (RED) {
                 let trimmedChatIds = self.config.chatids.trim();
                 if (trimmedChatIds.startsWith('{') && trimmedChatIds.endsWith('}')) {
                     let expression = trimmedChatIds.substr(1, trimmedChatIds.length - 2);
-                    let code = `sandbox.${expression};`;
-
-                    try {
-                        chatids = eval(code);
-                        if (chatids === undefined) {
-                            chatids = [];
-                        }
-                    } catch (e) {
-                        chatids = [];
-                    }
+                    let result = evalContextExpression(self, expression);
+                    chatids = result === undefined ? [] : result;
                 } else {
                     chatids = self.config.chatids.split(',').map(function (item) {
                         return parseInt(item, 10);

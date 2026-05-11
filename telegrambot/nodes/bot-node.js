@@ -341,7 +341,20 @@ module.exports = function (RED) {
             if (this.botHost && (this.sslTerminated || (this.privateKey && this.certificate))) {
                 this.useWebhook = true;
             } else {
-                self.error('Configuration data for webhook is not complete. Defaulting to send only mode.');
+                let missing = [];
+                if (!this.botHost) {
+                    missing.push('botHost');
+                }
+                if (!this.sslTerminated && !(this.privateKey && this.certificate)) {
+                    missing.push('sslTerminated OR (privateKey AND certificate)');
+                }
+                self.error(
+                    'Bot ' +
+                        n.botname +
+                        ': webhook mode requested but configuration is incomplete (missing: ' +
+                        missing.join(', ') +
+                        '). Falling back to send-only mode - this bot will NOT receive messages until the configuration is fixed.'
+                );
             }
         }
 

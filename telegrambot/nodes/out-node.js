@@ -352,12 +352,7 @@ module.exports = function (RED) {
                                         node.processError(chatId, ex, msg, nodeSend, nodeDone);
                                     })
                                     .then(function (result) {
-                                        msg.payload.content = result;
-                                        msg.payload.sentMessageId = result.message_id;
-                                        nodeSend(msg);
-                                        if (nodeDone) {
-                                            nodeDone();
-                                        }
+                                        node.processResult(chatId, result, msg, nodeSend, nodeDone);
                                     });
                             }
                             break;

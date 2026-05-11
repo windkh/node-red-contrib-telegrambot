@@ -59,6 +59,8 @@ module.exports = function (RED) {
         };
 
         // Safely handles circular references when stringifying objects.
+        // Substitutes a "[Circular]" placeholder rather than dropping the key, so error
+        // logs preserve the shape of the offending message instead of getting truncated.
         this.safeStringify = (obj, indent = 4) => {
             let cache = [];
             const retVal = JSON.stringify(
@@ -66,8 +68,8 @@ module.exports = function (RED) {
                 (key, value) =>
                     typeof value === 'object' && value !== null
                         ? cache.includes(value)
-                            ? undefined // Duplicate reference found, discard key
-                            : cache.push(value) && value // Store value in our collection
+                            ? '[Circular]'
+                            : cache.push(value) && value
                         : value,
                 indent
             );

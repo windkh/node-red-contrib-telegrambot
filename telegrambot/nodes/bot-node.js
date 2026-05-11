@@ -227,7 +227,7 @@ module.exports = function (RED) {
                 } else {
                     this.tokenRegistered = false;
                     let conflictingConfigNode = RED.nodes.getNode(configNodeId);
-                    self.error('Aborting: Token of ' + n.botname + ' is already in use by ' + conflictingConfigNode.botname + ': ' + self.token);
+                    self.error('Aborting: Token of ' + n.botname + ' is already in use by ' + conflictingConfigNode.botname);
                     return;
                 }
             }
@@ -539,7 +539,7 @@ module.exports = function (RED) {
                 let stopPolling = false;
                 let hint;
                 if (error.message === 'ETELEGRAM: 401 Unauthorized') {
-                    hint = 'Please check if the bot token is valid: ' + self.credentials.token;
+                    hint = 'Please check if the bot token is valid.';
                     stopPolling = true;
                 } else {
                     // unknown error occured... we simply ignore it.

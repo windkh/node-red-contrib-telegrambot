@@ -213,6 +213,31 @@ function getMessageDetails(botMsg) {
             content: botMsg.successful_payment,
             date: botMsg.date,
         };
+    } else if (botMsg.refunded_payment) {
+        messageDetails = {
+            chatId: botMsg.chat.id,
+            messageId: botMsg.message_id,
+            type: 'refunded_payment',
+            content: botMsg.refunded_payment,
+            date: botMsg.date,
+        };
+    } else if (botMsg.paid_media) {
+        messageDetails = {
+            chatId: botMsg.chat.id,
+            messageId: botMsg.message_id,
+            type: 'paid_media',
+            content: botMsg.paid_media,
+            caption: botMsg.caption,
+            date: botMsg.date,
+        };
+    } else if (botMsg.gift) {
+        messageDetails = {
+            chatId: botMsg.chat.id,
+            messageId: botMsg.message_id,
+            type: 'gift',
+            content: botMsg.gift,
+            date: botMsg.date,
+        };
     } else if (botMsg.new_chat_title) {
         messageDetails = {
             chatId: botMsg.chat.id,

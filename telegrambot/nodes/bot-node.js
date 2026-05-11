@@ -471,7 +471,11 @@ module.exports = function (RED) {
                     }
 
                     if (success) {
-                        self.status = 'connected'; // TODO: check if this must be SetStatus
+                        self.status = 'connected';
+                        // Broadcast the started status so receiver / event / command nodes can
+                        // attach their listeners. Without this, the webhook-success branch only
+                        // updated the local string and downstream nodes stayed in "not connected".
+                        self.setStatus('started', 'webhook enabled');
                     } else {
                         self.abortBot('Failed to set webhook ' + botUrl, function () {
                             self.error('Bot stopped: Webhook not set.');

@@ -533,7 +533,14 @@ module.exports = function (RED) {
                     self.warn(error.message);
 
                     // patch see #345
-                    self.warn(require('node:util').inspect(error, { depth: 5 }));
+                    // node-telegram-bot-api error objects can carry the request URL deep in their
+                    // structure (e.g. https://api.telegram.org/bot<TOKEN>/getUpdates). Redact the
+                    // token before writing the inspected dump to Node-RED's log/UI.
+                    let inspected = require('node:util').inspect(error, { depth: 5 });
+                    if (self.token) {
+                        inspected = inspected.split(self.token).join('<token>');
+                    }
+                    self.warn(inspected);
                 }
 
                 let stopPolling = false;

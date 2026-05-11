@@ -733,8 +733,18 @@ module.exports = function (RED) {
                         lastRequest.cancel('stopping');
                     }
                 } else if (self.telegramBot._webHook) {
-                    self.telegramBot.deleteWebHook();
-                    self.telegramBot.closeWebHook().then(setStatusDisconnected, setStatusDisconnected);
+                    // Telegram keeps the previously registered webhook URL on file until we tell it
+                    // to drop it. Wait for deleteWebHook to complete (or fail) before tearing the
+                    // local listener down so a redeploy with a new URL takes effect immediately.
+                    // Either branch falls through to closing the local hook.
+                    self.telegramBot
+                        .deleteWebHook()
+                        .catch(function () {
+                            // ignore - we still want to close the local hook
+                        })
+                        .then(function () {
+                            self.telegramBot.closeWebHook().then(setStatusDisconnected, setStatusDisconnected);
+                        });
                 } else {
                     setStatusDisconnected();
                 }

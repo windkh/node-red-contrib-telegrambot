@@ -263,7 +263,11 @@ module.exports = function (RED) {
             this.updateMode = 'polling';
         }
 
-        this.addressFamily = parseInt(n.addressfamily) || 0;
+        // Only 4 (IPv4) and 6 (IPv6) are valid for http.Agent.family. parseInt yields NaN
+        // when the field is empty, which we use further down to mean "leave unset and let
+        // node pick both stacks". The previous `|| 0` here mapped that case to 0, which is
+        // not a documented family value and confused the agent.
+        this.addressFamily = parseInt(n.addressfamily);
 
         // 1. optional when polling mode is used
         this.pollInterval = parseInt(n.pollinterval);
@@ -317,7 +321,7 @@ module.exports = function (RED) {
                 agentOptions.password = n.sockspassword;
             }
 
-            if (!isNaN(this.addressFamily)) {
+            if (this.addressFamily === 4 || this.addressFamily === 6) {
                 agentOptions.family = this.addressFamily;
             }
 
@@ -331,7 +335,7 @@ module.exports = function (RED) {
                 keepAlive: true,
             };
 
-            if (!isNaN(this.addressFamily)) {
+            if (this.addressFamily === 4 || this.addressFamily === 6) {
                 agentOptions.family = this.addressFamily;
             }
 

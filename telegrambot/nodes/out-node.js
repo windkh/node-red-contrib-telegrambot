@@ -733,24 +733,27 @@ module.exports = function (RED) {
                         // See https://core.telegram.org/bots/payments
                         // See https://core.telegram.org/bots/api#sendinvoice
                         case 'sendInvoice':
-                            //if (this.hasContent(msg)) {
-                            telegramBot[type](
-                                chatId,
-                                msg.payload.content.title,
-                                msg.payload.content.description,
-                                msg.payload.content.payload,
-                                msg.payload.content.providerToken,
-                                msg.payload.content.currency,
-                                msg.payload.content.prices,
-                                msg.payload.options || {}
-                            )
-                                .catch(function (ex) {
-                                    node.processError(chatId, ex, msg, nodeSend, nodeDone);
-                                })
-                                .then(function (result) {
-                                    node.processResult(chatId, result, msg, nodeSend, nodeDone);
-                                });
-                            //}
+                            // sendInvoice reads many fields off msg.payload.content (title, description,
+                            // payload, providerToken, currency, prices); without the guard a missing
+                            // payload.content crashes at the JS level instead of producing a clear warn.
+                            if (this.hasContent(msg)) {
+                                telegramBot[type](
+                                    chatId,
+                                    msg.payload.content.title,
+                                    msg.payload.content.description,
+                                    msg.payload.content.payload,
+                                    msg.payload.content.providerToken,
+                                    msg.payload.content.currency,
+                                    msg.payload.content.prices,
+                                    msg.payload.options || {}
+                                )
+                                    .catch(function (ex) {
+                                        node.processError(chatId, ex, msg, nodeSend, nodeDone);
+                                    })
+                                    .then(function (result) {
+                                        node.processResult(chatId, result, msg, nodeSend, nodeDone);
+                                    });
+                            }
                             break;
 
                         case 'shipping_query':

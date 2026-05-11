@@ -1,5 +1,6 @@
 module.exports = function (RED) {
     const converter = require('../lib/converter.js');
+    const safeStringify = require('../lib/safe-stringify.js');
 
     // --------------------------------------------------------------------------------------------
     // The input node receives an event from the chat. See https://core.telegram.org/bots/api#update
@@ -76,7 +77,9 @@ module.exports = function (RED) {
         node.eventHandler = null;
 
         this.processError = function (exception, msg) {
-            let errorMessage = 'Caught exception in event node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.stringify(msg);
+            // safeStringify tolerates circular references; raw JSON.stringify would throw
+            // here and surface as an unhandled rejection out of the bot library's catch.
+            let errorMessage = 'Caught exception in event node:\r\n' + exception + '\r\nwhen processing message: \r\n' + safeStringify(msg);
             node.error(errorMessage, msg);
 
             node.status({

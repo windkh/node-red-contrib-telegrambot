@@ -3,6 +3,7 @@ module.exports = function (RED) {
     const { pipeline } = require('stream');
     const fs = require('fs');
     const QueueManager = require('../lib/queue-manager.js');
+    const safeStringify = require('../lib/safe-stringify.js');
 
     // --------------------------------------------------------------------------------------------
     // The output node sends to the chat and passes the msg through.
@@ -56,19 +57,6 @@ module.exports = function (RED) {
             }
 
             return hasContent;
-        };
-
-        // Safely handles circular references when stringifying objects.
-        // Substitutes a "[Circular]" placeholder rather than dropping the key, so error
-        // logs preserve the shape of the offending message instead of getting truncated.
-        this.safeStringify = (obj, indent = 4) => {
-            let cache = [];
-            const retVal = JSON.stringify(
-                obj,
-                (key, value) => (typeof value === 'object' && value !== null ? (cache.includes(value) ? '[Circular]' : cache.push(value) && value) : value),
-                indent
-            );
-            return retVal;
         };
 
         this.start = function () {
@@ -137,7 +125,7 @@ module.exports = function (RED) {
             }
 
             if (!retry) {
-                let errorMessage = 'Caught exception in sender node:\r\n' + exception + '\r\nwhen processing message: \r\n' + node.safeStringify(msg);
+                let errorMessage = 'Caught exception in sender node:\r\n' + exception + '\r\nwhen processing message: \r\n' + safeStringify(msg);
 
                 node.status({
                     fill: 'red',

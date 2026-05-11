@@ -70,6 +70,11 @@ module.exports = function (RED) {
         this.event = config.event;
         this.autoAnswerCallback = config.autoanswer;
 
+        // The bot uses eventemitter3, where off(event) without a handler removes every
+        // listener on that event. Keep a reference to our own listener so stop() only
+        // detaches the one this node registered.
+        node.eventHandler = null;
+
         this.processError = function (exception, msg) {
             let errorMessage = 'Caught exception in event node:\r\n' + exception + '\r\nwhen processing message: \r\n' + JSON.stringify(msg);
             node.error(errorMessage, msg);
@@ -91,7 +96,8 @@ module.exports = function (RED) {
                         text: 'connected',
                     });
 
-                    telegramBot.on(this.event, (botMsg) => this.processMessage(botMsg));
+                    node.eventHandler = (botMsg) => this.processMessage(botMsg);
+                    telegramBot.on(this.event, node.eventHandler);
                 } else {
                     node.status({
                         fill: 'grey',
@@ -111,9 +117,10 @@ module.exports = function (RED) {
 
         this.stop = function () {
             let telegramBot = this.config.getTelegramBot(false);
-            if (telegramBot) {
-                telegramBot.off(this.event);
+            if (telegramBot && node.eventHandler) {
+                telegramBot.off(this.event, node.eventHandler);
             }
+            node.eventHandler = null;
 
             node.status({
                 fill: 'red',

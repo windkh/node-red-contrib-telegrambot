@@ -41,6 +41,10 @@ module.exports = function (RED) {
 
         this.bot = config.bot;
 
+        // The bot uses eventemitter3, where off(event) without a handler detaches every
+        // listener on the event. Track our own handler so stop() only removes ours.
+        node.messageHandler = null;
+
         // If the command should not be registered, then we invalidate the language.
         if (!registerCommand) {
             language = undefined;
@@ -60,7 +64,8 @@ module.exports = function (RED) {
                         text: 'connected',
                     });
 
-                    telegramBot.on('message', (botMsg) => this.processMessage(botMsg));
+                    node.messageHandler = (botMsg) => this.processMessage(botMsg);
+                    telegramBot.on('message', node.messageHandler);
                 } else {
                     node.status({
                         fill: 'grey',
@@ -80,9 +85,10 @@ module.exports = function (RED) {
 
         this.stop = function () {
             let telegramBot = this.config.getTelegramBot(false);
-            if (telegramBot) {
-                telegramBot.off('message');
+            if (telegramBot && node.messageHandler) {
+                telegramBot.off('message', node.messageHandler);
             }
+            node.messageHandler = null;
 
             node.status({
                 fill: 'red',

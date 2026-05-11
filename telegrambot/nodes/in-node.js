@@ -35,6 +35,12 @@ module.exports = function (RED) {
         let handleAllUpdates = config.handleallupdates || false;
         let handleProcessUpdates = config.handleprocessupdates || false;
 
+        // Bot uses eventemitter3 under the hood, where bot.off(event) with no handler
+        // removes EVERY listener for that event - so a stop() on one receiver node
+        // would silently detach listeners belonging to other nodes that share the bot.
+        // We track each handler we attach and remove only those on stop().
+        node.attachedListeners = [];
+
         const events = [
             'edited_message',
             'channel_post',
@@ -86,7 +92,7 @@ module.exports = function (RED) {
                     }
 
                     if (handleProcessUpdates) {
-                        telegramBot.on('update', (botMsg) => {
+                        const updateHandler = (botMsg) => {
                             let botDetails = {
                                 botname: this.config.botname,
                                 testEnvironment: this.config.testEnvironment,
@@ -103,14 +109,20 @@ module.exports = function (RED) {
                                 telegramBot: botDetails,
                             };
                             node.send([msg, null]);
-                        });
+                        };
+                        telegramBot.on('update', updateHandler);
+                        node.attachedListeners.push({ event: 'update', handler: updateHandler });
                     }
 
-                    telegramBot.on('message', (botMsg) => this.processMessage('message', botMsg));
+                    const messageHandler = (botMsg) => this.processMessage('message', botMsg);
+                    telegramBot.on('message', messageHandler);
+                    node.attachedListeners.push({ event: 'message', handler: messageHandler });
 
                     if (handleAllUpdates) {
                         events.forEach((event) => {
-                            telegramBot.on(event, (botMsg) => this.processMessage(event, botMsg));
+                            const handler = (botMsg) => this.processMessage(event, botMsg);
+                            telegramBot.on(event, handler);
+                            node.attachedListeners.push({ event: event, handler: handler });
                         });
                     }
                 }
@@ -127,14 +139,11 @@ module.exports = function (RED) {
         this.stop = function () {
             let telegramBot = this.config.getTelegramBot(false);
             if (telegramBot) {
-                telegramBot.off('message');
-
-                if (handleAllUpdates) {
-                    events.forEach((event) => {
-                        telegramBot.off(event);
-                    });
-                }
+                node.attachedListeners.forEach(function (entry) {
+                    telegramBot.off(entry.event, entry.handler);
+                });
             }
+            node.attachedListeners = [];
 
             node.status({
                 fill: 'red',

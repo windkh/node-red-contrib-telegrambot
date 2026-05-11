@@ -254,54 +254,48 @@ module.exports = function (RED) {
                         // --------------------------------------------------------------------
                         case 'message':
                             if (this.hasContent(msg)) {
-                                // the maximum message size is 4096 so we must split the message into smaller chunks.
-                                let chunkSize = 4000;
-                                let message = msg.payload.content;
-
-                                let done = false;
-                                do {
-                                    let messageToSend;
-                                    if (message.length > chunkSize) {
-                                        messageToSend = message.substr(0, chunkSize);
-                                        message = message.substr(chunkSize);
-                                    } else {
-                                        messageToSend = message;
-                                        done = true;
-                                    }
-
-                                    telegramBot
-                                        .sendMessage(chatId, messageToSend, msg.payload.options || {})
-                                        .then(function (result) {
-                                            node.processResult(chatId, result, msg, nodeSend, nodeDone);
-                                        })
+                                // The maximum message size is 4096, so we must split the message into smaller chunks.
+                                // Chunks are sent sequentially (one promise chain) so that:
+                                //   - Telegram receives them in order,
+                                //   - processResult/nodeDone/processNext fire exactly once for the whole message,
+                                //   - a chunk failure aborts the remainder via a single processError call.
+                                const chunkSize = 4000;
+                                const sendChunks = function (remaining) {
+                                    const isLast = remaining.length <= chunkSize;
+                                    const chunkText = isLast ? remaining : remaining.substr(0, chunkSize);
+                                    const rest = isLast ? '' : remaining.substr(chunkSize);
+                                    return telegramBot
+                                        .sendMessage(chatId, chunkText, msg.payload.options || {})
                                         .catch(function (err) {
-                                            // markdown error? try plain mode
-
-                                            // TODO: MarkdownV2 issues error "Error: ETELEGRAM: 400 Bad Request: can't parse entities:"
+                                            // Markdown parse error? Retry this chunk in plain mode. parse_mode is
+                                            // deleted from the shared options object so subsequent chunks also fall back.
+                                            // TODO: MarkdownV2 issues "Error: ETELEGRAM: 400 Bad Request: can't parse entities:"
                                             // adapt the following if so that MarkdownV2 also works.
-                                            if (
-                                                String(err).includes(
-                                                    // eslint-disable-next-line quotes
-                                                    "can't parse entities in message text:"
-                                                ) &&
+                                            let next;
+                                            const isMarkdownParseError =
+                                                // eslint-disable-next-line quotes
+                                                String(err).includes("can't parse entities in message text:") &&
                                                 msg.payload.options &&
-                                                msg.payload.options.parse_mode === 'Markdown'
-                                            ) {
+                                                msg.payload.options.parse_mode === 'Markdown';
+                                            if (isMarkdownParseError) {
                                                 delete msg.payload.options.parse_mode;
-                                                telegramBot
-                                                    .sendMessage(chatId, messageToSend, msg.payload.options || {})
-                                                    .catch(function (ex) {
-                                                        node.processError(chatId, ex, msg, nodeSend, nodeDone);
-                                                    })
-                                                    .then(function (result) {
-                                                        node.processResult(chatId, result, msg, nodeSend, nodeDone);
-                                                    });
-                                                return;
+                                                next = telegramBot.sendMessage(chatId, chunkText, msg.payload.options || {});
                                             } else {
-                                                node.processError(chatId, err, msg, nodeSend, nodeDone);
+                                                next = Promise.reject(err);
                                             }
+                                            return next;
+                                        })
+                                        .then(function (result) {
+                                            return isLast ? result : sendChunks(rest);
                                         });
-                                } while (!done);
+                                };
+                                sendChunks(msg.payload.content)
+                                    .then(function (result) {
+                                        node.processResult(chatId, result, msg, nodeSend, nodeDone);
+                                    })
+                                    .catch(function (err) {
+                                        node.processError(chatId, err, msg, nodeSend, nodeDone);
+                                    });
                             }
                             break;
 

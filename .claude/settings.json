@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -c telegrambot/nodes/bot-node.js)",
+      "Bash(node -e ' *)",
+      "Bash(node _smoketest.js)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

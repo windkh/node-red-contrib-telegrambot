@@ -125,7 +125,7 @@ module.exports = function (RED) {
         };
 
         this.stop = function () {
-            let telegramBot = this.config.getTelegramBot();
+            let telegramBot = this.config.getTelegramBot(false);
             if (telegramBot) {
                 telegramBot.off('message');
 

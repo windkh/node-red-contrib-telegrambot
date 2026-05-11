@@ -1,15 +1,23 @@
+// Returns the index of the highest-resolution entry in a Telegram photo array, or -1 if the
+// array is missing/empty. Callers must check the return value before indexing so a malformed
+// payload (e.g. an external-webhook caller posting `photo: []`) cannot crash the converter.
 function getPhotoIndexWithHighestResolution(photoArray) {
-    let photoIndex = 0;
-    let highestResolution = 0;
-
-    photoArray.forEach(function (photo, index) {
-        let resolution = photo.width * photo.height;
-        if (resolution > highestResolution) {
-            highestResolution = resolution;
-            photoIndex = index;
+    let photoIndex = -1;
+    if (Array.isArray(photoArray) && photoArray.length > 0) {
+        let highestResolution = -1;
+        photoArray.forEach(function (photo, index) {
+            let resolution = (photo && photo.width) * (photo && photo.height);
+            if (resolution > highestResolution) {
+                highestResolution = resolution;
+                photoIndex = index;
+            }
+        });
+        if (photoIndex === -1) {
+            // No entry had usable dimensions; fall back to the first item so we still emit
+            // something rather than dropping the message entirely.
+            photoIndex = 0;
         }
-    });
-
+    }
     return photoIndex;
 }
 
@@ -72,18 +80,20 @@ function getMessageDetails(botMsg) {
     } else if (botMsg.photo) {
         // photos are sent using several resolutions. Therefore photo is an array. We choose the one with the highest resolution in the array.
         const index = getPhotoIndexWithHighestResolution(botMsg.photo);
-        const fileId = botMsg.photo[index].file_id;
-        messageDetails = {
-            chatId: botMsg.chat.id,
-            messageId: botMsg.message_id,
-            type: 'photo',
-            content: fileId,
-            caption: botMsg.caption,
-            date: botMsg.date,
-            blob: true,
-            photos: botMsg.photo,
-            mediaGroupId: botMsg.media_group_id,
-        };
+        if (index >= 0) {
+            const fileId = botMsg.photo[index].file_id;
+            messageDetails = {
+                chatId: botMsg.chat.id,
+                messageId: botMsg.message_id,
+                type: 'photo',
+                content: fileId,
+                caption: botMsg.caption,
+                date: botMsg.date,
+                blob: true,
+                photos: botMsg.photo,
+                mediaGroupId: botMsg.media_group_id,
+            };
+        }
     } else if (botMsg.audio) {
         messageDetails = {
             chatId: botMsg.chat.id,
@@ -249,15 +259,17 @@ function getMessageDetails(botMsg) {
     } else if (botMsg.new_chat_photo) {
         // photos are sent using several resolutions. Therefore photo is an array. We choose the one with the highest resolution in the array.
         const index = getPhotoIndexWithHighestResolution(botMsg.new_chat_photo);
-        messageDetails = {
-            chatId: botMsg.chat.id,
-            messageId: botMsg.message_id,
-            type: 'new_chat_photo',
-            content: botMsg.new_chat_photo[index].file_id,
-            date: botMsg.date,
-            blob: true,
-            photos: botMsg.new_chat_photo,
-        };
+        if (index >= 0) {
+            messageDetails = {
+                chatId: botMsg.chat.id,
+                messageId: botMsg.message_id,
+                type: 'new_chat_photo',
+                content: botMsg.new_chat_photo[index].file_id,
+                date: botMsg.date,
+                blob: true,
+                photos: botMsg.new_chat_photo,
+            };
+        }
     } else if (botMsg.new_chat_members) {
         messageDetails = {
             chatId: botMsg.chat.id,

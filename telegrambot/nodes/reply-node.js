@@ -12,6 +12,12 @@ module.exports = function (RED) {
         let node = this;
         this.bot = config.bot;
 
+        // Tracks outstanding onReplyToMessage listener ids so we can clean them up on close.
+        // Without this, replies that never arrive (chat deleted, user blocked the bot, etc.)
+        // keep the callback closure - and the captured msg / nodeSend / nodeDone - alive
+        // for the lifetime of the bot instance.
+        this.pendingReplyListenerIds = new Set();
+
         this.start = function () {
             let telegramBot = this.config.getTelegramBot();
             if (telegramBot) {
@@ -85,17 +91,19 @@ module.exports = function (RED) {
                             let chatId = msg.payload.chatId;
                             let messageId = msg.payload.sentMessageId;
 
-                            telegramBot.onReplyToMessage(chatId, messageId, function (botMsg) {
+                            let listenerId = telegramBot.onReplyToMessage(chatId, messageId, function (botMsg) {
+                                node.pendingReplyListenerIds.delete(listenerId);
                                 let messageDetails = converter.getMessageDetails(botMsg);
                                 if (messageDetails) {
                                     msg.payload = messageDetails;
                                     msg.originalMessage = botMsg;
                                     nodeSend(msg);
-                                    if (nodeDone) {
-                                        nodeDone();
-                                    }
+                                }
+                                if (nodeDone) {
+                                    nodeDone();
                                 }
                             });
+                            node.pendingReplyListenerIds.add(listenerId);
                         } else {
                             node.warn('msg.payload.sentMessageId is empty');
                         }
@@ -121,6 +129,15 @@ module.exports = function (RED) {
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }
+
+            // Drop any reply listeners that never fired so we don't leak the captured msg/nodeSend/nodeDone.
+            let telegramBot = node.config && node.config.getTelegramBot ? node.config.getTelegramBot(false) : null;
+            if (telegramBot && typeof telegramBot.removeReplyListener === 'function') {
+                node.pendingReplyListenerIds.forEach(function (id) {
+                    telegramBot.removeReplyListener(id);
+                });
+            }
+            node.pendingReplyListenerIds.clear();
 
             node.status({});
             done();

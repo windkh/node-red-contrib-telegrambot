@@ -239,7 +239,7 @@ function getMessageDetails(botMsg) {
             messageId: botMsg.message_id,
             type: 'new_chat_members',
             content: botMsg.new_chat_members,
-            user: botMsg.new_chat_member,
+            user: botMsg.new_chat_members[0],
             date: botMsg.date,
         };
     } else if (botMsg.left_chat_member) {

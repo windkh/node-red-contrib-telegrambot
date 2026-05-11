@@ -1,6 +1,27 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.3.0] - 2026-05-11
+### Security: bot token no longer leaked in duplicate-token abort, polling 401 hint, or polling_error verbose util.inspect dump (token redacted before logging)
+### Sender: long-message chunked sends now serialised through a single promise chain - earlier code dispatched every chunk in parallel and called nodeDone/processNext N times, corrupting the queue manager
+### Sender: audio send now goes through processResult so the per-chat queue advances and messagesProcessed updates
+### Sender: downloadFile gets a 60s hard timeout so a stalled CDN stream cannot leak the captured nodeDone
+### Sender: sendInvoice guards against missing msg.payload.content (previously crashed at the JS level instead of warning)
+### Receiver / event / command: each node now detaches only its own listener (eventemitter3 quirk where off(name) without a handler removed every listener for the event) and the 'update' listener leak in the receiver is plugged
+### Reply: outstanding onReplyToMessage listeners are cleaned up on close; nodeDone is always called so Node-RED's in-flight tracking does not stall
+### Control: restart command no longer double-sends the input msg; the pending restart timeout is cancellable on node close, supervisor uses clearInterval
+### Command: botMsg.from is now resolved via the shared converter helper so anonymous-admin and channel-post commands no longer crash with "Cannot read properties of undefined"
+### Converter: new_chat_members `user` field is now populated from the array (the singular new_chat_member field has been gone from Telegram for years); refunded_payment, paid_media and gift message subtypes are now surfaced; empty/missing photo arrays no longer crash the converter
+### Bot: start() now also handles the never-started case so a control-node "start" on a fresh deploy actually creates the bot
+### Bot: abortBot awaits deleteWebHook before closeWebHook so a redeploy with a different URL takes effect immediately; uses stopPolling({cancel:true}) instead of reaching into _polling._lastRequest; restartPolling drops its delete+null poke on _polling
+### Bot: clearer error when webhook configuration is incomplete (lists which fields are missing and warns that the bot will not receive messages)
+### Bot: webhook setWebHook success now broadcasts the started status so receiver / event / command nodes attach their listeners
+### Bot: addressFamily only sets agent family for valid IPv4 / IPv6 values (4 or 6) instead of defaulting to 0
+### Queue manager: synchronous throws no longer strand the chat (head is drained, advance is deferred via setImmediate to avoid stack growth on repeated throws)
+### Refactor: safeStringify lifted into lib/safe-stringify.js and used by both sender and event nodes; the event-node previously called raw JSON.stringify and would throw on circular msg payloads
+### Internal: stale upstream-patch notes refreshed against node-telegram-bot-api@0.66.0; obsolete NTBA_FIX_319 assignment removed (no longer consulted upstream)
+### Thanks to @gtalusan for #435 (catch unhandled promise rejections) and #439 (fix infinite loop/resource exhaustion on disconnect)
+
 # [17.2.0] - 2026-05-11
 ### Removed eval() from token/usernames/chatids fields - expressions are now parsed safely and only the documented context lookups (flow.get, global.get, context.get, context.flow.get, context.global.get, env.get, plus .keys()) are accepted
 ### Bumped engines.node from >=12.0.0 to >=14.0.0 to match socks-proxy-agent

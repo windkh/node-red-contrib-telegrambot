@@ -738,13 +738,12 @@ module.exports = function (RED) {
 
             if (self.telegramBot !== undefined && self.telegramBot !== null) {
                 if (self.telegramBot._polling) {
-                    // cancel true only cancels the current request.
-                    // cancel false aborts polling completely.
-                    self.telegramBot.stopPolling({ cancel: false }).then(setStatusDisconnected, setStatusDisconnected);
-                    let lastRequest = self.telegramBot._polling._lastRequest;
-                    if (lastRequest) {
-                        lastRequest.cancel('stopping');
-                    }
+                    // cancel:true asks node-telegram-bot-api to abort the in-flight
+                    // getUpdates so stopPolling resolves immediately instead of waiting
+                    // for the long-poll timeout. Previously we passed cancel:false and
+                    // then reached into _polling._lastRequest.cancel() to achieve the
+                    // same thing - same outcome, two racing cancellations, internal API.
+                    self.telegramBot.stopPolling({ cancel: true }).then(setStatusDisconnected, setStatusDisconnected);
                 } else if (self.telegramBot._webHook) {
                     // Telegram keeps the previously registered webhook URL on file until we tell it
                     // to drop it. Wait for deleteWebHook to complete (or fail) before tearing the

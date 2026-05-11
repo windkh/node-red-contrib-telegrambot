@@ -490,10 +490,12 @@ module.exports = function (RED) {
         this.createTelegramBotForPollingMode = function () {
             function restartPolling() {
                 setTimeout(function () {
-                    // we check if abort was called in the meantime.
-                    if (self.telegramBot !== undefined && self.telegramBot !== null) {
-                        delete self.telegramBot._polling;
-                        self.telegramBot._polling = null; // force the underlying API to recreate the class.
+                    // Check if abort was called in the meantime.
+                    if (self.telegramBot) {
+                        // startPolling({ restart: true }) is the documented way to ask the library
+                        // to tear down its current polling state and start a new loop. The previous
+                        // delete + null poke into self.telegramBot._polling was a workaround for
+                        // older versions and reaches into an undocumented internal.
                         self.telegramBot.startPolling({ restart: true });
                     }
                 }, 3000); // 3 seconds to not flood the output with too many messages.

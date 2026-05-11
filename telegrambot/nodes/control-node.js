@@ -190,7 +190,8 @@ module.exports = function (RED) {
                         node.config.stop('by control node', function () {
                             let delay = msg.payload.delay;
                             if (delay !== undefined && delay > 0) {
-                                setTimeout(function () {
+                                node.restartTimer = setTimeout(function () {
+                                    node.restartTimer = null;
                                     node.config.start('by control node', function () {
                                         node.send(msg);
                                     });
@@ -200,7 +201,6 @@ module.exports = function (RED) {
                                     node.send(msg);
                                 });
                             }
-                            node.send(msg);
                         });
                         break;
                     }
@@ -235,8 +235,14 @@ module.exports = function (RED) {
         this.on('close', function (removed, done) {
             // Stop supervisor
             if (node.checkConnectionTimer) {
-                clearTimeout(node.checkConnectionTimer);
+                clearInterval(node.checkConnectionTimer);
                 node.checkConnectionTimer = null;
+            }
+
+            // Cancel a pending delayed restart so we don't fire start() against a deleted node.
+            if (node.restartTimer) {
+                clearTimeout(node.restartTimer);
+                node.restartTimer = null;
             }
 
             node.stop();

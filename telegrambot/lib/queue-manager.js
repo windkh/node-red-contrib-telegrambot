@@ -29,7 +29,15 @@ class QueueManager {
         this.processing.set(chatId, true);
 
         const func = queue[0];
-        func();
+        // A synchronous throw from the handler would otherwise leave the queue stuck:
+        // `processing` stays true and the head is never shifted, so every subsequent
+        // message for this chatId is silently dropped. Drain the head and advance.
+        try {
+            func();
+        } catch (err) {
+            this.processNext(chatId);
+            throw err;
+        }
     }
 
     processNext(chatId) {

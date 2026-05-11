@@ -754,10 +754,13 @@ module.exports = function (RED) {
 
         // starts the bot if not already started
         this.start = function (hint, done) {
-            if (self.telegramBot === null && self.status === 'disconnected') {
+            // On first construction self.telegramBot is undefined, not null. abortBot()
+            // explicitly sets it back to null, so allow both forms here - otherwise a
+            // control-node "start" on a never-started bot would be a silent no-op.
+            if (!self.telegramBot && self.status === 'disconnected') {
                 self.status = 'connecting';
                 self.getTelegramBot(); // trigger creation
-                if (self.telegramBot !== null) {
+                if (self.telegramBot) {
                     self.status = 'connected';
                     self.setStatus('started', 'started ' + hint);
                 }

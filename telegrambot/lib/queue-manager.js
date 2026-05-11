@@ -32,10 +32,13 @@ class QueueManager {
         // A synchronous throw from the handler would otherwise leave the queue stuck:
         // `processing` stays true and the head is never shifted, so every subsequent
         // message for this chatId is silently dropped. Drain the head and advance.
+        // The advance is deferred so that a chat where every handler throws cannot
+        // recurse processCurrent -> catch -> processNext -> processCurrent ... and blow
+        // the stack; each iteration starts on a fresh task instead.
         try {
             func();
         } catch (err) {
-            this.processNext(chatId);
+            setImmediate(() => this.processNext(chatId));
             throw err;
         }
     }

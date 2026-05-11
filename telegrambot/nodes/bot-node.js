@@ -825,7 +825,14 @@ module.exports = function (RED) {
                 if (trimmedUsernames.startsWith('{') && trimmedUsernames.endsWith('}')) {
                     let expression = trimmedUsernames.substr(1, trimmedUsernames.length - 2);
                     let result = evalContextExpression(self, expression);
-                    usernames = result === undefined ? [] : result;
+                    if (Array.isArray(result)) {
+                        usernames = result;
+                    } else if (typeof result === 'string') {
+                        // env.get / flow.get / global.get may yield a raw string when the
+                        // stored value is e.g. a process env var ("alice,bob"). Split on
+                        // commas to match the literal-comma branch below.
+                        usernames = result.split(',');
+                    }
                 } else {
                     usernames = self.config.usernames.split(',');
                 }
@@ -841,7 +848,18 @@ module.exports = function (RED) {
                 if (trimmedChatIds.startsWith('{') && trimmedChatIds.endsWith('}')) {
                     let expression = trimmedChatIds.substr(1, trimmedChatIds.length - 2);
                     let result = evalContextExpression(self, expression);
-                    chatids = result === undefined ? [] : result;
+                    if (Array.isArray(result)) {
+                        chatids = result;
+                    } else if (typeof result === 'string') {
+                        // env.get / flow.get / global.get may yield a raw string when the
+                        // stored value is e.g. a process env var ("123,456"). Split and
+                        // coerce to numbers to match the literal-comma branch below.
+                        chatids = result.split(',').map(function (item) {
+                            return parseInt(item, 10);
+                        });
+                    } else if (typeof result === 'number') {
+                        chatids = [result];
+                    }
                 } else {
                     chatids = self.config.chatids.split(',').map(function (item) {
                         return parseInt(item, 10);

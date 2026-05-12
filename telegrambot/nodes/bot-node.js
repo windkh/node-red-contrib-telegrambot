@@ -822,7 +822,9 @@ module.exports = function (RED) {
 
         this.getUserNames = function () {
             let usernames = [];
-            if (self.config.usernames !== '') {
+            // Truthiness check rather than !== '' so undefined / null (e.g. flow JSON that
+            // omits the field entirely) is handled the same as an empty string.
+            if (self.config.usernames) {
                 let trimmedUsernames = self.config.usernames.trim();
                 if (trimmedUsernames.startsWith('{') && trimmedUsernames.endsWith('}')) {
                     let expression = trimmedUsernames.substr(1, trimmedUsernames.length - 2);
@@ -845,7 +847,8 @@ module.exports = function (RED) {
 
         this.getChatIds = function () {
             let chatids = [];
-            if (self.config.chatids !== '') {
+            // Same truthiness reasoning as getUserNames.
+            if (self.config.chatids) {
                 let trimmedChatIds = self.config.chatids.trim();
                 if (trimmedChatIds.startsWith('{') && trimmedChatIds.endsWith('}')) {
                     let expression = trimmedChatIds.substr(1, trimmedChatIds.length - 2);
@@ -903,7 +906,9 @@ module.exports = function (RED) {
 
         this.isAuthorized = function (node, chatid, userid, user) {
             let isAuthorized = false;
-            if (self.config.chatids === '' && self.config.usernames === '') {
+            // Allowlists are "empty" if the field is omitted from the flow JSON (undefined)
+            // or set to the empty string by the editor — both mean "default open".
+            if (!self.config.chatids && !self.config.usernames) {
                 isAuthorized = true;
             } else {
                 let isAuthorizedUser = false;

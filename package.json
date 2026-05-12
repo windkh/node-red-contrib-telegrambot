@@ -12,7 +12,10 @@
     },
     "scripts": {
         "lint": "eslint telegrambot --ext .js --format unix",
-        "postlint": "echo ✅ lint valid"
+        "postlint": "echo ✅ lint valid",
+        "test": "mocha",
+        "test:watch": "mocha --watch --reporter min",
+        "test:coverage": "c8 --reporter=text --reporter=lcov --exclude=test --exclude=examples --exclude=doc npm test"
     },
     "husky": {
         "hooks": {
@@ -40,10 +43,13 @@
     "author": "Karl-Heinz Wind",
     "license": "MIT",
     "devDependencies": {
+        "c8": "^9.1.0",
+        "chai": "^4.4.1",
         "eslint": "^8.20.0",
         "eslint-config-prettier": "^8.5.0",
         "eslint-plugin-prettier": "^4.2.1",
         "husky": "^8.0.1",
+        "mocha": "^10.4.0",
         "prettier": "^2.7.1"
     }
 }

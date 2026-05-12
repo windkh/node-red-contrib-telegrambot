@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.3.1] - 2026-05-12
+### Fix #432 (partial): getUserNames / getChatIds now split env.get / flow.get / global.get string results on commas, so a process env var like CHATIDS="123,456" resolves to [123, 456] instead of the raw string
+### Override tough-cookie to ^4.1.3 to clear GHSA-72xf-g2v4-qvf3 (prototype pollution); the vulnerable copy comes in transitively via legacy request@2.88.2, pinned by node-telegram-bot-api -> @cypress/request-promise -> request-promise-core's peer dependency on request@^2.34. Dependabot could not auto-resolve this without an explicit override
+
 # [17.3.0] - 2026-05-11
 ### Security: bot token no longer leaked in duplicate-token abort, polling 401 hint, or polling_error verbose util.inspect dump (token redacted before logging)
 ### Sender: long-message chunked sends now serialised through a single promise chain - earlier code dispatched every chunk in parallel and called nodeDone/processNext N times, corrupting the queue manager

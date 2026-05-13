@@ -224,6 +224,25 @@ module.exports = function (RED) {
                         });
                         break;
                     }
+                    case 'setwebhook': {
+                        // Dynamic webhook URL update (issue #410). Useful for ngrok / dynamic-DNS
+                        // setups where the public URL changes between restarts. Note: only meaningful
+                        // when the bot is in webhook mode — Telegram rejects setWebHook when polling
+                        // is active. The user is responsible for configuring the right updatemode.
+                        // Pass msg.payload.url = "" to deleteWebHook instead.
+                        let url = msg.payload.url;
+                        let options = msg.payload.options;
+                        node.config.setWebHookDynamically(url, options, function (err, result) {
+                            if (err) {
+                                msg.error = err.message || String(err);
+                                node.send(msg);
+                            } else {
+                                msg.payload.result = result;
+                                node.send(msg);
+                            }
+                        });
+                        break;
+                    }
                     default:
                         break;
                 }

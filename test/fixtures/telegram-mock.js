@@ -120,12 +120,18 @@ function startMock() {
                 if (boundary) body = parseMultipart(raw, boundary);
             }
 
-            state.calls.push({ method: method, body: body, query: parsed.query });
+            // node-telegram-bot-api hits inconsistently-cased URLs across methods
+            // (setWebHook keeps the capital H, but deleteWebhook / getWebhookInfo lowercase
+            // the h). Normalise to lowercase internally so the response dispatch and the
+            // tests' callsTo()/failNext() lookups work regardless of which case any given
+            // version of the library happens to use today.
+            const methodKey = method.toLowerCase();
+            state.calls.push({ method: method, methodKey: methodKey, body: body, query: parsed.query });
 
             // Force-failure injection for the next call to this method
-            if (state.failures[method]) {
-                const fail = state.failures[method];
-                delete state.failures[method];
+            if (state.failures[methodKey]) {
+                const fail = state.failures[methodKey];
+                delete state.failures[methodKey];
                 res.setHeader('content-type', 'application/json');
                 res.statusCode = fail.code || 400;
                 res.end(
@@ -140,33 +146,33 @@ function startMock() {
             }
 
             let result;
-            if (method === 'getMe') {
+            if (methodKey === 'getme') {
                 result = { id: 1, is_bot: true, first_name: 'mock', username: 'mockbot' };
-            } else if (method === 'getUpdates') {
+            } else if (methodKey === 'getupdates') {
                 // The library passes the next-expected `offset`; we just return what we have.
                 const updates = state.updates.slice();
                 state.updates = [];
                 result = updates;
-            } else if (method === 'sendMessage') {
+            } else if (methodKey === 'sendmessage') {
                 result = {
                     message_id: state.nextMessageId++,
                     chat: { id: Number(body.chat_id), type: 'private' },
                     date: Math.floor(Date.now() / 1000),
                     text: body.text,
                 };
-            } else if (method === 'setWebHook') {
-                state.webhookInfo = { url: body.url, has_custom_certificate: false, pending_update_count: 0 };
+            } else if (methodKey === 'setwebhook') {
+                state.webhookInfo = { url: body.url || (parsed.query && parsed.query.url) || '', has_custom_certificate: false, pending_update_count: 0 };
                 result = true;
-            } else if (method === 'deleteWebHook') {
+            } else if (methodKey === 'deletewebhook') {
                 state.webhookInfo = { url: '' };
                 result = true;
-            } else if (method === 'getWebHookInfo') {
+            } else if (methodKey === 'getwebhookinfo') {
                 result = state.webhookInfo;
-            } else if (method === 'setMyCommands' || method === 'deleteMyCommands') {
+            } else if (methodKey === 'setmycommands' || methodKey === 'deletemycommands') {
                 result = true;
-            } else if (method === 'answerCallbackQuery') {
+            } else if (methodKey === 'answercallbackquery') {
                 result = true;
-            } else if (method.startsWith('send') || method.startsWith('edit') || method.startsWith('forward') || method.startsWith('copy')) {
+            } else if (methodKey.startsWith('send') || methodKey.startsWith('edit') || methodKey.startsWith('forward') || methodKey.startsWith('copy')) {
                 result = { message_id: state.nextMessageId++ };
             } else {
                 result = true;
@@ -193,11 +199,12 @@ function startMock() {
                     state.updates.push(u);
                 },
                 failNext: function (method, spec) {
-                    state.failures[method] = spec;
+                    state.failures[method.toLowerCase()] = spec;
                 },
                 callsTo: function (method) {
+                    const key = method.toLowerCase();
                     return state.calls.filter(function (c) {
-                        return c.method === method;
+                        return c.methodKey === key;
                     });
                 },
                 clearCalls: function () {

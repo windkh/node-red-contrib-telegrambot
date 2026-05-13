@@ -242,8 +242,12 @@ module.exports = function (RED) {
             return;
         }
 
-        // see https://github.com/windkh/node-red-contrib-telegrambot/issues/198
-        self.setMaxListeners(0);
+        // Issue #198: many runtime nodes attach to the config node's 'status' event,
+        // and the default cap of 10 fires a "possible EventEmitter memory leak" warning
+        // for legitimate flows. Bumping to a generous-but-finite cap keeps the warning
+        // available if a real listener leak ever re-emerges (e.g. a future regression of
+        // the listener-tracking work in ADR 0005), instead of suppressing it entirely.
+        self.setMaxListeners(50);
 
         this.pendingCommands = {}; // dictionary that contains all pending comands.
         this.commandsByNode = {}; // contains all configured command infos (command, description) by node.
@@ -734,6 +738,33 @@ module.exports = function (RED) {
         this.onStarted = function () {
             self.deleteMyCommands();
             self.setMyCommands();
+        };
+
+        // Used by the control node's "setwebhook" command (issue #410) — exposes
+        // bot.setWebHook / deleteWebHook so flows can swap the public URL at runtime
+        // (e.g. when an ngrok tunnel restarts with a new URL). Best-effort: only
+        // meaningful in webhook mode; Telegram rejects setWebHook while polling is
+        // active. Empty url => deleteWebHook.
+        this.setWebHookDynamically = function (url, options, callback) {
+            let telegramBot = self.getTelegramBot();
+            if (!telegramBot) {
+                callback(new Error('bot not initialized'));
+                return;
+            }
+            let p;
+            if (!url || url === '') {
+                p = telegramBot.deleteWebHook();
+            } else {
+                p = telegramBot.setWebHook(url, options || {});
+            }
+            p.then(
+                function (result) {
+                    callback(null, result);
+                },
+                function (err) {
+                    callback(err);
+                }
+            );
         };
 
         RED.events.on('flows:started', this.onStarted);

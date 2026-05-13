@@ -495,13 +495,19 @@ module.exports = function (RED) {
 
         this.createTelegramBotForPollingMode = function () {
             function restartPolling() {
-                setTimeout(function () {
+                // Single-flight guard: if a restart is already pending, drop this one.
+                // Without it, a burst of polling_error events queues N parallel 3 s timers
+                // and the bot ends up scheduling several startPolling calls in parallel
+                // (the root cause behind issue #442's "12 cycles in 3 minutes" pattern).
+                if (self.pollingRestartTimer) {
+                    return;
+                }
+                self.pollingRestartTimer = setTimeout(function () {
+                    self.pollingRestartTimer = null;
                     // Check if abort was called in the meantime.
                     if (self.telegramBot) {
                         // startPolling({ restart: true }) is the documented way to ask the library
-                        // to tear down its current polling state and start a new loop. The previous
-                        // delete + null poke into self.telegramBot._polling was a workaround for
-                        // older versions and reaches into an undocumented internal.
+                        // to tear down its current polling state and start a new loop.
                         self.telegramBot.startPolling({ restart: true });
                     }
                 }, 3000); // 3 seconds to not flood the output with too many messages.
@@ -629,10 +635,10 @@ module.exports = function (RED) {
 
             newTelegramBot.on('error', function (error) {
                 self.warn('Bot error: ' + error.message);
-
-                self.abortBot(error.message, function () {
-                    self.warn('Bot stopped: Fatal Error.');
-                });
+                // Don't just abort — schedule a backoff-restart so the bot recovers
+                // from transient fatal failures (stale keep-alive sockets, prolonged
+                // proxy outages, etc.) without operator intervention. Issues #442 / #440.
+                self.scheduleRestart('fatal: ' + error.message);
             });
 
             return newTelegramBot;
@@ -734,6 +740,15 @@ module.exports = function (RED) {
 
         this.on('close', function (removed, done) {
             RED.events.removeListener('flows:started', this.onStarted);
+            // Cancel any pending restart / polling-restart so we don't fire on a deleted node.
+            if (self.restartTimer) {
+                clearTimeout(self.restartTimer);
+                self.restartTimer = null;
+            }
+            if (self.pollingRestartTimer) {
+                clearTimeout(self.pollingRestartTimer);
+                self.pollingRestartTimer = null;
+            }
             if (removed) {
                 if (self.tokenRegistered) {
                     delete botsByToken[self.token];
@@ -779,6 +794,48 @@ module.exports = function (RED) {
             } else {
                 setStatusDisconnected();
             }
+        };
+
+        // Tear the bot down, then rebuild it after a back-off. This is the recovery
+        // path for fatal failures emitted on the bot's 'error' event — keep-alive socket
+        // pools going stale, proxy interruptions that outlive the polling-restart logic,
+        // etc. Without this the bot stays silent until manual redeploy (issues #442, #440).
+        //
+        // Single-flight: while a restart is queued or in progress, further calls are dropped.
+        // Backoff: 3 s, 6 s, 12 s, 24 s, 48 s, capped at 60 s. After 8 failed restarts in a
+        // row the helper logs a node.error and gives up — operator intervention required.
+        // A successful restart resets the counter.
+        this.restartCount = 0;
+        this.restartTimer = null;
+        this.scheduleRestart = function (reason) {
+            if (self.restartTimer) {
+                return;
+            }
+            if (self.restartCount >= 8) {
+                self.error('Bot ' + self.botname + ' gave up restarting after fatal: ' + reason);
+                return;
+            }
+            const delay = Math.min(60000, 3000 * Math.pow(2, self.restartCount));
+            self.restartCount++;
+            self.warn('Bot ' + self.botname + ' will restart in ' + delay + 'ms (' + reason + ')');
+            self.restartTimer = setTimeout(function () {
+                self.restartTimer = null;
+                self.abortBot('pre-restart', function () {
+                    // abortBot already nulled self.telegramBot via setStatusDisconnected.
+                    // Re-create through the standard path; a successful create rebuilds the
+                    // http.Agent so a stale keep-alive pool is replaced.
+                    self.status = 'disconnected';
+                    const bot = self.getTelegramBot();
+                    if (bot) {
+                        self.restartCount = 0;
+                        self.status = 'connected';
+                        self.setStatus('started', 'restarted after ' + reason);
+                    } else {
+                        // creation failed (e.g. webhook config incomplete); back off again
+                        self.scheduleRestart('retry-create');
+                    }
+                });
+            }, delay);
         };
 
         // stops the bot if not already stopped

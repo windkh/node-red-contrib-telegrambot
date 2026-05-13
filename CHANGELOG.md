@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.0] - 2026-05-13
+### Auto-restart on fatal bot 'error' event with exponential backoff (3 s, 6 s, ..., capped 60 s; surrender after 8 attempts). Resolves the long-standing "bot dies on fatal error, manual redeploy needed" pattern in #442 and the proxy-interruption recovery half of #440. The restart abortBot+create cycle rebuilds the http.Agent so stale keep-alive sockets are flushed.
+### Single-flight guard on the polling-restart 3 s setTimeout. Burst polling_error events now queue at most one restart instead of stacking N parallel ones (the underlying cause of #442's "12 cycles in 3 minutes" pattern).
+### Control node "setwebhook" command: msg.payload.command="setwebhook" with msg.payload.url forwards to bot.setWebHook for dynamic URL updates (issue #410). An empty url calls deleteWebHook. msg.payload.result on success, msg.error on failure.
+### bot-node setMaxListeners cap bumped from 0 (unlimited, hides leaks) to 50 (covers realistic per-bot listener counts, still catches future regressions).
+### New DEPLOYMENT.md documenting the credentialSecret pattern for automated / git-managed deployments — closes the docs half of #432.
+### Architecture documentation set added under doc/architecture/ with 9 ADRs covering the major design decisions.
+### Test infrastructure: full mocha + chai + c8 + node-red-node-test-helper harness via npm test. 204 tests, 70.6 % overall statement coverage. CI workflow runs lint + test on Node 18 / 20 / 22 on every push and PR.
+
 # [17.3.1] - 2026-05-12
 ### Fix #432 (partial): getUserNames / getChatIds now split env.get / flow.get / global.get string results on commas, so a process env var like CHATIDS="123,456" resolves to [123, 456] instead of the raw string
 ### Override tough-cookie to ^4.1.3 to clear GHSA-72xf-g2v4-qvf3 (prototype pollution); the vulnerable copy comes in transitively via legacy request@2.88.2, pinned by node-telegram-bot-api -> @cypress/request-promise -> request-promise-core's peer dependency on request@^2.34. Dependabot could not auto-resolve this without an explicit override

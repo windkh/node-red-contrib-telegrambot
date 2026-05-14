@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.1] - 2026-05-13
+### Suppress duplicate "Bot error: ..." warn lines during outage bursts (#411 retest): the bot library can emit 'error' many times in rapid succession during a network outage; the V17.4.0 auto-restart's single-flight collapsed the restart attempts but the warn line above it was logged unconditionally. Gate the warn on `!self.restartTimer` so the first error of a burst still logs and the rest stay silent until recovery. No behaviour change, just log volume.
+
 # [17.4.0] - 2026-05-13
 ### Auto-restart on fatal bot 'error' event with exponential backoff (3 s, 6 s, ..., capped 60 s; surrender after 8 attempts). Resolves the long-standing "bot dies on fatal error, manual redeploy needed" pattern in #442 and the proxy-interruption recovery half of #440. The restart abortBot+create cycle rebuilds the http.Agent so stale keep-alive sockets are flushed.
 ### Single-flight guard on the polling-restart 3 s setTimeout. Burst polling_error events now queue at most one restart instead of stacking N parallel ones (the underlying cause of #442's "12 cycles in 3 minutes" pattern).

@@ -782,7 +782,8 @@ module.exports = function (RED) {
 
         this.on('close', function (removed, done) {
             RED.events.removeListener('flows:started', this.onStarted);
-            // Cancel any pending restart / polling-restart so we don't fire on a deleted node.
+            // Cancel any pending restart / polling-restart / stable-window timer so we
+            // don't fire on a deleted node.
             if (self.restartTimer) {
                 clearTimeout(self.restartTimer);
                 self.restartTimer = null;
@@ -790,6 +791,10 @@ module.exports = function (RED) {
             if (self.pollingRestartTimer) {
                 clearTimeout(self.pollingRestartTimer);
                 self.pollingRestartTimer = null;
+            }
+            if (self.restartStableTimer) {
+                clearTimeout(self.restartStableTimer);
+                self.restartStableTimer = null;
             }
             if (removed) {
                 if (self.tokenRegistered) {
@@ -846,12 +851,26 @@ module.exports = function (RED) {
         // Single-flight: while a restart is queued or in progress, further calls are dropped.
         // Backoff: 3 s, 6 s, 12 s, 24 s, 48 s, capped at 60 s. After 8 failed restarts in a
         // row the helper logs a node.error and gives up — operator intervention required.
-        // A successful restart resets the counter.
+        //
+        // Stable-window: a "successful" restart only counts as such once the bot has been
+        // operational for STABLE_WINDOW_MS without another error. Until that timer fires,
+        // a fresh error keeps the count climbing through the backoff curve. Without this,
+        // persistent network problems (issue #442 retest, where errors arrive every ~5 s)
+        // would have the helper oscillate at the minimum 3 s delay forever and never let
+        // the exponential curve do its job.
+        const STABLE_WINDOW_MS = 60000;
         this.restartCount = 0;
         this.restartTimer = null;
+        this.restartStableTimer = null;
         this.scheduleRestart = function (reason) {
             if (self.restartTimer) {
                 return;
+            }
+            // A fresh error invalidates any in-progress "looks stable" countdown — the
+            // previous restart's success was illusory.
+            if (self.restartStableTimer) {
+                clearTimeout(self.restartStableTimer);
+                self.restartStableTimer = null;
             }
             if (self.restartCount >= 8) {
                 self.error('Bot ' + self.botname + ' gave up restarting after fatal: ' + reason);
@@ -869,9 +888,16 @@ module.exports = function (RED) {
                     self.status = 'disconnected';
                     const bot = self.getTelegramBot();
                     if (bot) {
-                        self.restartCount = 0;
                         self.status = 'connected';
                         self.setStatus('started', 'restarted after ' + reason);
+                        // Don't reset restartCount yet. If another error fires inside the
+                        // stable window, scheduleRestart will clear this timer and treat
+                        // the next failure as a continuation of the same outage so the
+                        // backoff keeps escalating.
+                        self.restartStableTimer = setTimeout(function () {
+                            self.restartStableTimer = null;
+                            self.restartCount = 0;
+                        }, STABLE_WINDOW_MS);
                     } else {
                         // creation failed (e.g. webhook config incomplete); back off again
                         self.scheduleRestart('retry-create');

@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.2] - 2026-05-14
+### Auto-restart now requires 60 s of stability before declaring a restart "successful" and resetting the backoff counter (#442 retest). Previously restartCount was zeroed immediately on createTelegramBot returning a non-null bot — for persistent network problems (errors every few seconds) the helper oscillated at the minimum 3 s delay forever and never let the exponential curve escalate. A new error inside the stable window keeps the count climbing, so the bot now backs off properly through 6 s -> 12 s -> 24 s -> ... -> 60 s for sustained outages.
+
 # [17.4.1] - 2026-05-13
 ### Suppress duplicate "Bot error: ..." warn lines during outage bursts (#411 retest): the bot library can emit 'error' many times in rapid succession during a network outage; the V17.4.0 auto-restart's single-flight collapsed the restart attempts but the warn line above it was logged unconditionally. Gate the warn on `!self.restartTimer` so the first error of a burst still logs and the rest stay silent until recovery. No behaviour change, just log volume.
 

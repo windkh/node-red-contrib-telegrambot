@@ -131,6 +131,90 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
     });
 });
 
+describe('bot-node — stable-window restartCount reset (issue #442 retest, V17.4.2)', function () {
+    this.timeout(5000);
+
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    it('a fresh error inside the stable window keeps the backoff escalating', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                // Simulate the post-restart "looks stable" timer being set (which is what the
+                // success path of the restartTimer callback does) without actually firing
+                // the abortBot+create chain.
+                n.restartCount = 3; // pretend we've already had 3 escalating restarts
+                n.restartStableTimer = setTimeout(function () {
+                    n.restartStableTimer = null;
+                    n.restartCount = 0;
+                }, 60000);
+
+                // A new error before the 60 s elapses must:
+                //   1. cancel the stableTimer (so the previous "success" doesn't reset count)
+                //   2. NOT reset restartCount — the next backoff continues from where we were
+                n.scheduleRestart('another error');
+                expect(n.restartStableTimer).to.equal(null);
+                expect(n.restartCount).to.equal(4); // 3 -> 4, not 0 -> 1
+                // delay for count=3 going to 4 is 3000 * 2^3 = 24000 ms.
+                // (We don't assert delay directly here — covered separately below.)
+
+                // Cleanup so the actual scheduled restart doesn't fire during teardown.
+                clearTimeout(n.restartTimer);
+                n.restartTimer = null;
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('an error AFTER the stable window has fired resets to the minimum backoff', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                n.restartCount = 5;
+                // Stable window fired and successfully reset:
+                n.restartStableTimer = null;
+                n.restartCount = 0;
+
+                // New error after the stable window: clean slate.
+                n.scheduleRestart('much later');
+                expect(n.restartCount).to.equal(1);
+
+                clearTimeout(n.restartTimer);
+                n.restartTimer = null;
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('close handler clears the pending stable-window timer too', async function () {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        await new Promise(function (resolve) {
+            helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, resolve);
+        });
+        const n = helper.getNode('b1');
+        n.restartStableTimer = setTimeout(function () {}, 60000);
+        expect(n.restartStableTimer).to.not.equal(null);
+        await helper.unload();
+        expect(n.restartStableTimer).to.equal(null);
+    });
+});
+
 describe('bot-node — fatal-error log suppression while restart is queued (issue #411 retest)', function () {
     this.timeout(5000);
 

@@ -638,10 +638,21 @@ module.exports = function (RED) {
             }
 
             newTelegramBot.on('error', function (error) {
-                self.warn('Bot error: ' + error.message);
-                // Don't just abort — schedule a backoff-restart so the bot recovers
-                // from transient fatal failures (stale keep-alive sockets, prolonged
-                // proxy outages, etc.) without operator intervention. Issues #442 / #440.
+                // During a network outage the bot library can emit 'error' many times in
+                // rapid succession (each pending request fails its own way). The single-
+                // flight in scheduleRestart already collapses the *restart attempts* to one,
+                // but the per-event warn line below was still flooding the log with
+                // "Bot error: ..." duplicates (issue #411 retest, 14 May 2026). Suppress
+                // the warn while a restart is already queued — the original warn for the
+                // first error of the burst plus the scheduleRestart "will restart in Xms"
+                // message together describe the situation, and additional copies add no
+                // information.
+                if (!self.restartTimer) {
+                    self.warn('Bot error: ' + error.message);
+                }
+                // Schedule a backoff-restart so the bot recovers from transient fatal
+                // failures (stale keep-alive sockets, prolonged proxy outages, etc.)
+                // without operator intervention. Issues #442 / #440.
                 self.scheduleRestart('fatal: ' + error.message);
             });
 

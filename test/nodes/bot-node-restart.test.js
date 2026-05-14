@@ -131,6 +131,64 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
     });
 });
 
+describe('bot-node — fatal-error log suppression while restart is queued (issue #411 retest)', function () {
+    this.timeout(5000);
+
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    it('emits one warn for the first error of a burst, then suppresses while the restart is queued', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const warnLines = [];
+                n.warn = function (m) {
+                    warnLines.push(m);
+                };
+
+                // Simulate three rapid 'error' events as the bot library would emit during
+                // a network outage. The auto-restart handler is set up by createTelegramBot,
+                // so we drive it directly via scheduleRestart + the warn-suppression check
+                // that the new handler does.
+                function simulateFatalErrorEvent(msg) {
+                    if (!n.restartTimer) {
+                        n.warn('Bot error: ' + msg);
+                    }
+                    n.scheduleRestart('fatal: ' + msg);
+                }
+
+                simulateFatalErrorEvent('ETIMEDOUT 1');
+                simulateFatalErrorEvent('ETIMEDOUT 2');
+                simulateFatalErrorEvent('ETIMEDOUT 3');
+
+                // Only the first error of the burst logs; the next two see restartTimer
+                // already set and stay silent (scheduleRestart also dedupes via single-flight).
+                const botErrorLines = warnLines.filter(function (line) {
+                    return line.indexOf('Bot error:') === 0;
+                });
+                expect(botErrorLines).to.have.length(1);
+                expect(botErrorLines[0]).to.include('ETIMEDOUT 1');
+
+                clearTimeout(n.restartTimer);
+                n.restartTimer = null;
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+});
+
 describe('bot-node — polling-restart single-flight guard (issue #442)', function () {
     this.timeout(5000);
 

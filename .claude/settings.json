@@ -31,7 +31,10 @@
       "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" release view V17.1.3 --repo windkh/node-red-contrib-telegrambot)",
       "Bash('/c/Program Files/GitHub CLI/gh.exe' release create V17.3.1 --repo windkh/node-red-contrib-telegrambot --title V17.3.1 --notes ' *)",
       "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" release view V17.3.1 --repo windkh/node-red-contrib-telegrambot)",
-      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" issue list --repo windkh/node-red-contrib-telegrambot --state open --limit 100 --json number,title,labels,createdAt,updatedAt,comments)"
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" issue list --repo windkh/node-red-contrib-telegrambot --state open --limit 100 --json number,title,labels,createdAt,updatedAt,comments)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" issue view 442 --repo windkh/node-red-contrib-telegrambot --comments)",
+      "Bash('/c/Program Files/GitHub CLI/gh.exe' release create V17.4.2 --repo windkh/node-red-contrib-telegrambot --title V17.4.2 --notes ' *)",
+      "Bash('/c/Program Files/GitHub CLI/gh.exe' release create V17.4.3 --repo windkh/node-red-contrib-telegrambot --title V17.4.3 --notes ' *)"
     ]
   }
 }

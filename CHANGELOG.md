@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.4] - 2026-05-15
+### Fix 409 Conflict loop on redeploy/restart after a polling failure (#442). Two changes: (a) the polling_error handler now detects "ETELEGRAM: 409 Conflict" specifically and skips the stop+restartPolling chain, since calling our own restart on top of the library's natural retry actively perpetuates the conflict. (b) restartPolling resets self.telegramBot._polling to null before startPolling({restart:true}) so the library treats the next poll as a fresh boot — without this (since V17.3.0's df46aa0) the library kept enough internal state across restarts that the new getUpdates raced the previous one server-side. Reaches into the library's private API on purpose; the documented soft-restart wasn't sufficient.
+
 # [17.4.3] - 2026-05-14
 ### "Bot error: ..." log line now surfaces leaf-level error messages instead of intermediate wrapper labels (#442 retest). Previously a TCP-level failure to Telegram's API showed as the unhelpful `Bot error: AggregateError`; the actual `connect ETIMEDOUT 149.154.166.110:443` (and the IPv6-side leaf too, if dual-stack failed) is now in the headline log line. New formatErrorChain helper walks the error.cause chain and any AggregateError.errors arrays down to the leaf messages, deduplicates, and joins with semicolons. Same handler change applied to the verbose polling_error log.
 

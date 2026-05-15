@@ -1,7 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run watch 25762347317 --repo windkh/node-red-contrib-telegrambot --exit-status)",
+      "Bash(node -e \"const b = require\\('./telegrambot/nodes/bot-node'\\); console.log\\('parseStringArgList:', typeof b.__test.parseStringArgList\\); console.log\\('evalContextExpression:', typeof b.__test.evalContextExpression\\); console.log\\('factory:', typeof b\\);\")",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run watch --repo windkh/node-red-contrib-telegrambot 25762964069 --exit-status)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run list --repo windkh/node-red-contrib-telegrambot --limit 2 --workflow ci.yml)",
+      "Bash(node -e \"const h = require\\('node-red-node-test-helper'\\); console.log\\('startServer:', typeof h.startServer, 'load:', typeof h.load, 'getNode:', typeof h.getNode\\);\")",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run list --repo windkh/node-red-contrib-telegrambot --limit 1 --workflow ci.yml)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run watch 25763548643 --repo windkh/node-red-contrib-telegrambot --exit-status)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view 25763548643 --repo windkh/node-red-contrib-telegrambot)",
+      "Bash(node -e ' *)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run watch --repo windkh/node-red-contrib-telegrambot --exit-status 25775275680)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run watch 25764790957 --repo windkh/node-red-contrib-telegrambot --exit-status)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" run view 25764790957 --repo windkh/node-red-contrib-telegrambot)",
+      "Bash('/c/Program Files/GitHub CLI/gh.exe' release create V17.4.0 --repo windkh/node-red-contrib-telegrambot --title V17.4.0 --notes ' *)"
     ]
   }
 }

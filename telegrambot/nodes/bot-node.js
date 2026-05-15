@@ -562,8 +562,17 @@ module.exports = function (RED) {
                     self.pollingRestartTimer = null;
                     // Check if abort was called in the meantime.
                     if (self.telegramBot) {
-                        // startPolling({ restart: true }) is the documented way to ask the library
-                        // to tear down its current polling state and start a new loop.
+                        // Force a fully fresh polling instance. We previously trusted
+                        // startPolling({ restart: true }) (the documented soft-restart) but
+                        // since V17.3.0's df46aa0 removed the explicit teardown, the library
+                        // kept enough internal polling state across restarts that a new
+                        // getUpdates would race a still-pending one server-side, causing
+                        // the 409 Conflict loops in issue #442. Resetting _polling to null
+                        // first guarantees the library treats the next start as a clean
+                        // boot. Reaches into the library's private API on purpose — keep
+                        // an eye on this on node-telegram-bot-api major bumps.
+                        delete self.telegramBot._polling;
+                        self.telegramBot._polling = null;
                         self.telegramBot.startPolling({ restart: true });
                     }
                 }, 3000); // 3 seconds to not flood the output with too many messages.
@@ -638,10 +647,21 @@ module.exports = function (RED) {
                 }
 
                 let stopPolling = false;
+                let skipRestart = false;
                 let hint;
                 if (error.message === 'ETELEGRAM: 401 Unauthorized') {
                     hint = 'Please check if the bot token is valid.';
                     stopPolling = true;
+                } else if (error.message && error.message.indexOf('ETELEGRAM: 409 Conflict') === 0) {
+                    // 409 means Telegram saw another getUpdates request for the same token —
+                    // typically the previous one is still being processed server-side after a
+                    // restart or redeploy. The library's polling loop will naturally retry on
+                    // the next interval; calling stopPolling+restartPolling on top of that
+                    // races yet ANOTHER getUpdates and perpetuates the conflict (issue #442
+                    // retest, "ETELEGRAM: 409 Conflict ... on pressing the deploy button").
+                    // Skip the restart, let it clear on its own.
+                    hint = '409 Conflict — another getUpdates still in flight server-side; letting it clear naturally.';
+                    skipRestart = true;
                 } else {
                     // unknown error occured... we simply ignore it.
                     hint = 'Polling error --> Trying again.';
@@ -651,6 +671,10 @@ module.exports = function (RED) {
                     self.abortBot(error.message, function () {
                         self.error('Bot ' + self.botname + ' stopped: ' + hint);
                     });
+                } else if (skipRestart) {
+                    if (self.verbose) {
+                        self.warn(hint);
+                    }
                 } else {
                     // here we simply ignore the bug and try to reestablish polling.
                     self.telegramBot.stopPolling({ cancel: false }).then(restartPolling, restartPolling);

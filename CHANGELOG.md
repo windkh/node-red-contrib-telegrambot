@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.3] - 2026-05-14
+### "Bot error: ..." log line now surfaces leaf-level error messages instead of intermediate wrapper labels (#442 retest). Previously a TCP-level failure to Telegram's API showed as the unhelpful `Bot error: AggregateError`; the actual `connect ETIMEDOUT 149.154.166.110:443` (and the IPv6-side leaf too, if dual-stack failed) is now in the headline log line. New formatErrorChain helper walks the error.cause chain and any AggregateError.errors arrays down to the leaf messages, deduplicates, and joins with semicolons. Same handler change applied to the verbose polling_error log.
+
 # [17.4.2] - 2026-05-14
 ### Auto-restart now requires 60 s of stability before declaring a restart "successful" and resetting the backoff counter (#442 retest). Previously restartCount was zeroed immediately on createTelegramBot returning a non-null bot — for persistent network problems (errors every few seconds) the helper oscillated at the minimum 3 s delay forever and never let the exponential curve escalate. A new error inside the stable window keeps the count climbing, so the bot now backs off properly through 6 s -> 12 s -> 24 s -> ... -> 60 s for sustained outages.
 

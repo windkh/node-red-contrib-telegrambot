@@ -1,3 +1,55 @@
+// Walks an Error's .cause chain (Node 16+ standard) and any nested .errors arrays
+// (AggregateError) to collect the leaf error messages — i.e. the ones that actually
+// carry the useful diagnostic (typically the syscall-level message like
+// "connect ETIMEDOUT 149.154.166.110:443" rather than the intermediate library
+// wrappers' generic "AggregateError" / "RequestError" labels).
+//
+// The whole point is to get a one-line warn that tells an operator what to actually
+// fix (IPv4 vs IPv6, DNS, blocked port, ...) without needing to enable verbose
+// logging and read a 5-deep util.inspect dump.
+//
+// Returns a string formatted as: "<message1>; <message2>; ..." with consecutive
+// duplicates removed. Empty input -> empty string.
+function formatErrorChain(error) {
+    const seen = new Set();
+    const leaves = [];
+    function walk(e, depth) {
+        if (!e || typeof e !== 'object' || seen.has(e) || depth > 10) return;
+        seen.add(e);
+        const isAgg = Array.isArray(e.errors) && e.errors.length > 0;
+        const hasCause = e.cause && typeof e.cause === 'object';
+        if (isAgg) {
+            e.errors.forEach(function (inner) {
+                walk(inner, depth + 1);
+            });
+        }
+        if (hasCause) {
+            walk(e.cause, depth + 1);
+        }
+        if (!isAgg && !hasCause) {
+            // Prefer e.message; for plain string inputs, the string itself; else nothing.
+            // Avoid String(e) so a shape-less object doesn't show up as "[object Object]".
+            const msg = e.message || (typeof e === 'string' ? e : '');
+            if (msg) leaves.push(msg);
+        }
+    }
+    walk(error, 0);
+    // De-duplicate while preserving order.
+    const dedup = [];
+    leaves.forEach(function (m) {
+        if (dedup.indexOf(m) === -1) dedup.push(m);
+    });
+    if (dedup.length === 0) {
+        // Avoid the JS default "[object Object]" for shape-less inputs — fall back to
+        // the message if present, the raw string itself if the caller passed a string,
+        // else empty.
+        if (!error) return '';
+        if (typeof error === 'string') return error;
+        return error.message || '';
+    }
+    return dedup.join('; ');
+}
+
 // Parses a comma-separated list of single- or double-quoted string literals.
 // Returns the array of decoded strings, or null if the input is not a valid list of string literals.
 // Lifted to module scope so it can be unit-tested directly without a RED runtime.
@@ -569,7 +621,10 @@ module.exports = function (RED) {
                 }, self.pollInterval * 0.8);
 
                 if (self.verbose) {
-                    self.warn(error.message);
+                    // formatErrorChain extracts the leaf-level messages (e.g.
+                    // "connect ETIMEDOUT 149.154.166.110:443") so the headline log line is
+                    // immediately actionable rather than just showing "AggregateError".
+                    self.warn(formatErrorChain(error));
 
                     // patch see #345
                     // node-telegram-bot-api error objects can carry the request URL deep in their
@@ -647,13 +702,20 @@ module.exports = function (RED) {
                 // first error of the burst plus the scheduleRestart "will restart in Xms"
                 // message together describe the situation, and additional copies add no
                 // information.
+                //
+                // formatErrorChain walks the .cause + .errors hierarchy down to the leaf
+                // messages so the warn line carries the actionable detail
+                // (e.g. "connect ETIMEDOUT 149.154.166.110:443") rather than the
+                // intermediate wrapper labels ("AggregateError", "RequestError") that
+                // node-telegram-bot-api / request-promise-core stack on top.
+                const detail = formatErrorChain(error);
                 if (!self.restartTimer) {
-                    self.warn('Bot error: ' + error.message);
+                    self.warn('Bot error: ' + detail);
                 }
                 // Schedule a backoff-restart so the bot recovers from transient fatal
                 // failures (stale keep-alive sockets, prolonged proxy outages, etc.)
                 // without operator intervention. Issues #442 / #440.
-                self.scheduleRestart('fatal: ' + error.message);
+                self.scheduleRestart('fatal: ' + detail);
             });
 
             return newTelegramBot;
@@ -1181,4 +1243,4 @@ module.exports = function (RED) {
 };
 
 // Exposed for unit tests. Not part of the public Node-RED API — do not consume from flows.
-module.exports.__test = { parseStringArgList, evalContextExpression };
+module.exports.__test = { parseStringArgList, evalContextExpression, formatErrorChain };

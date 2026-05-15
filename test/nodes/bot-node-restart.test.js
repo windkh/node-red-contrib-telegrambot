@@ -273,6 +273,130 @@ describe('bot-node — fatal-error log suppression while restart is queued (issu
     });
 });
 
+describe('bot-node — request pool rebuild on scheduleRestart (issue #442, V17.4.5)', function () {
+    this.timeout(5000);
+
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    it('constructor wires up a per-bot requestPool object', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                expect(n.requestPool).to.be.an('object');
+                expect(n.request.pool).to.equal(n.requestPool);
+                expect(n.buildRequestOptions).to.be.a('function');
+                expect(n.destroyRequestPool).to.be.a('function');
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('buildRequestOptions returns a fresh pool object each call', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const first = n.buildRequestOptions();
+                const second = n.buildRequestOptions();
+                expect(first.pool).to.not.equal(second.pool);
+                expect(n.requestPool).to.equal(second.pool); // tracked is the latest one
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('destroyRequestPool calls destroy() on every agent and nulls the pool', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const destroyed = [];
+                n.requestPool['https:'] = {
+                    destroy: function () {
+                        destroyed.push('https');
+                    },
+                };
+                n.requestPool['http:'] = {
+                    destroy: function () {
+                        destroyed.push('http');
+                    },
+                };
+                // An entry without .destroy must be tolerated, not crash.
+                n.requestPool['weird'] = { foo: 'bar' };
+                n.destroyRequestPool();
+                expect(destroyed.sort()).to.deep.equal(['http', 'https']);
+                expect(n.requestPool).to.equal(null);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('destroyRequestPool with no pool set is a no-op', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                n.requestPool = null;
+                n.destroyRequestPool(); // must not throw
+                expect(n.requestPool).to.equal(null);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('non-SOCKS bot uses keepAlive agentOptions and a pool field', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                expect(n.request.agentOptions).to.be.an('object');
+                expect(n.request.agentOptions.keepAlive).to.equal(true);
+                expect(n.request.pool).to.be.an('object');
+                expect(n.request.agentClass).to.equal(undefined);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('close handler destroys the request pool', async function () {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        await new Promise(function (resolve) {
+            helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, resolve);
+        });
+        const n = helper.getNode('b1');
+        let destroyed = false;
+        n.requestPool['https:'] = {
+            destroy: function () {
+                destroyed = true;
+            },
+        };
+        await helper.unload();
+        expect(destroyed).to.equal(true);
+        expect(n.requestPool).to.equal(null);
+    });
+});
+
 describe('bot-node — polling-restart single-flight guard (issue #442)', function () {
     this.timeout(5000);
 

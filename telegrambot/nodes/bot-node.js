@@ -361,46 +361,85 @@ module.exports = function (RED) {
 
         // 4. optional when request via SOCKS is used.
         this.useSocks = n.usesocks;
-        if (this.useSocks) {
-            let socksprotocol = n.socksprotocol || 'socks5';
-            let agentOptions = {
-                hostname: n.sockshost,
-                port: n.socksport,
-                protocol: socksprotocol,
-                // type: 5,
-                timeout: 5000, // ms <-- does not really work
-            };
 
-            if (n.socksusername !== '') {
-                agentOptions.username = n.socksusername;
+        // Builds the @cypress/request options object that node-telegram-bot-api passes
+        // into every HTTP call. Returned with a fresh `pool: {}` reference each call —
+        // see destroyRequestPool below for why. Earlier versions of this code passed
+        // `agentOptions` with no `pool` field for the non-SOCKS path, which silently
+        // routed all bot traffic through @cypress/request's process-global pool. That
+        // meant the keep-alive socket pool persisted across bot rebuilds — exactly the
+        // wedge petermeter69 reported on #442 ("connection to TG is dead until manual
+        // redeploy, network itself is fine"). With a fresh per-bot `pool: {}` and the
+        // explicit destroy on rebuild, scheduleRestart genuinely replaces the agent.
+        this.buildRequestOptions = function () {
+            const pool = {};
+            self.requestPool = pool;
+            let result;
+            if (self.useSocks) {
+                let socksprotocol = n.socksprotocol || 'socks5';
+                let agentOptions = {
+                    hostname: n.sockshost,
+                    port: n.socksport,
+                    protocol: socksprotocol,
+                    // type: 5,
+                    timeout: 5000, // ms <-- does not really work
+                };
+
+                if (n.socksusername !== '') {
+                    agentOptions.username = n.socksusername;
+                }
+
+                if (n.sockspassword !== '') {
+                    agentOptions.password = n.sockspassword;
+                }
+
+                if (self.addressFamily === 4 || self.addressFamily === 6) {
+                    agentOptions.family = self.addressFamily;
+                }
+
+                result = {
+                    agentClass: SocksProxyAgent,
+                    agentOptions: agentOptions,
+                    pool: pool,
+                };
+            } else {
+                let agentOptions = {
+                    keepAlive: true,
+                };
+
+                if (self.addressFamily === 4 || self.addressFamily === 6) {
+                    agentOptions.family = self.addressFamily;
+                }
+
+                result = {
+                    agentOptions: agentOptions,
+                    pool: pool,
+                };
             }
+            return result;
+        };
 
-            if (n.sockspassword !== '') {
-                agentOptions.password = n.sockspassword;
+        // Destroys every agent currently cached in self.requestPool. @cypress/request
+        // populates the pool keyed by protocol + cert/cipher options (see request.js
+        // getNewAgent) and reuses the same agent instance across requests with the same
+        // key. Without explicit destroy(), the agent's keep-alive sockets stay open
+        // until they idle out or the agent is garbage-collected — neither happens
+        // promptly when a dropped network link silently kills half-open sockets, which
+        // is the root cause of the "bot says polling but nothing flows" wedge in #442.
+        this.destroyRequestPool = function () {
+            const pool = self.requestPool;
+            if (pool && typeof pool === 'object') {
+                for (const key of Object.keys(pool)) {
+                    const agent = pool[key];
+                    if (agent && typeof agent.destroy === 'function') {
+                        agent.destroy();
+                    }
+                }
             }
+            self.requestPool = null;
+        };
 
-            if (this.addressFamily === 4 || this.addressFamily === 6) {
-                agentOptions.family = this.addressFamily;
-            }
-
-            this.request = {
-                agentClass: SocksProxyAgent,
-                agentOptions: agentOptions,
-                pool: {},
-            };
-        } else {
-            let agentOptions = {
-                keepAlive: true,
-            };
-
-            if (this.addressFamily === 4 || this.addressFamily === 6) {
-                agentOptions.family = this.addressFamily;
-            }
-
-            this.request = {
-                agentOptions: agentOptions,
-            };
-        }
+        this.request = this.buildRequestOptions();
 
         this.useWebhook = false;
         if (this.updateMode == 'webhook') {
@@ -887,7 +926,12 @@ module.exports = function (RED) {
                     delete botsByToken[self.token];
                 }
             }
-            self.abortBot('closing', done);
+            self.abortBot('closing', function () {
+                // Tear down the keep-alive socket pool too, so a redeploy doesn't leave
+                // dangling sockets behind. See destroyRequestPool for context.
+                self.destroyRequestPool();
+                done();
+            });
         });
 
         this.abortBot = function (hint, done) {
@@ -969,9 +1013,19 @@ module.exports = function (RED) {
                 self.restartTimer = null;
                 self.abortBot('pre-restart', function () {
                     // abortBot already nulled self.telegramBot via setStatusDisconnected.
-                    // Re-create through the standard path; a successful create rebuilds the
-                    // http.Agent so a stale keep-alive pool is replaced.
+                    // Destroy every agent in the per-bot request pool and replace it with
+                    // a fresh empty pool before re-creating the bot. @cypress/request keys
+                    // its agent cache on the pool object and reuses agent instances across
+                    // requests with the same protocol/cert combination — without an
+                    // explicit destroy, half-dead keep-alive sockets from the previous
+                    // outage stay parked in the pool and the new bot inherits the same
+                    // wedge (issue #442: "bot says polling, nothing flows, only manual
+                    // redeploy recovers"). The buildRequestOptions call hands back a
+                    // request option object with a fresh pool reference, which
+                    // createTelegramBot then passes into the new bot.
                     self.status = 'disconnected';
+                    self.destroyRequestPool();
+                    self.request = self.buildRequestOptions();
                     const bot = self.getTelegramBot();
                     if (bot) {
                         self.status = 'connected';

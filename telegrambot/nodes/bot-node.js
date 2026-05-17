@@ -311,7 +311,12 @@ module.exports = function (RED) {
 
         // Reading configuration properties...
         this.botname = n.botname;
-        this.verbose = n.verboselogging;
+        // Coerce to strict boolean. n.verboselogging is bound to an HTML checkbox so
+        // it should be true/false, but older configs (or hand-edited / imported
+        // flows.json) can carry the value as the *string* 'false', which is truthy
+        // and silently flips every verbose-gated `self.warn(...)` to fire even when
+        // the UI checkbox is unchecked. Issue #411 retest, May 2026.
+        this.verbose = !!n.verboselogging && n.verboselogging !== 'false';
 
         this.baseApiUrl = n.baseapiurl;
         this.testEnvironment = n.testenvironment;

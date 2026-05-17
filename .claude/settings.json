@@ -35,7 +35,13 @@
       "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" issue view 442 --repo windkh/node-red-contrib-telegrambot --comments)",
       "Bash('/c/Program Files/GitHub CLI/gh.exe' release create V17.4.2 --repo windkh/node-red-contrib-telegrambot --title V17.4.2 --notes ' *)",
       "Bash('/c/Program Files/GitHub CLI/gh.exe' release create V17.4.3 --repo windkh/node-red-contrib-telegrambot --title V17.4.3 --notes ' *)",
-      "Bash(git fetch *)"
+      "Bash(git fetch *)",
+      "Bash(gh api *)",
+      "Bash(rm .claude/d441-body.md .claude/d368-body.md .claude/d354-body.md)",
+      "Bash(rm .claude/d433-body.md)"
+    ],
+    "additionalDirectories": [
+      "D:\\HeinzSeinz\\Github\\node-red-contrib-telegrambot\\.claude"
     ]
   }
 }

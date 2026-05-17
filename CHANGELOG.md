@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.6] - 2026-05-17
+### Fix verbose-logging checkbox being silently ignored when the saved value is a string (#411 retest). bot-node.js stored `this.verbose = n.verboselogging` with no coercion; if flows.json carried the value as the *string* 'false' (which happens after some imports / hand edits / certain older Node-RED versions), it was truthy in JavaScript and every verbose-gated `self.warn` fired regardless of the UI checkbox state. New coerce `this.verbose = !!n.verboselogging && n.verboselogging !== 'false'` strictly distinguishes the unchecked / "false" / empty cases from the checked / "true" / "on" cases. 7 input cases now covered in tests.
+
 # [17.4.5] - 2026-05-15
 ### Auto-restart now actually rebuilds the HTTP keep-alive socket pool (#442 root cause). Previously bot-node.js initialised this.request once at config-node construction with no `pool` field, which silently routed all bot traffic through @cypress/request's process-global agent pool. That meant scheduleRestart's abortBot+create cycle reused the same agent instance and the same half-dead keep-alive sockets, which matches petermeter69's reported "bot says polling, nothing flows, only manual redeploy recovers" symptom — the network was fine, the agent pool was wedged. Two changes: (a) this.request is now built from a new buildRequestOptions() that returns a fresh `pool: {}` per call and tracks it on this.requestPool. (b) scheduleRestart's success path destroys every agent in the previous pool via destroyRequestPool() and rebuilds this.request before re-creating the bot, so the new bot starts with a genuinely empty socket pool. Same treatment on node close so a redeploy doesn't leak sockets either. Comment at the rebuild site that previously claimed "a successful create rebuilds the http.Agent so a stale keep-alive pool is replaced" — aspirational, not actually true — corrected.
 

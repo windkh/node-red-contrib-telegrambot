@@ -170,6 +170,49 @@ describe('telegram bot (config node)', function () {
         });
     });
 
+    it('coerces n.verboselogging to a strict boolean (issue #411, V17.4.6)', function () {
+        // Run cases sequentially via promise chain so each load/unload completes
+        // before the next starts — interleaved helper.load calls collide.
+        const cases = [
+            { input: true, expected: true },
+            { input: false, expected: false },
+            { input: undefined, expected: false },
+            { input: 'true', expected: true },
+            { input: 'false', expected: false },
+            { input: 'on', expected: true },
+            { input: '', expected: false },
+        ];
+        return cases.reduce(function (chain, tc) {
+            return chain.then(function () {
+                const flow = [
+                    {
+                        id: 'b1',
+                        type: 'telegram bot',
+                        botname: 'b',
+                        updatemode: 'sendonly',
+                        verboselogging: tc.input,
+                    },
+                ];
+                return new Promise(function (resolve, reject) {
+                    helper.load(telegrambotModule, flow, { b1: { token: 'tok' } }, function () {
+                        try {
+                            const n = helper.getNode('b1');
+                            expect(n.verbose).to.equal(
+                                tc.expected,
+                                'input ' + JSON.stringify(tc.input) + ' should coerce to ' + tc.expected
+                            );
+                            helper.unload().then(resolve, reject);
+                        } catch (err) {
+                            helper.unload().finally(function () {
+                                reject(err);
+                            });
+                        }
+                    });
+                });
+            });
+        }, Promise.resolve());
+    });
+
     it('refuses to register two bot configs with the same token', function (done) {
         const flow = [
             { id: 'b1', type: 'telegram bot', botname: 'first', updatemode: 'sendonly' },

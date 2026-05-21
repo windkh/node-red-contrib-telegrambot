@@ -149,6 +149,10 @@ module.exports = function (RED) {
 
     let { SocksProxyAgent } = require('socks-proxy-agent');
 
+    // See this.conflict409Times in the config-node constructor for the rationale.
+    const CONFLICT_409_THRESHOLD = 10;
+    const CONFLICT_409_WINDOW_MS = 30000;
+
     // Override upstream's FatalError so the underlying cause is preserved on the thrown
     // error (upstream copies error.stack but not error itself). PR #1257, which originally
     // added FatalError to node-telegram-bot-api, has long since been merged, so the class
@@ -716,7 +720,23 @@ module.exports = function (RED) {
                         self.error('Bot ' + self.botname + ' stopped: ' + hint);
                     });
                 } else if (skipRestart) {
-                    if (self.verbose) {
+                    // Reached only via the 409 Conflict branch. Track to distinguish
+                    // a transient same-process race (clears in seconds, V17.4.4
+                    // scenario) from a persistent second-poller (#441, never clears).
+                    if (self.record409Conflict()) {
+                        const giveUpMsg =
+                            'Bot ' +
+                            self.botname +
+                            ' stopped: ' +
+                            CONFLICT_409_THRESHOLD +
+                            ' "409 Conflict" responses in ' +
+                            CONFLICT_409_WINDOW_MS / 1000 +
+                            's — another getUpdates is actively in flight for this bot token. ' +
+                            'Check https://api.telegram.org/bot<TOKEN>/getWebhookInfo, kill any duplicate bot instance, then redeploy.';
+                        self.abortBot('409-loop', function () {
+                            self.error(giveUpMsg);
+                        });
+                    } else if (self.verbose) {
                         self.warn(hint);
                     }
                 } else {
@@ -997,6 +1017,34 @@ module.exports = function (RED) {
         this.restartCount = 0;
         this.restartTimer = null;
         this.restartStableTimer = null;
+        // Persistent-409-Conflict circuit breaker (issue #441). The library's polling
+        // loop naturally retries every pollInterval, so on a genuine same-process race
+        // (V17.4.4 scenario) the conflict clears within seconds. But if a *separate*
+        // bot instance is actively polling the same token — a second Node-RED, a
+        // forgotten Docker container, a webhook accidentally registered — the 409s
+        // persist forever and the log fills with thousands of lines per minute.
+        // CONFLICT_409_THRESHOLD failures within CONFLICT_409_WINDOW_MS trip the
+        // breaker: we call abortBot and log a single actionable node.error. Operator
+        // intervention is required (kill the other poller, then redeploy).
+        this.conflict409Times = [];
+
+        // Record one 409 Conflict observation. Returns true if the breaker has tripped
+        // (caller should abortBot and log a node.error); false to continue letting the
+        // library's natural retry handle it. Resets the window when it trips so the
+        // operator gets exactly one error log per outage, not one per overflow.
+        this.record409Conflict = function () {
+            const now = Date.now();
+            self.conflict409Times.push(now);
+            while (self.conflict409Times.length > 0 && now - self.conflict409Times[0] > CONFLICT_409_WINDOW_MS) {
+                self.conflict409Times.shift();
+            }
+            let trip = false;
+            if (self.conflict409Times.length >= CONFLICT_409_THRESHOLD) {
+                self.conflict409Times = [];
+                trip = true;
+            }
+            return trip;
+        };
         this.scheduleRestart = function (reason) {
             if (self.restartTimer) {
                 return;

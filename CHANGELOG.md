@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.7] - 2026-05-18
+### 409 Conflict circuit breaker on the polling path (#441). The V17.4.4 fix (skip our restart on 409 and let the library retry naturally) is correct for the *transient* same-process race where the conflict clears within seconds — but it loops forever when a *separate* bot instance (second Node-RED, forgotten Docker container, accidentally registered webhook) is actively polling the same token. chapapagit's logs from #441 captured exactly this shape: thousands of repeated 409s with no path back to working. New record409Conflict helper tracks 409 occurrences in a 30-second sliding window; if 10 fire within the window, the breaker trips, abortBot stops polling, and a single node.error logs an actionable message pointing the operator at getWebhookInfo + the likely causes. No auto-recovery — operator must fix the duplicate poller and redeploy. 5 new mocha cases cover threshold, reset, window pruning, and in-window-only counting.
+
 # [17.4.6] - 2026-05-17
 ### Fix verbose-logging checkbox being silently ignored when the saved value is a string (#411 retest). bot-node.js stored `this.verbose = n.verboselogging` with no coercion; if flows.json carried the value as the *string* 'false' (which happens after some imports / hand edits / certain older Node-RED versions), it was truthy in JavaScript and every verbose-gated `self.warn` fired regardless of the UI checkbox state. New coerce `this.verbose = !!n.verboselogging && n.verboselogging !== 'false'` strictly distinguishes the unchecked / "false" / empty cases from the checked / "true" / "on" cases. 7 input cases now covered in tests.
 

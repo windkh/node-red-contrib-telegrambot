@@ -397,6 +397,109 @@ describe('bot-node — request pool rebuild on scheduleRestart (issue #442, V17.
     });
 });
 
+describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', function () {
+    this.timeout(5000);
+
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    function flow() {
+        return [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+    }
+
+    it('initialises conflict409Times as an empty array and exposes record409Conflict', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                expect(n.conflict409Times).to.deep.equal([]);
+                expect(n.record409Conflict).to.be.a('function');
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('does not trip below the threshold', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                for (let i = 0; i < 9; i++) {
+                    expect(n.record409Conflict()).to.equal(false);
+                }
+                expect(n.conflict409Times.length).to.equal(9);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('trips on the 10th 409 in the window and resets the array', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                for (let i = 0; i < 9; i++) {
+                    n.record409Conflict();
+                }
+                // 10th call trips.
+                expect(n.record409Conflict()).to.equal(true);
+                // Array reset so the operator gets exactly one error log, not one per overflow.
+                expect(n.conflict409Times).to.deep.equal([]);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('prunes timestamps older than the 30 s window', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                // Pre-seed 9 timestamps from 31 s ago — older than the window.
+                const ancient = Date.now() - 31000;
+                for (let i = 0; i < 9; i++) {
+                    n.conflict409Times.push(ancient);
+                }
+                // A fresh call must prune the old ones and not trip on its own.
+                expect(n.record409Conflict()).to.equal(false);
+                expect(n.conflict409Times.length).to.equal(1);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('only trips when the 10 calls fall *inside* the window', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                // 5 ancient + 4 fresh = 9 in-window. Should not trip.
+                const ancient = Date.now() - 35000;
+                for (let i = 0; i < 5; i++) n.conflict409Times.push(ancient);
+                for (let i = 0; i < 4; i++) n.record409Conflict();
+                expect(n.conflict409Times.length).to.equal(4); // ancients pruned
+                expect(n.record409Conflict()).to.equal(false);
+                expect(n.conflict409Times.length).to.equal(5);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+});
+
 describe('bot-node — polling-restart single-flight guard (issue #442)', function () {
     this.timeout(5000);
 

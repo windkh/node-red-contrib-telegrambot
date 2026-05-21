@@ -610,18 +610,33 @@ module.exports = function (RED) {
                     self.pollingRestartTimer = null;
                     // Check if abort was called in the meantime.
                     if (self.telegramBot) {
-                        // Force a fully fresh polling instance. We previously trusted
-                        // startPolling({ restart: true }) (the documented soft-restart) but
-                        // since V17.3.0's df46aa0 removed the explicit teardown, the library
-                        // kept enough internal polling state across restarts that a new
-                        // getUpdates would race a still-pending one server-side, causing
-                        // the 409 Conflict loops in issue #442. Resetting _polling to null
-                        // first guarantees the library treats the next start as a clean
-                        // boot. Reaches into the library's private API on purpose — keep
-                        // an eye on this on node-telegram-bot-api major bumps.
-                        delete self.telegramBot._polling;
-                        self.telegramBot._polling = null;
-                        self.telegramBot.startPolling({ restart: true });
+                        // Properly halt the existing polling instance before starting a new
+                        // poll. Earlier versions of this code (V17.4.4) nulled _polling
+                        // before calling startPolling, but that doesn't actually stop the
+                        // recursive setTimeout loop already scheduled inside the old polling
+                        // instance — the OLD instance is held alive by its .finally()
+                        // closure and keeps making getUpdates against Telegram, racing with
+                        // the new one (#440 retest). The only thing that stops the loop is
+                        // setting _abort=true on the polling instance, which is what
+                        // stopPolling({cancel:false}) does. After it resolves, the loop is
+                        // genuinely halted and startPolling can safely begin a fresh cycle
+                        // on the same _polling instance (lib's start() recreates _lastRequest).
+                        const polling = self.telegramBot._polling;
+                        if (polling && polling._lastRequest && typeof polling._lastRequest.cancel === 'function') {
+                            polling._lastRequest.cancel('restartPolling');
+                        }
+                        self.telegramBot.stopPolling({ cancel: false }).then(
+                            function () {
+                                if (self.telegramBot) {
+                                    self.telegramBot.startPolling({ restart: true });
+                                }
+                            },
+                            function () {
+                                if (self.telegramBot) {
+                                    self.telegramBot.startPolling({ restart: true });
+                                }
+                            }
+                        );
                     }
                 }, 3000); // 3 seconds to not flood the output with too many messages.
             }
@@ -971,12 +986,33 @@ module.exports = function (RED) {
 
             if (self.telegramBot !== undefined && self.telegramBot !== null) {
                 if (self.telegramBot._polling) {
-                    // cancel:true asks node-telegram-bot-api to abort the in-flight
-                    // getUpdates so stopPolling resolves immediately instead of waiting
-                    // for the long-poll timeout. Previously we passed cancel:false and
-                    // then reached into _polling._lastRequest.cancel() to achieve the
-                    // same thing - same outcome, two racing cancellations, internal API.
-                    self.telegramBot.stopPolling({ cancel: true }).then(setStatusDisconnected, setStatusDisconnected);
+                    // We need BOTH halves of node-telegram-bot-api's stop() semantics here:
+                    //
+                    // - cancel:false sets the polling instance's `_abort = true`, which is
+                    //   the ONLY thing that stops the recursive setTimeout loop inside
+                    //   `_polling()` (see telegramPolling.js:163 `.finally()`). Without
+                    //   _abort, the cancelled HTTP request settles via the .catch path,
+                    //   `.finally()` runs, sees no abort, and schedules ANOTHER `_polling()`
+                    //   iteration. Result: the old polling instance keeps making
+                    //   getUpdates requests after stopPolling resolves, racing with whatever
+                    //   the next bot construction sets up. Telegram sees two getUpdates for
+                    //   the same token and 409 Conflicts the loser (#440, #441 retest).
+                    //
+                    // - We *also* call .cancel() on the in-flight request directly so the
+                    //   local socket closes immediately rather than waiting up to
+                    //   pollTimeout seconds for Telegram's long-poll to time out. Without
+                    //   this, stopPolling can take up to 10 s on the happy path (when the
+                    //   in-flight getUpdates is just waiting), which would push redeploys
+                    //   past Node-RED's close timeout.
+                    //
+                    // V17.3.0 dropped the explicit `.cancel()` in favour of cancel:true, and
+                    // V17.4.4 added a `_polling = null` hack to compensate. Neither actually
+                    // stopped the recursive loop. This restores the pattern that does.
+                    const polling = self.telegramBot._polling;
+                    if (polling._lastRequest && typeof polling._lastRequest.cancel === 'function') {
+                        polling._lastRequest.cancel('abortBot');
+                    }
+                    self.telegramBot.stopPolling({ cancel: false }).then(setStatusDisconnected, setStatusDisconnected);
                 } else if (self.telegramBot._webHook) {
                     // Telegram keeps the previously registered webhook URL on file until we tell it
                     // to drop it. Wait for deleteWebHook to complete (or fail) before tearing the

@@ -397,6 +397,142 @@ describe('bot-node — request pool rebuild on scheduleRestart (issue #442, V17.
     });
 });
 
+describe('bot-node — abortBot stops polling cleanly (issue #440, V17.4.8)', function () {
+    this.timeout(5000);
+
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    function flow() {
+        return [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+    }
+
+    function makeFakePollingBot(behaviour) {
+        behaviour = behaviour || {};
+        const calls = { cancel: [], stopPolling: [] };
+        const fake = {
+            _polling: {
+                _lastRequest: {
+                    cancel: function (reason) {
+                        calls.cancel.push(reason);
+                    },
+                },
+            },
+            stopPolling: function (options) {
+                calls.stopPolling.push(options);
+                if (behaviour.stopPollingRejects) {
+                    return Promise.reject(new Error('stopPolling failed'));
+                }
+                return Promise.resolve();
+            },
+        };
+        return { bot: fake, calls };
+    }
+
+    it('cancels in-flight _lastRequest before stopPolling resolves', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const { bot, calls } = makeFakePollingBot();
+                n.telegramBot = bot;
+                n.abortBot('test', function () {
+                    try {
+                        expect(calls.cancel).to.deep.equal(['abortBot']);
+                        // stopPolling MUST be called with cancel:false (the only way to set
+                        // _abort=true in the lib, which is the only way to halt the recursive
+                        // polling loop).
+                        expect(calls.stopPolling).to.deep.equal([{ cancel: false }]);
+                        expect(n.telegramBot).to.equal(null);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('still completes the done callback if stopPolling rejects', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const { bot, calls } = makeFakePollingBot({ stopPollingRejects: true });
+                n.telegramBot = bot;
+                n.abortBot('test', function () {
+                    try {
+                        expect(calls.stopPolling).to.deep.equal([{ cancel: false }]);
+                        expect(n.telegramBot).to.equal(null);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('tolerates _lastRequest without a cancel function', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const { bot, calls } = makeFakePollingBot();
+                // Replace _lastRequest with a shape that doesn't expose .cancel — e.g.
+                // a lib version where the internal API has shifted. We must not crash.
+                bot._polling._lastRequest = { foo: 'bar' };
+                n.telegramBot = bot;
+                n.abortBot('test', function () {
+                    try {
+                        expect(calls.cancel).to.deep.equal([]); // no cancel attempted
+                        expect(calls.stopPolling).to.deep.equal([{ cancel: false }]);
+                        expect(n.telegramBot).to.equal(null);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('tolerates _polling without an in-flight _lastRequest', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const { bot, calls } = makeFakePollingBot();
+                bot._polling._lastRequest = null;
+                n.telegramBot = bot;
+                n.abortBot('test', function () {
+                    try {
+                        expect(calls.cancel).to.deep.equal([]);
+                        expect(calls.stopPolling).to.deep.equal([{ cancel: false }]);
+                        expect(n.telegramBot).to.equal(null);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+});
+
 describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', function () {
     this.timeout(5000);
 

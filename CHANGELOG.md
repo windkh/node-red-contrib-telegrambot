@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.10] - 2026-05-23
+### Override serialize-javascript to ^7.0.5 to clear the latest serialize-javascript security advisory. Same shape as V17.4.9's qs override and V17.3.1's tough-cookie override: mocha@10.8.2 (and even mocha@11.7.6, the latest stable) pin `serialize-javascript@^6.0.2` via caret, which cannot reach the patched 7.0.5 line. Dependabot logged `security_update_not_possible`. Forcing one version via `overrides` resolves it; 232 tests still pass with serialize-javascript 7.0.5 under mocha 10.8.2 (mocha uses it only for parallel-test-reporter result serialisation, a stable API surface across the 6→7 jump). Also publishes through the npm publish path repaired after the token refresh on 2026-05-23, restoring the `latest` dist-tag to the newest version (17.4.8 had taken it as a side-effect of the V17.4.7/V17.4.8 backfill reruns happening after V17.4.9 had already published).
+
 # [17.4.9] - 2026-05-23
 ### Override qs to ^6.15.2 to clear the latest qs security advisories. Same shape as V17.3.1's tough-cookie override (GHSA-72xf-g2v4-qvf3): the vulnerable copy is pinned transitively (`@cypress/request@3.0.1` exact-pins `qs@6.10.4`), Dependabot can't resolve a single version that satisfies every constraint AND the security fix (6.15.2 is below several `~6.14.0` constraints from body-parser/express AND above @cypress/request's exact pin). Forcing one version via `overrides` cuts through the conflict. All six transitive paths now resolve to qs@6.15.2; 232 tests still pass.
 

@@ -43,7 +43,9 @@
       "Bash(curl -sL \"https://github.com/user-attachments/files/28013068/node-red-log.txt\" -o /tmp/d441-log.txt)",
       "Read(//tmp/**)",
       "Bash(mv /tmp/d441-log.txt ./.claude/d441-log.txt && wc -l ./.claude/d441-log.txt)",
-      "Bash(gh run *)"
+      "Bash(gh run *)",
+      "Bash(rm .claude/d441-followup.md)",
+      "Bash(node -e \"console.log\\(Object.keys\\(require\\('uuid'\\)\\)\\)\")"
     ],
     "additionalDirectories": [
       "D:\\HeinzSeinz\\Github\\node-red-contrib-telegrambot\\.claude",

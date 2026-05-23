@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.12] - 2026-05-23
+### Drop Node 18 from the CI matrix and declare `engines: { node: ">=20.0.0" }`. The V17.4.11 uuid override pulled in `uuid@14.0.0`, which is ESM-only (the package shipped pure-ESM starting from uuid 12). Loading it from CommonJS requires Node's `require(esm)` feature, which is available unflagged on Node 20.17+ / Node 22+ but throws `ERR_REQUIRE_ESM` on Node 18 — the load failure inside `@cypress/request/lib/auth.js`'s `require('uuid')` cascades into `@cypress/request-promise`'s misleading "request library is not installed" banner and breaks every test that constructs a bot (76 failures on the Node 18 CI leg of the V17.4.11 commit). Node 18 reached EOL 2025-04-30; the cleanest fix is to formalise dropping it. CI matrix now `[20.x, 22.x]`. Coverage job already targets Node 20. No code changes; downstream impact on users is limited to those who haven't yet migrated from Node 18.
+
 # [17.4.11] - 2026-05-23
 ### Override uuid to ^14.0.0 to clear the latest uuid security advisory. Same shape as V17.4.10 / V17.4.9 / V17.3.1: two competing transitive pins (`@cypress/request@3.0.1` requires `uuid@^8.3.2`; the legacy phantom `request@2.88.2` requires `uuid@^3.3.2`) can't reach the patched 14.x line via normal semver resolution. Verified safe before applying: the only runtime caller is `@cypress/request` which uses the modern `require('uuid').v4` named-export form (works in uuid 7-14+); the legacy `request@2.88.2` uses `require('uuid/v4')` (removed in uuid 9.0.0) but is never `require()`'d at runtime — `@cypress/request-promise/lib/rp.js:11` redirects every promise call into `@cypress/request` instead. 232 tests pass including the integration suite that exercises the live polling/sending/webhook transports against a mocked Telegram API.
 

@@ -42,7 +42,8 @@
       "Bash(rm .claude/d438-body.md)",
       "Bash(curl -sL \"https://github.com/user-attachments/files/28013068/node-red-log.txt\" -o /tmp/d441-log.txt)",
       "Read(//tmp/**)",
-      "Bash(mv /tmp/d441-log.txt ./.claude/d441-log.txt && wc -l ./.claude/d441-log.txt)"
+      "Bash(mv /tmp/d441-log.txt ./.claude/d441-log.txt && wc -l ./.claude/d441-log.txt)",
+      "Bash(gh run *)"
     ],
     "additionalDirectories": [
       "D:\\HeinzSeinz\\Github\\node-red-contrib-telegrambot\\.claude",

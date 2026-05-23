@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.9] - 2026-05-23
+### Override qs to ^6.15.2 to clear the latest qs security advisories. Same shape as V17.3.1's tough-cookie override (GHSA-72xf-g2v4-qvf3): the vulnerable copy is pinned transitively (`@cypress/request@3.0.1` exact-pins `qs@6.10.4`), Dependabot can't resolve a single version that satisfies every constraint AND the security fix (6.15.2 is below several `~6.14.0` constraints from body-parser/express AND above @cypress/request's exact pin). Forcing one version via `overrides` cuts through the conflict. All six transitive paths now resolve to qs@6.15.2; 232 tests still pass.
+
 # [17.4.8] - 2026-05-18
 ### Polling teardown actually halts the recursive _polling loop (#440, root-causes #441/#442/#411 too). Earlier versions of abortBot used stopPolling({cancel:true}), which the lib implements as `lastRequest.cancel(); return Promise.resolve()` — it cancels the HTTP request locally but does NOT set the polling instance's `_abort` flag. The polling loop inside node-telegram-bot-api is a recursive setTimeout chain inside `_polling()`'s `.finally()` block, and the ONLY thing that stops that chain is `_abort=true`, which only stopPolling({cancel:false}) sets. Result: every previous "stop polling" call left the old polling loop running in the background, racing with whatever the next bot construction set up. V17.4.4's `_polling = null` hack didn't help — the old instance was held alive by its own .finally() closure and kept making getUpdates against Telegram, which is exactly what triggered the persistent 409 Conflicts AtieshStaff reported on #440 after upgrading.
 

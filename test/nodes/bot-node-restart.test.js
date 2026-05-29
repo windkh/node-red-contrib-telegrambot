@@ -737,3 +737,110 @@ describe('bot-node — polling-restart single-flight guard (issue #442)', functi
         });
     });
 });
+
+describe('bot-node — polling-burst circuit breaker (issue #442 retest 2026-05-29)', function () {
+    this.timeout(5000);
+
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    function flow() {
+        return [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+    }
+
+    it('initialises pollingErrorTimes as an empty array and exposes recordPollingError', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                expect(n.pollingErrorTimes).to.deep.equal([]);
+                expect(n.recordPollingError).to.be.a('function');
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('does not trip below the threshold', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                for (let i = 0; i < 4; i++) {
+                    expect(n.recordPollingError()).to.equal(false);
+                }
+                expect(n.pollingErrorTimes.length).to.equal(4);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('trips on the 5th polling error in the window and resets the array', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                for (let i = 0; i < 4; i++) {
+                    n.recordPollingError();
+                }
+                // 5th call trips.
+                expect(n.recordPollingError()).to.equal(true);
+                // Reset so the breaker doesn't fire again while the rebuild is in flight.
+                expect(n.pollingErrorTimes).to.deep.equal([]);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('prunes timestamps older than the 60 s window', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                // Pre-seed 4 timestamps from 61 s ago — older than the window.
+                const ancient = Date.now() - 61000;
+                for (let i = 0; i < 4; i++) {
+                    n.pollingErrorTimes.push(ancient);
+                }
+                // A fresh call must prune the old ones and not trip on its own.
+                expect(n.recordPollingError()).to.equal(false);
+                expect(n.pollingErrorTimes.length).to.equal(1);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('only trips when the 5 calls fall *inside* the window', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                // 3 ancient + 1 fresh = 4 in-window. Should not trip.
+                const ancient = Date.now() - 70000;
+                for (let i = 0; i < 3; i++) n.pollingErrorTimes.push(ancient);
+                for (let i = 0; i < 1; i++) n.recordPollingError();
+                expect(n.pollingErrorTimes.length).to.equal(1); // ancients pruned
+                // 3 more fresh calls — 4 in-window total. Still no trip.
+                for (let i = 0; i < 3; i++) {
+                    expect(n.recordPollingError()).to.equal(false);
+                }
+                // 5th fresh call inside the window trips.
+                expect(n.recordPollingError()).to.equal(true);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+});

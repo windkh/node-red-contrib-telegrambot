@@ -153,6 +153,16 @@ module.exports = function (RED) {
     const CONFLICT_409_THRESHOLD = 10;
     const CONFLICT_409_WINDOW_MS = 30000;
 
+    // See this.pollingErrorTimes in the config-node constructor for the rationale.
+    // 5 polling errors in 60 s = sustained problem, escalate from the cheap
+    // restartPolling path (which reuses the same _polling instance and the same
+    // HTTP agent pool) to scheduleRestart (which rebuilds the bot and the agent
+    // pool from scratch). #442 retest 2026-05-29: petermeter69's wedge showed
+    // every error going through the polling path and never triggering the
+    // 'error' event, so the V17.4.5 agent-pool rebuild never ran.
+    const POLLING_ERROR_THRESHOLD = 5;
+    const POLLING_ERROR_WINDOW_MS = 60000;
+
     // Override upstream's FatalError so the underlying cause is preserved on the thrown
     // error (upstream copies error.stack but not error itself). PR #1257, which originally
     // added FatalError to node-telegram-bot-api, has long since been merged, so the class
@@ -755,8 +765,27 @@ module.exports = function (RED) {
                         self.warn(hint);
                     }
                 } else {
-                    // here we simply ignore the bug and try to reestablish polling.
-                    self.telegramBot.stopPolling({ cancel: false }).then(restartPolling, restartPolling);
+                    // Normal polling failure path. Two recovery modes:
+                    //
+                    // 1. Cheap path (transient blip): stopPolling+restartPolling on
+                    //    the same _polling instance. Same _polling state, same
+                    //    HTTP agent pool. Works fine when the failure is genuinely
+                    //    transient.
+                    // 2. Escalation path (sustained burst): recordPollingError trips
+                    //    after POLLING_ERROR_THRESHOLD failures in
+                    //    POLLING_ERROR_WINDOW_MS. The cheap path is no longer enough
+                    //    because (a) repeated overlapping stopPolling/startPolling
+                    //    cycles can wedge the lib's polling state machine and
+                    //    (b) the underlying keep-alive pool may be handing out dead
+                    //    sockets. Escalate to scheduleRestart, which abortBot's the
+                    //    bot, destroyRequestPool's the agent pool, and constructs a
+                    //    fresh bot — the only path that genuinely rebuilds the agent
+                    //    pool on the polling code path. #442 retest 2026-05-29.
+                    if (self.recordPollingError()) {
+                        self.scheduleRestart('polling-burst: ' + (error.message || 'unknown'));
+                    } else {
+                        self.telegramBot.stopPolling({ cancel: false }).then(restartPolling, restartPolling);
+                    }
 
                     // The following line is removed as this would create endless log files
                     if (self.verbose) {
@@ -1094,6 +1123,39 @@ module.exports = function (RED) {
             }
             return trip;
         };
+
+        // Polling-burst circuit breaker (issue #442 retest 2026-05-29). The
+        // polling_error event fires for every transient network failure; the
+        // cheap recovery is stopPolling+restartPolling on the same _polling
+        // instance, which keeps the HTTP keep-alive agent pool intact. That
+        // pool can hold zombie sockets after a real network drop, and many
+        // rapid stop/start cycles can wedge the lib's polling state machine.
+        // POLLING_ERROR_THRESHOLD failures within POLLING_ERROR_WINDOW_MS trip
+        // the breaker: caller escalates to scheduleRestart, which destroys the
+        // agent pool and constructs a fresh bot. Reset on bot rebuild in
+        // scheduleRestart's success path so the new bot starts with a clean
+        // window.
+        this.pollingErrorTimes = [];
+
+        // Record one polling-error observation. Returns true if the breaker
+        // has tripped (caller should escalate to scheduleRestart); false to
+        // continue with the cheap restartPolling path. Resets the window when
+        // it trips so the breaker doesn't fire repeatedly while the rebuild
+        // is in flight.
+        this.recordPollingError = function () {
+            const now = Date.now();
+            self.pollingErrorTimes.push(now);
+            while (self.pollingErrorTimes.length > 0 && now - self.pollingErrorTimes[0] > POLLING_ERROR_WINDOW_MS) {
+                self.pollingErrorTimes.shift();
+            }
+            let trip = false;
+            if (self.pollingErrorTimes.length >= POLLING_ERROR_THRESHOLD) {
+                self.pollingErrorTimes = [];
+                trip = true;
+            }
+            return trip;
+        };
+
         this.scheduleRestart = function (reason) {
             if (self.restartTimer) {
                 return;
@@ -1147,6 +1209,9 @@ module.exports = function (RED) {
                     if (bot) {
                         self.status = 'connected';
                         self.setStatus('started', 'restarted after ' + reason);
+                        // New bot, fresh agent pool — clear the polling-burst
+                        // breaker so the new bot starts with a clean window.
+                        self.pollingErrorTimes = [];
                         // Don't reset restartCount yet. If another error fires inside the
                         // stable window, scheduleRestart will clear this timer and treat
                         // the next failure as a continuation of the same outage so the

@@ -1040,19 +1040,32 @@ module.exports = function (RED) {
         // etc. Without this the bot stays silent until manual redeploy (issues #442, #440).
         //
         // Single-flight: while a restart is queued or in progress, further calls are dropped.
-        // Backoff: 3 s, 6 s, 12 s, 24 s, 48 s, capped at 60 s. After 8 failed restarts in a
-        // row the helper logs a node.error and gives up — operator intervention required.
+        // Backoff: 3 s, 6 s, 12 s, 24 s, 48 s, then 60 s forever — there is no give-up.
+        // V17.4.12 and earlier capped the retry count at 8 and then permanently silenced
+        // the bot, but that left the operator with the same recourse as not retrying at
+        // all (manual redeploy) while removing any chance of automatic recovery when the
+        // underlying network eventually came back (#442 retest 2026-05-27, 15-minute
+        // wedge from a transient EAI_AGAIN burst). The helper now keeps trying at the
+        // 60 s ceiling indefinitely; a single node.error fires the first time the
+        // ceiling is reached (~90 s into a sustained outage) so the operator gets one
+        // actionable alert without being spammed every minute.
         //
         // Stable-window: a "successful" restart only counts as such once the bot has been
         // operational for STABLE_WINDOW_MS without another error. Until that timer fires,
         // a fresh error keeps the count climbing through the backoff curve. Without this,
         // persistent network problems (issue #442 retest, where errors arrive every ~5 s)
         // would have the helper oscillate at the minimum 3 s delay forever and never let
-        // the exponential curve do its job.
+        // the exponential curve do its job. The same callback also clears
+        // restartCeilingAnnounced so a future outage can raise the ceiling alert again.
         const STABLE_WINDOW_MS = 60000;
         this.restartCount = 0;
         this.restartTimer = null;
         this.restartStableTimer = null;
+        // Tracks whether the "auto-restart hit 60s ceiling" node.error has already
+        // fired for the current outage. Set by scheduleRestart on the first ceiling
+        // hit; cleared by the stable-window callback when the bot has run cleanly
+        // for STABLE_WINDOW_MS.
+        this.restartCeilingAnnounced = false;
         // Persistent-409-Conflict circuit breaker (issue #441). The library's polling
         // loop naturally retries every pollInterval, so on a genuine same-process race
         // (V17.4.4 scenario) the conflict clears within seconds. But if a *separate*
@@ -1091,11 +1104,26 @@ module.exports = function (RED) {
                 clearTimeout(self.restartStableTimer);
                 self.restartStableTimer = null;
             }
-            if (self.restartCount >= 8) {
-                self.error('Bot ' + self.botname + ' gave up restarting after fatal: ' + reason);
-                return;
-            }
             const delay = Math.min(60000, 3000 * Math.pow(2, self.restartCount));
+            if (delay >= 60000 && !self.restartCeilingAnnounced) {
+                // Backoff has reached the 60 s ceiling — the exponential ramp
+                // (3 + 6 + 12 + 24 + 48 ≈ 90 s of sustained failures) has been
+                // fully consumed without any restart surviving the stable window.
+                // Emit one node.error so the operator gets a single actionable
+                // alert that automatic recovery is no longer making forward
+                // progress; the helper keeps retrying at the ceiling silently
+                // after this. V17.4.12 and earlier hit a hard give-up at 8
+                // attempts instead, which left the bot permanently silent until
+                // manual redeploy with no upside (#442 retest 2026-05-27).
+                self.restartCeilingAnnounced = true;
+                self.error(
+                    'Bot ' +
+                        self.botname +
+                        ' auto-restart hit 60s ceiling — sustained failure (' +
+                        reason +
+                        '). Will keep retrying every 60s until network/Telegram recovers.'
+                );
+            }
             self.restartCount++;
             self.warn('Bot ' + self.botname + ' will restart in ' + delay + 'ms (' + reason + ')');
             self.restartTimer = setTimeout(function () {
@@ -1126,6 +1154,9 @@ module.exports = function (RED) {
                         self.restartStableTimer = setTimeout(function () {
                             self.restartStableTimer = null;
                             self.restartCount = 0;
+                            // Clear the ceiling-announced flag so a future outage
+                            // can raise the operator alert again.
+                            self.restartCeilingAnnounced = false;
                         }, STABLE_WINDOW_MS);
                     } else {
                         // creation failed (e.g. webhook config incomplete); back off again

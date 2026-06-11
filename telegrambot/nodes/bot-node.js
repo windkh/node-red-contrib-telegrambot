@@ -153,6 +153,16 @@ module.exports = function (RED) {
     const CONFLICT_409_THRESHOLD = 10;
     const CONFLICT_409_WINDOW_MS = 30000;
 
+    // See this.pollingErrorTimes in the config-node constructor for the rationale.
+    // 5 polling errors in 60 s = sustained problem, escalate from the cheap
+    // restartPolling path (which reuses the same _polling instance and the same
+    // HTTP agent pool) to scheduleRestart (which rebuilds the bot and the agent
+    // pool from scratch). #442 retest 2026-05-29: petermeter69's wedge showed
+    // every error going through the polling path and never triggering the
+    // 'error' event, so the V17.4.5 agent-pool rebuild never ran.
+    const POLLING_ERROR_THRESHOLD = 5;
+    const POLLING_ERROR_WINDOW_MS = 60000;
+
     // Override upstream's FatalError so the underlying cause is preserved on the thrown
     // error (upstream copies error.stack but not error itself). PR #1257, which originally
     // added FatalError to node-telegram-bot-api, has long since been merged, so the class
@@ -755,8 +765,27 @@ module.exports = function (RED) {
                         self.warn(hint);
                     }
                 } else {
-                    // here we simply ignore the bug and try to reestablish polling.
-                    self.telegramBot.stopPolling({ cancel: false }).then(restartPolling, restartPolling);
+                    // Normal polling failure path. Two recovery modes:
+                    //
+                    // 1. Cheap path (transient blip): stopPolling+restartPolling on
+                    //    the same _polling instance. Same _polling state, same
+                    //    HTTP agent pool. Works fine when the failure is genuinely
+                    //    transient.
+                    // 2. Escalation path (sustained burst): recordPollingError trips
+                    //    after POLLING_ERROR_THRESHOLD failures in
+                    //    POLLING_ERROR_WINDOW_MS. The cheap path is no longer enough
+                    //    because (a) repeated overlapping stopPolling/startPolling
+                    //    cycles can wedge the lib's polling state machine and
+                    //    (b) the underlying keep-alive pool may be handing out dead
+                    //    sockets. Escalate to scheduleRestart, which abortBot's the
+                    //    bot, destroyRequestPool's the agent pool, and constructs a
+                    //    fresh bot — the only path that genuinely rebuilds the agent
+                    //    pool on the polling code path. #442 retest 2026-05-29.
+                    if (self.recordPollingError()) {
+                        self.scheduleRestart('polling-burst: ' + (error.message || 'unknown'));
+                    } else {
+                        self.telegramBot.stopPolling({ cancel: false }).then(restartPolling, restartPolling);
+                    }
 
                     // The following line is removed as this would create endless log files
                     if (self.verbose) {
@@ -1040,19 +1069,32 @@ module.exports = function (RED) {
         // etc. Without this the bot stays silent until manual redeploy (issues #442, #440).
         //
         // Single-flight: while a restart is queued or in progress, further calls are dropped.
-        // Backoff: 3 s, 6 s, 12 s, 24 s, 48 s, capped at 60 s. After 8 failed restarts in a
-        // row the helper logs a node.error and gives up — operator intervention required.
+        // Backoff: 3 s, 6 s, 12 s, 24 s, 48 s, then 60 s forever — there is no give-up.
+        // V17.4.12 and earlier capped the retry count at 8 and then permanently silenced
+        // the bot, but that left the operator with the same recourse as not retrying at
+        // all (manual redeploy) while removing any chance of automatic recovery when the
+        // underlying network eventually came back (#442 retest 2026-05-27, 15-minute
+        // wedge from a transient EAI_AGAIN burst). The helper now keeps trying at the
+        // 60 s ceiling indefinitely; a single node.error fires the first time the
+        // ceiling is reached (~90 s into a sustained outage) so the operator gets one
+        // actionable alert without being spammed every minute.
         //
         // Stable-window: a "successful" restart only counts as such once the bot has been
         // operational for STABLE_WINDOW_MS without another error. Until that timer fires,
         // a fresh error keeps the count climbing through the backoff curve. Without this,
         // persistent network problems (issue #442 retest, where errors arrive every ~5 s)
         // would have the helper oscillate at the minimum 3 s delay forever and never let
-        // the exponential curve do its job.
+        // the exponential curve do its job. The same callback also clears
+        // restartCeilingAnnounced so a future outage can raise the ceiling alert again.
         const STABLE_WINDOW_MS = 60000;
         this.restartCount = 0;
         this.restartTimer = null;
         this.restartStableTimer = null;
+        // Tracks whether the "auto-restart hit 60s ceiling" node.error has already
+        // fired for the current outage. Set by scheduleRestart on the first ceiling
+        // hit; cleared by the stable-window callback when the bot has run cleanly
+        // for STABLE_WINDOW_MS.
+        this.restartCeilingAnnounced = false;
         // Persistent-409-Conflict circuit breaker (issue #441). The library's polling
         // loop naturally retries every pollInterval, so on a genuine same-process race
         // (V17.4.4 scenario) the conflict clears within seconds. But if a *separate*
@@ -1081,6 +1123,39 @@ module.exports = function (RED) {
             }
             return trip;
         };
+
+        // Polling-burst circuit breaker (issue #442 retest 2026-05-29). The
+        // polling_error event fires for every transient network failure; the
+        // cheap recovery is stopPolling+restartPolling on the same _polling
+        // instance, which keeps the HTTP keep-alive agent pool intact. That
+        // pool can hold zombie sockets after a real network drop, and many
+        // rapid stop/start cycles can wedge the lib's polling state machine.
+        // POLLING_ERROR_THRESHOLD failures within POLLING_ERROR_WINDOW_MS trip
+        // the breaker: caller escalates to scheduleRestart, which destroys the
+        // agent pool and constructs a fresh bot. Reset on bot rebuild in
+        // scheduleRestart's success path so the new bot starts with a clean
+        // window.
+        this.pollingErrorTimes = [];
+
+        // Record one polling-error observation. Returns true if the breaker
+        // has tripped (caller should escalate to scheduleRestart); false to
+        // continue with the cheap restartPolling path. Resets the window when
+        // it trips so the breaker doesn't fire repeatedly while the rebuild
+        // is in flight.
+        this.recordPollingError = function () {
+            const now = Date.now();
+            self.pollingErrorTimes.push(now);
+            while (self.pollingErrorTimes.length > 0 && now - self.pollingErrorTimes[0] > POLLING_ERROR_WINDOW_MS) {
+                self.pollingErrorTimes.shift();
+            }
+            let trip = false;
+            if (self.pollingErrorTimes.length >= POLLING_ERROR_THRESHOLD) {
+                self.pollingErrorTimes = [];
+                trip = true;
+            }
+            return trip;
+        };
+
         this.scheduleRestart = function (reason) {
             if (self.restartTimer) {
                 return;
@@ -1091,11 +1166,26 @@ module.exports = function (RED) {
                 clearTimeout(self.restartStableTimer);
                 self.restartStableTimer = null;
             }
-            if (self.restartCount >= 8) {
-                self.error('Bot ' + self.botname + ' gave up restarting after fatal: ' + reason);
-                return;
-            }
             const delay = Math.min(60000, 3000 * Math.pow(2, self.restartCount));
+            if (delay >= 60000 && !self.restartCeilingAnnounced) {
+                // Backoff has reached the 60 s ceiling — the exponential ramp
+                // (3 + 6 + 12 + 24 + 48 ≈ 90 s of sustained failures) has been
+                // fully consumed without any restart surviving the stable window.
+                // Emit one node.error so the operator gets a single actionable
+                // alert that automatic recovery is no longer making forward
+                // progress; the helper keeps retrying at the ceiling silently
+                // after this. V17.4.12 and earlier hit a hard give-up at 8
+                // attempts instead, which left the bot permanently silent until
+                // manual redeploy with no upside (#442 retest 2026-05-27).
+                self.restartCeilingAnnounced = true;
+                self.error(
+                    'Bot ' +
+                        self.botname +
+                        ' auto-restart hit 60s ceiling — sustained failure (' +
+                        reason +
+                        '). Will keep retrying every 60s until network/Telegram recovers.'
+                );
+            }
             self.restartCount++;
             self.warn('Bot ' + self.botname + ' will restart in ' + delay + 'ms (' + reason + ')');
             self.restartTimer = setTimeout(function () {
@@ -1119,6 +1209,9 @@ module.exports = function (RED) {
                     if (bot) {
                         self.status = 'connected';
                         self.setStatus('started', 'restarted after ' + reason);
+                        // New bot, fresh agent pool — clear the polling-burst
+                        // breaker so the new bot starts with a clean window.
+                        self.pollingErrorTimes = [];
                         // Don't reset restartCount yet. If another error fires inside the
                         // stable window, scheduleRestart will clear this timer and treat
                         // the next failure as a continuation of the same outage so the
@@ -1126,6 +1219,9 @@ module.exports = function (RED) {
                         self.restartStableTimer = setTimeout(function () {
                             self.restartStableTimer = null;
                             self.restartCount = 0;
+                            // Clear the ceiling-announced flag so a future outage
+                            // can raise the operator alert again.
+                            self.restartCeilingAnnounced = false;
                         }, STABLE_WINDOW_MS);
                     } else {
                         // creation failed (e.g. webhook config incomplete); back off again

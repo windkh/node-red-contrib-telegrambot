@@ -69,18 +69,90 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
         });
     });
 
-    it('surrenders after 8 consecutive failed restarts and logs node.error', function (done) {
+    it('initialises restartCeilingAnnounced to false on construction', function (done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
-                let errorMsg = null;
+                expect(n.restartCeilingAnnounced).to.equal(false);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('keeps retrying past the old 8-attempt cap — no permanent give-up (#442 retest 2026-05-27)', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const errorMsgs = [];
+                const warnMsgs = [];
                 n.error = function (m) {
-                    errorMsg = m;
+                    errorMsgs.push(m);
                 };
-                n.restartCount = 8; // already at the cap
-                n.scheduleRestart('boom');
-                expect(errorMsg).to.match(/gave up restarting after fatal: boom/);
-                expect(n.restartTimer).to.equal(null);
+                n.warn = function (m) {
+                    warnMsgs.push(m);
+                };
+                n.restartCount = 12; // well past the old give-up threshold of 8
+                n.restartCeilingAnnounced = true; // pretend the operator was already alerted
+                n.scheduleRestart('still-broken');
+                // A restart MUST be scheduled — the helper no longer surrenders.
+                expect(n.restartTimer).to.not.equal(null);
+                // No "gave up" message — that branch is gone.
+                expect(
+                    errorMsgs.some(function (m) {
+                        return /gave up restarting/.test(m);
+                    })
+                ).to.equal(false);
+                // The warn line still announces the scheduled restart at the cap.
+                expect(
+                    warnMsgs.some(function (m) {
+                        return /will restart in 60000ms/.test(m);
+                    })
+                ).to.equal(true);
+                clearTimeout(n.restartTimer);
+                n.restartTimer = null;
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('emits exactly one node.error the first time the 60s ceiling is reached and stays silent after', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const errorMsgs = [];
+                n.error = function (m) {
+                    errorMsgs.push(m);
+                };
+                n.warn = function () {};
+
+                // count=4 → delay=48000, still below the ceiling — no node.error yet.
+                n.restartCount = 4;
+                n.scheduleRestart('approaching');
+                expect(errorMsgs).to.deep.equal([]);
+                expect(n.restartCeilingAnnounced).to.equal(false);
+                clearTimeout(n.restartTimer);
+                n.restartTimer = null;
+
+                // count=5 → delay=60000, first time at the ceiling — node.error fires once.
+                n.restartCount = 5;
+                n.scheduleRestart('at-ceiling');
+                expect(errorMsgs).to.have.length(1);
+                expect(errorMsgs[0]).to.match(/auto-restart hit 60s ceiling/);
+                expect(errorMsgs[0]).to.include('at-ceiling');
+                expect(n.restartCeilingAnnounced).to.equal(true);
+                clearTimeout(n.restartTimer);
+                n.restartTimer = null;
+
+                // count=6 → still at the ceiling but the flag is set — no further node.errors.
+                n.restartCount = 6;
+                n.scheduleRestart('still-at-ceiling');
+                expect(errorMsgs).to.have.length(1); // unchanged
+                clearTimeout(n.restartTimer);
+                n.restartTimer = null;
                 done();
             } catch (err) {
                 done(err);
@@ -658,6 +730,113 @@ describe('bot-node — polling-restart single-flight guard (issue #442)', functi
                 const n = helper.getNode('b1');
                 // Initial state: no pending polling restart.
                 expect(n.pollingRestartTimer === null || n.pollingRestartTimer === undefined).to.equal(true);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+});
+
+describe('bot-node — polling-burst circuit breaker (issue #442 retest 2026-05-29)', function () {
+    this.timeout(5000);
+
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    function flow() {
+        return [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+    }
+
+    it('initialises pollingErrorTimes as an empty array and exposes recordPollingError', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                expect(n.pollingErrorTimes).to.deep.equal([]);
+                expect(n.recordPollingError).to.be.a('function');
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('does not trip below the threshold', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                for (let i = 0; i < 4; i++) {
+                    expect(n.recordPollingError()).to.equal(false);
+                }
+                expect(n.pollingErrorTimes.length).to.equal(4);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('trips on the 5th polling error in the window and resets the array', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                for (let i = 0; i < 4; i++) {
+                    n.recordPollingError();
+                }
+                // 5th call trips.
+                expect(n.recordPollingError()).to.equal(true);
+                // Reset so the breaker doesn't fire again while the rebuild is in flight.
+                expect(n.pollingErrorTimes).to.deep.equal([]);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('prunes timestamps older than the 60 s window', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                // Pre-seed 4 timestamps from 61 s ago — older than the window.
+                const ancient = Date.now() - 61000;
+                for (let i = 0; i < 4; i++) {
+                    n.pollingErrorTimes.push(ancient);
+                }
+                // A fresh call must prune the old ones and not trip on its own.
+                expect(n.recordPollingError()).to.equal(false);
+                expect(n.pollingErrorTimes.length).to.equal(1);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('only trips when the 5 calls fall *inside* the window', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                // 3 ancient + 1 fresh = 4 in-window. Should not trip.
+                const ancient = Date.now() - 70000;
+                for (let i = 0; i < 3; i++) n.pollingErrorTimes.push(ancient);
+                for (let i = 0; i < 1; i++) n.recordPollingError();
+                expect(n.pollingErrorTimes.length).to.equal(1); // ancients pruned
+                // 3 more fresh calls — 4 in-window total. Still no trip.
+                for (let i = 0; i < 3; i++) {
+                    expect(n.recordPollingError()).to.equal(false);
+                }
+                // 5th fresh call inside the window trips.
+                expect(n.recordPollingError()).to.equal(true);
                 done();
             } catch (err) {
                 done(err);

@@ -2,6 +2,7 @@ const helper = require('node-red-node-test-helper');
 const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
 const { startMock } = require('../fixtures/telegram-mock.js');
+const { loadTelegramBot } = require('../../telegrambot/lib/telegram-bot-loader');
 
 helper.init(require.resolve('node-red'));
 
@@ -11,6 +12,13 @@ describe('integration: polling transport against a mocked Telegram API', functio
     let mock;
 
     before(async function () {
+        // Pre-resolve the dynamic import of node-telegram-bot-api so the
+        // module-level subclass (`TelegramBotEx` in bot-node.js) is built
+        // before the first bot is constructed. In production this happens
+        // automatically — by the time a flow runs, the import has long since
+        // settled — but mocha tests call helper.load synchronously right
+        // after the module require, so we have to preload explicitly.
+        await loadTelegramBot();
         mock = await startMock();
         await new Promise(function (r) {
             helper.startServer(r);

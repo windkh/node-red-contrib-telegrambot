@@ -1,12 +1,9 @@
 const { formatErrorChain } = require('../lib/error-chain');
 const { evalContextExpression } = require('../lib/context-expression');
+const { loadTelegramBot } = require('../lib/telegram-bot-loader');
+const { installDispatcher, destroyDispatcher } = require('../lib/undici-pool');
 
 module.exports = function (RED) {
-    let telegramBot = require('node-telegram-bot-api');
-    let telegramBotWebHook = require('node-telegram-bot-api/src/telegramWebHook');
-
-    let { SocksProxyAgent } = require('socks-proxy-agent');
-
     // See this.conflict409Times in the config-node constructor for the rationale.
     const CONFLICT_409_THRESHOLD = 10;
     const CONFLICT_409_WINDOW_MS = 30000;
@@ -14,112 +11,65 @@ module.exports = function (RED) {
     // See this.pollingErrorTimes in the config-node constructor for the rationale.
     // 5 polling errors in 60 s = sustained problem, escalate from the cheap
     // restartPolling path (which reuses the same _polling instance and the same
-    // HTTP agent pool) to scheduleRestart (which rebuilds the bot and the agent
+    // HTTP keep-alive pool) to scheduleRestart (which rebuilds the bot and the
     // pool from scratch). #442 retest 2026-05-29: petermeter69's wedge showed
     // every error going through the polling path and never triggering the
     // 'error' event, so the V17.4.5 agent-pool rebuild never ran.
     const POLLING_ERROR_THRESHOLD = 5;
     const POLLING_ERROR_WINDOW_MS = 60000;
 
-    // Override upstream's FatalError so the underlying cause is preserved on the thrown
-    // error (upstream copies error.stack but not error itself). PR #1257, which originally
-    // added FatalError to node-telegram-bot-api, has long since been merged, so the class
-    // exists upstream - we only keep the override for the `this.cause = error` line. The
-    // 'SLIGHTLYBETTEREFATAL' code marks the patched form so it is distinguishable in logs
-    // from the stock 'EFATAL' string. Original context: issue #345.
-    let tgbe = require('node-telegram-bot-api/src/errors');
-    class FatalError extends tgbe.BaseError {
-        constructor(data) {
-            const error = typeof data === 'string' ? null : data;
-            const message = error ? error.message : data;
-            super('SLIGHTLYBETTEREFATAL', message);
-            if (error) this.stack = error.stack;
-            if (error) this.cause = error;
+    // node-telegram-bot-api v1.0.0 is ESM-only; the dynamic import resolves to
+    // the default-exported constructor. We kick it off at module load and cache
+    // a `telegramBotEx` subclass once the import settles. Node-RED instantiates
+    // config nodes synchronously when flows deploy, but bots are not actually
+    // constructed until the first send / receive / poll path runs — by which
+    // time this Promise has long since settled. If a bot construction races
+    // ahead of the import (very early test code paths, mostly), the
+    // `createTelegramBot*` helpers below detect a null subclass and surface a
+    // node.error rather than hanging.
+    let TelegramBotEx = null;
+    let telegramBotLoadError = null;
+    loadTelegramBot().then(
+        function (TelegramBot) {
+            TelegramBotEx = class telegramBotEx extends TelegramBot {
+                constructor(token, options = {}) {
+                    super(token, options);
+                    this.cycle = 0;
+                }
+
+                // Emit getUpdates_start / getUpdates_end so the control node
+                // can drive its "live polling activity" status indicator.
+                // Public API on TelegramBot in both v0.66 and v1.0.0.
+                getUpdates(form = {}) {
+                    this.cycle++;
+                    this.emit('getUpdates_start', this.cycle);
+                    const startTime = Date.now();
+                    const result = super.getUpdates(form);
+                    result
+                        .then((updates) => {
+                            this.emit('getUpdates_end', this.cycle, Date.now() - startTime, updates);
+                        })
+                        .catch(() => {
+                            // Errors from getUpdates are handled by the caller;
+                            // suppress unhandled rejection here.
+                        });
+                    return result;
+                }
+
+                // Emit 'update' so the receiver node can dispatch any update
+                // shape (not just bot-emitted built-ins like 'message').
+                processUpdate(update) {
+                    this.emit('update', update);
+                    super.processUpdate(update);
+                }
+            };
+        },
+        function (err) {
+            telegramBotLoadError = err;
+            // eslint-disable-next-line no-console
+            console.error('node-red-contrib-telegrambot: failed to load node-telegram-bot-api:', err);
         }
-    }
-    tgbe.FatalError = FatalError;
-
-    // Orginal class is extended to be able to emit an event when getUpdates is called.
-    class telegramBotWebHookEx extends telegramBotWebHook {
-        constructor(bot) {
-            super(bot);
-        }
-
-        open() {
-            if (this.isOpen()) {
-                return Promise.resolve();
-            }
-            return new Promise((resolve, reject) => {
-                this._webServer.listen(this.options.port, this.options.host, () => {
-                    RED.log.info('node-red-contrib-telegrambot: WebHook listening on ' + this.options.host + ':' + this.options.port);
-                    this._open = true;
-                    return resolve();
-                });
-
-                this._webServer.once('error', (err) => {
-                    reject(err);
-                });
-            });
-        }
-    }
-
-    // Orginal class is extended to be able to emit an event when getUpdates is called.
-    class telegramBotEx extends telegramBot {
-        constructor(token, options = {}) {
-            super(token, options);
-            this.cycle = 0;
-        }
-
-        getUpdates(form = {}) {
-            this.cycle++;
-            this.emit('getUpdates_start', this.cycle);
-            let startTime = new Date().getTime();
-
-            let result = super.getUpdates(form);
-            result
-                .then((updates) => {
-                    let endTime = new Date().getTime();
-                    this.emit('getUpdates_end', this.cycle, endTime - startTime, updates);
-                })
-                .catch(() => {
-                    // Errors from getUpdates are handled by the caller; suppress unhandled rejection here.
-                });
-
-            return result;
-        }
-
-        processUpdate(update) {
-            this.emit('update', update);
-            super.processUpdate(update);
-        }
-
-        openWebHook() {
-            if (this.isPolling()) {
-                return Promise.reject('WebHook and Polling are mutually exclusive');
-            }
-
-            if (!this._webHook) {
-                this._webHook = new telegramBotWebHookEx(this);
-            }
-
-            return this._webHook.open();
-        }
-
-        _request(_path, options = {}) {
-            let result;
-            if (_path !== 'getUpdates') {
-                // TODO: add catch and retry later here.
-                result = super._request(_path, options);
-                // result.catch(function (err) {
-                //     ;
-                // });
-            } else {
-                result = super._request(_path, options); // no special handling for polling updates.
-            }
-
-            return result;
-        }
-    }
+    );
 
     // --------------------------------------------------------------------------------------------
 
@@ -239,84 +189,37 @@ module.exports = function (RED) {
         // 4. optional when request via SOCKS is used.
         this.useSocks = n.usesocks;
 
-        // Builds the @cypress/request options object that node-telegram-bot-api passes
-        // into every HTTP call. Returned with a fresh `pool: {}` reference each call —
-        // see destroyRequestPool below for why. Earlier versions of this code passed
-        // `agentOptions` with no `pool` field for the non-SOCKS path, which silently
-        // routed all bot traffic through @cypress/request's process-global pool. That
-        // meant the keep-alive socket pool persisted across bot rebuilds — exactly the
-        // wedge petermeter69 reported on #442 ("connection to TG is dead until manual
-        // redeploy, network itself is fine"). With a fresh per-bot `pool: {}` and the
-        // explicit destroy on rebuild, scheduleRestart genuinely replaces the agent.
-        this.buildRequestOptions = function () {
-            const pool = {};
-            self.requestPool = pool;
+        // Builds the options object passed to `installDispatcher` (see
+        // telegrambot/lib/undici-pool). The dispatcher backs every fetch
+        // call from the bot library because node-telegram-bot-api v1.0.0
+        // uses native fetch with no per-instance hook — we install a
+        // process-global undici Agent (or `fetch-socks` socksDispatcher)
+        // and route every bot through it.
+        //
+        // Pool isolation per bot is gone (the symbol-based install is
+        // process-global), but the V17.4.5 / V17.4.13 #442 defence is
+        // preserved via destroy+rebuild on `scheduleRestart`.
+        this.buildDispatcherOptions = function () {
+            const agent = { keepAliveTimeout: 4000 };
+            if (self.addressFamily === 4 || self.addressFamily === 6) {
+                agent.connect = { family: self.addressFamily };
+            }
             let result;
             if (self.useSocks) {
-                let socksprotocol = n.socksprotocol || 'socks5';
-                let agentOptions = {
-                    hostname: n.sockshost,
+                const socksType = (n.socksprotocol || 'socks5') === 'socks4' ? 4 : 5;
+                const socks = {
+                    type: socksType,
+                    host: n.sockshost,
                     port: n.socksport,
-                    protocol: socksprotocol,
-                    // type: 5,
-                    timeout: 5000, // ms <-- does not really work
                 };
-
-                if (n.socksusername !== '') {
-                    agentOptions.username = n.socksusername;
-                }
-
-                if (n.sockspassword !== '') {
-                    agentOptions.password = n.sockspassword;
-                }
-
-                if (self.addressFamily === 4 || self.addressFamily === 6) {
-                    agentOptions.family = self.addressFamily;
-                }
-
-                result = {
-                    agentClass: SocksProxyAgent,
-                    agentOptions: agentOptions,
-                    pool: pool,
-                };
+                if (n.socksusername) socks.userId = n.socksusername;
+                if (n.sockspassword) socks.password = n.sockspassword;
+                result = { socks, agent };
             } else {
-                let agentOptions = {
-                    keepAlive: true,
-                };
-
-                if (self.addressFamily === 4 || self.addressFamily === 6) {
-                    agentOptions.family = self.addressFamily;
-                }
-
-                result = {
-                    agentOptions: agentOptions,
-                    pool: pool,
-                };
+                result = { agent };
             }
             return result;
         };
-
-        // Destroys every agent currently cached in self.requestPool. @cypress/request
-        // populates the pool keyed by protocol + cert/cipher options (see request.js
-        // getNewAgent) and reuses the same agent instance across requests with the same
-        // key. Without explicit destroy(), the agent's keep-alive sockets stay open
-        // until they idle out or the agent is garbage-collected — neither happens
-        // promptly when a dropped network link silently kills half-open sockets, which
-        // is the root cause of the "bot says polling but nothing flows" wedge in #442.
-        this.destroyRequestPool = function () {
-            const pool = self.requestPool;
-            if (pool && typeof pool === 'object') {
-                for (const key of Object.keys(pool)) {
-                    const agent = pool[key];
-                    if (agent && typeof agent.destroy === 'function') {
-                        agent.destroy();
-                    }
-                }
-            }
-            self.requestPool = null;
-        };
-
-        this.request = this.buildRequestOptions();
 
         this.useWebhook = false;
         if (this.updateMode == 'webhook') {
@@ -361,10 +264,12 @@ module.exports = function (RED) {
                 webHook: webHook,
                 baseApiUrl: this.baseApiUrl,
                 testEnvironment: this.testEnvironment,
-                request: this.request,
             };
 
-            newTelegramBot = new telegramBotEx(this.token, options);
+            newTelegramBot = self.instantiateBot(this.token, options);
+            if (!newTelegramBot) {
+                return null;
+            }
 
             newTelegramBot
                 .openWebHook()
@@ -478,22 +383,13 @@ module.exports = function (RED) {
                     self.pollingRestartTimer = null;
                     // Check if abort was called in the meantime.
                     if (self.telegramBot) {
-                        // Properly halt the existing polling instance before starting a new
-                        // poll. Earlier versions of this code (V17.4.4) nulled _polling
-                        // before calling startPolling, but that doesn't actually stop the
-                        // recursive setTimeout loop already scheduled inside the old polling
-                        // instance — the OLD instance is held alive by its .finally()
-                        // closure and keeps making getUpdates against Telegram, racing with
-                        // the new one (#440 retest). The only thing that stops the loop is
-                        // setting _abort=true on the polling instance, which is what
-                        // stopPolling({cancel:false}) does. After it resolves, the loop is
-                        // genuinely halted and startPolling can safely begin a fresh cycle
-                        // on the same _polling instance (lib's start() recreates _lastRequest).
-                        const polling = self.telegramBot._polling;
-                        if (polling && polling._lastRequest && typeof polling._lastRequest.cancel === 'function') {
-                            polling._lastRequest.cancel('restartPolling');
-                        }
-                        self.telegramBot.stopPolling({ cancel: false }).then(
+                        // v1.0.0's `stopPolling({cancel: true})` uses AbortController
+                        // internally to cancel the in-flight getUpdates and sets the
+                        // polling instance's `_abort = true` to halt the recursive
+                        // loop in one go — replacing the V17.4.8 dance that called
+                        // `_lastRequest.cancel()` then `stopPolling({cancel: false})`
+                        // by hand because v0.x's `{cancel: true}` didn't set _abort.
+                        self.telegramBot.stopPolling({ cancel: true }).then(
                             function () {
                                 if (self.telegramBot) {
                                     self.telegramBot.startPolling({ restart: true });
@@ -543,9 +439,11 @@ module.exports = function (RED) {
                 polling: polling,
                 baseApiUrl: this.baseApiUrl,
                 testEnvironment: this.testEnvironment,
-                request: this.request,
             };
-            newTelegramBot = new telegramBotEx(this.token, options);
+            newTelegramBot = self.instantiateBot(this.token, options);
+            if (!newTelegramBot) {
+                return null;
+            }
 
             self.status = 'connected';
 
@@ -635,14 +533,15 @@ module.exports = function (RED) {
                     //    because (a) repeated overlapping stopPolling/startPolling
                     //    cycles can wedge the lib's polling state machine and
                     //    (b) the underlying keep-alive pool may be handing out dead
-                    //    sockets. Escalate to scheduleRestart, which abortBot's the
-                    //    bot, destroyRequestPool's the agent pool, and constructs a
-                    //    fresh bot — the only path that genuinely rebuilds the agent
-                    //    pool on the polling code path. #442 retest 2026-05-29.
+                    //    sockets. Escalate to scheduleRestart, which abortBot's
+                    //    the bot, destroys the undici dispatcher pool, and
+                    //    constructs a fresh bot — the only path that genuinely
+                    //    rebuilds the agent pool on the polling code path.
+                    //    #442 retest 2026-05-29.
                     if (self.recordPollingError()) {
                         self.scheduleRestart('polling-burst: ' + (error.message || 'unknown'));
                     } else {
-                        self.telegramBot.stopPolling({ cancel: false }).then(restartPolling, restartPolling);
+                        self.telegramBot.stopPolling({ cancel: true }).then(restartPolling, restartPolling);
                     }
 
                     // The following line is removed as this would create endless log files
@@ -661,13 +560,33 @@ module.exports = function (RED) {
             const options = {
                 baseApiUrl: this.baseApiUrl,
                 testEnvironment: this.testEnvironment,
-                request: this.request,
             };
-            newTelegramBot = new telegramBotEx(this.token, options);
-
-            self.status = 'send only mode';
-
+            newTelegramBot = self.instantiateBot(this.token, options);
+            if (newTelegramBot) {
+                self.status = 'send only mode';
+            }
             return newTelegramBot;
+        };
+
+        // Construct a bot (subclass of TelegramBot with our event-emitting
+        // overrides) and install the process-global undici dispatcher under
+        // the bot's address-family / SOCKS configuration. Returns null if
+        // the dynamic import of node-telegram-bot-api hasn't resolved yet
+        // (vanishingly rare in practice — the import settles in ms during
+        // module load, long before any flow can trigger bot creation).
+        this.instantiateBot = function (token, options) {
+            let bot = null;
+            if (!TelegramBotEx) {
+                if (telegramBotLoadError) {
+                    self.error('Bot library failed to load: ' + telegramBotLoadError.message);
+                } else {
+                    self.error('Bot library not yet loaded; redeploy in a moment to retry.');
+                }
+            } else {
+                installDispatcher(self.buildDispatcherOptions());
+                bot = new TelegramBotEx(token, options);
+            }
+            return bot;
         };
 
         this.createTelegramBot = function () {
@@ -854,10 +773,11 @@ module.exports = function (RED) {
                 }
             }
             self.abortBot('closing', function () {
-                // Tear down the keep-alive socket pool too, so a redeploy doesn't leave
-                // dangling sockets behind. See destroyRequestPool for context.
-                self.destroyRequestPool();
-                done();
+                // Tear down the global undici dispatcher so a redeploy doesn't
+                // leave dangling sockets behind. Async — wait for the pool to
+                // drain before calling done() so Node-RED's close timeout
+                // sees a clean shutdown.
+                destroyDispatcher().then(done, done);
             });
         });
 
@@ -873,33 +793,14 @@ module.exports = function (RED) {
 
             if (self.telegramBot !== undefined && self.telegramBot !== null) {
                 if (self.telegramBot._polling) {
-                    // We need BOTH halves of node-telegram-bot-api's stop() semantics here:
-                    //
-                    // - cancel:false sets the polling instance's `_abort = true`, which is
-                    //   the ONLY thing that stops the recursive setTimeout loop inside
-                    //   `_polling()` (see telegramPolling.js:163 `.finally()`). Without
-                    //   _abort, the cancelled HTTP request settles via the .catch path,
-                    //   `.finally()` runs, sees no abort, and schedules ANOTHER `_polling()`
-                    //   iteration. Result: the old polling instance keeps making
-                    //   getUpdates requests after stopPolling resolves, racing with whatever
-                    //   the next bot construction sets up. Telegram sees two getUpdates for
-                    //   the same token and 409 Conflicts the loser (#440, #441 retest).
-                    //
-                    // - We *also* call .cancel() on the in-flight request directly so the
-                    //   local socket closes immediately rather than waiting up to
-                    //   pollTimeout seconds for Telegram's long-poll to time out. Without
-                    //   this, stopPolling can take up to 10 s on the happy path (when the
-                    //   in-flight getUpdates is just waiting), which would push redeploys
-                    //   past Node-RED's close timeout.
-                    //
-                    // V17.3.0 dropped the explicit `.cancel()` in favour of cancel:true, and
-                    // V17.4.4 added a `_polling = null` hack to compensate. Neither actually
-                    // stopped the recursive loop. This restores the pattern that does.
-                    const polling = self.telegramBot._polling;
-                    if (polling._lastRequest && typeof polling._lastRequest.cancel === 'function') {
-                        polling._lastRequest.cancel('abortBot');
-                    }
-                    self.telegramBot.stopPolling({ cancel: false }).then(setStatusDisconnected, setStatusDisconnected);
+                    // v1.0.0's `stopPolling({cancel: true})` aborts the in-flight
+                    // getUpdates via an AbortController AND sets the polling
+                    // instance's `_abort = true` to halt the recursive loop in
+                    // one call. Resolves once the active request settles, so the
+                    // V17.4.8 two-step (`_lastRequest.cancel()` then
+                    // `stopPolling({cancel: false})`) is no longer needed — both
+                    // halves now happen inside the public API.
+                    self.telegramBot.stopPolling({ cancel: true }).then(setStatusDisconnected, setStatusDisconnected);
                 } else if (self.telegramBot._webHook) {
                     // Telegram keeps the previously registered webhook URL on file until we tell it
                     // to drop it. Wait for deleteWebHook to complete (or fail) before tearing the
@@ -1050,19 +951,16 @@ module.exports = function (RED) {
                 self.restartTimer = null;
                 self.abortBot('pre-restart', function () {
                     // abortBot already nulled self.telegramBot via setStatusDisconnected.
-                    // Destroy every agent in the per-bot request pool and replace it with
-                    // a fresh empty pool before re-creating the bot. @cypress/request keys
-                    // its agent cache on the pool object and reuses agent instances across
-                    // requests with the same protocol/cert combination — without an
-                    // explicit destroy, half-dead keep-alive sockets from the previous
-                    // outage stay parked in the pool and the new bot inherits the same
-                    // wedge (issue #442: "bot says polling, nothing flows, only manual
-                    // redeploy recovers"). The buildRequestOptions call hands back a
-                    // request option object with a fresh pool reference, which
-                    // createTelegramBot then passes into the new bot.
+                    // Destroy the process-global undici dispatcher (which closes
+                    // every keep-alive socket in the pool) and let the next
+                    // bot construction install a fresh one. Same #442 defence
+                    // as V17.4.5 / V17.4.13 — half-dead sockets from the
+                    // previous outage cannot survive into the new bot.
                     self.status = 'disconnected';
-                    self.destroyRequestPool();
-                    self.request = self.buildRequestOptions();
+                    destroyDispatcher().catch(function () {
+                        // Pool drain failures are non-fatal — proceed with
+                        // the new bot construction regardless.
+                    });
                     const bot = self.getTelegramBot();
                     if (bot) {
                         self.status = 'connected';

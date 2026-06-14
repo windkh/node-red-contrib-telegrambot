@@ -886,35 +886,31 @@ module.exports = function (RED) {
             return promise;
         };
 
-        // TODO: https://github.com/windkh/node-red-contrib-telegrambot/issues/178
-        // TODO: https://github.com/yagop/node-telegram-bot-api/issues/876
+        // Delegates to v1.0.0's public `bot.editMessageMedia(media, form, fileMeta)`.
+        // The wrapper used to reach into `_request` / `_formatSendData` (private
+        // helpers on v0.66) because the public method didn't expose the file-options
+        // hook. v1.0.0 exposes it via the third positional argument, so the
+        // wrapper is now a thin pass-through that preserves the V17 call shape.
         this.editMessageMedia = function (media, form = {}) {
-            const opts = {
-                qs: form,
-            };
-            opts.formData = {};
-
             const payload = Object.assign({}, media);
+            const fileOptions = media.fileOptions;
+            const fileInput = media.media;
             delete payload.media;
             delete payload.fileOptions;
 
+            // Merge the inner caller-supplied options into the media payload so
+            // downstream `editMessageMedia(media, form)` receives a single
+            // InputMedia object with chat / message identifiers in `form`.
+            payload.media = fileInput;
+
             let telegramBot = this.config.getTelegramBot();
-
+            let result;
             try {
-                const attachName = String(0);
-                const [formData, fileId] = telegramBot._formatSendData(attachName, media.media, media.fileOptions);
-                if (formData) {
-                    opts.formData[attachName] = formData[attachName];
-                    payload.media = `attach://${attachName}`;
-                } else {
-                    payload.media = fileId;
-                }
+                result = telegramBot.editMessageMedia(payload, form, fileOptions);
             } catch (ex) {
-                return Promise.reject(ex);
+                result = Promise.reject(ex);
             }
-
-            opts.qs.media = JSON.stringify(payload);
-            return telegramBot._request('editMessageMedia', opts);
+            return result;
         };
 
         this.config = RED.nodes.getNode(this.bot);

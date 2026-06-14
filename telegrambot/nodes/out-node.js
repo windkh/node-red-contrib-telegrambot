@@ -4,6 +4,7 @@ module.exports = function (RED) {
     const fs = require('fs');
     const QueueManager = require('../lib/queue-manager.js');
     const safeStringify = require('../lib/safe-stringify.js');
+    const { migrateLegacyOptions } = require('../lib/legacy-options.js');
 
     // --------------------------------------------------------------------------------------------
     // The output node sends to the chat and passes the msg through.
@@ -32,6 +33,25 @@ module.exports = function (RED) {
         this.messagesProcessed = 0;
         this.retryDelayError429 = 3; // 3s when too many requests
         this.retryDelayErrorNoConnection = 10; // 10s when not connected to internet
+
+        // Set of deprecation-warn strings that have already been emitted for
+        // this node, so each deprecated msg.payload.options form is reported
+        // exactly once per node lifetime instead of once per send. Cleared on
+        // node close.
+        this.deprecationWarnsSeen = new Set();
+
+        // Run the legacy-options shim on the user-supplied options, warning
+        // once per deprecated field per node. Tolerates undefined / non-object
+        // input (the shim itself short-circuits). Called wherever the node
+        // forwards `msg.payload.*` option objects into the bot library.
+        this.migrateOptions = function (options) {
+            return migrateLegacyOptions(options, function (warnMsg) {
+                if (!node.deprecationWarnsSeen.has(warnMsg)) {
+                    node.deprecationWarnsSeen.add(warnMsg);
+                    node.warn(warnMsg);
+                }
+            });
+        };
 
         let haserroroutput = config.haserroroutput || false;
 
@@ -93,6 +113,13 @@ module.exports = function (RED) {
             if (msg.payload.caption !== undefined) {
                 options.caption = msg.payload.caption;
             }
+
+            // Backward-compat shim for the 5 deprecated msg.payload.options
+            // fields removed in node-telegram-bot-api v1.0.0. Runs once here
+            // (the central preprocessing point for the main send dispatch);
+            // forward/copy branches handle their own options separately
+            // below.
+            node.migrateOptions(options);
 
             msg.payload.options = options;
 
@@ -186,6 +213,7 @@ module.exports = function (RED) {
                 let toChatId = msg.payload.forward.chatId;
 
                 let messageId = msg.payload.messageId;
+                node.migrateOptions(msg.payload.forward.options);
                 telegramBot
                     .forwardMessage(toChatId, chatId, messageId, msg.payload.forward.options)
                     .catch(function (ex) {
@@ -199,6 +227,7 @@ module.exports = function (RED) {
                 let toChatId = msg.payload.copy.chatId;
 
                 let messageId = msg.payload.messageId;
+                node.migrateOptions(msg.payload.copy.options);
                 telegramBot
                     .copyMessage(toChatId, chatId, messageId, msg.payload.copy.options)
                     .catch(function (ex) {
@@ -974,6 +1003,9 @@ module.exports = function (RED) {
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }
+
+            // Reset the dedup set so a redeploy gets a fresh warn cycle.
+            node.deprecationWarnsSeen.clear();
 
             node.status({});
             done();

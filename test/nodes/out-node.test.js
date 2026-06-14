@@ -223,3 +223,233 @@ describe('telegram sender (out-node)', function () {
         });
     });
 });
+
+describe('telegram sender (out-node) — legacy-options shim (#448)', function () {
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    function flow() {
+        return [
+            { id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' },
+            { id: 's1', type: 'telegram sender', bot: 'b1', wires: [['out']] },
+            { id: 'out', type: 'helper' },
+        ];
+    }
+
+    it('exposes deprecationWarnsSeen as an empty Set and migrateOptions as a function', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                expect(s.deprecationWarnsSeen).to.be.instanceOf(Set);
+                expect(s.deprecationWarnsSeen.size).to.equal(0);
+                expect(s.migrateOptions).to.be.a('function');
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('rewrites reply_to_message_id on the send path and warns exactly once per node', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+                const warns = [];
+                s.warn = function (m) {
+                    warns.push(m);
+                };
+
+                let outputs = 0;
+                out.on('input', function () {
+                    outputs++;
+                    if (outputs === 2) {
+                        try {
+                            expect(record).to.have.length(2);
+                            // Both sendMessage calls received the rewritten options.
+                            record.forEach(function (call) {
+                                expect(call.method).to.equal('sendMessage');
+                                const sentOptions = call.args[2];
+                                expect(sentOptions.reply_to_message_id).to.equal(undefined);
+                                expect(sentOptions.reply_parameters).to.deep.equal({ message_id: 42 });
+                            });
+                            // Despite TWO sends with the deprecated field, exactly ONE warn.
+                            const replyWarns = warns.filter(function (w) {
+                                return /reply_to_message_id/.test(w);
+                            });
+                            expect(replyWarns).to.have.length(1);
+                            done();
+                        } catch (err) {
+                            done(err);
+                        }
+                    }
+                });
+
+                s.receive({
+                    payload: {
+                        chatId: 123,
+                        type: 'message',
+                        content: 'first',
+                        options: { reply_to_message_id: 42 },
+                    },
+                });
+                s.receive({
+                    payload: {
+                        chatId: 123,
+                        type: 'message',
+                        content: 'second',
+                        options: { reply_to_message_id: 42 },
+                    },
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('warns separately for each distinct deprecated field', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+                const warns = [];
+                s.warn = function (m) {
+                    warns.push(m);
+                };
+
+                let outputs = 0;
+                out.on('input', function () {
+                    outputs++;
+                    if (outputs === 2) {
+                        try {
+                            // Two distinct deprecated forms across two sends => two warns.
+                            expect(warns.filter((w) => /reply_to_message_id/.test(w))).to.have.length(1);
+                            expect(warns.filter((w) => /disable_web_page_preview/.test(w))).to.have.length(1);
+                            done();
+                        } catch (err) {
+                            done(err);
+                        }
+                    }
+                });
+
+                s.receive({
+                    payload: {
+                        chatId: 123,
+                        type: 'message',
+                        content: 'a',
+                        options: { reply_to_message_id: 42 },
+                    },
+                });
+                s.receive({
+                    payload: {
+                        chatId: 123,
+                        type: 'message',
+                        content: 'b',
+                        options: { disable_web_page_preview: true },
+                    },
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('produces zero deprecation warns when no deprecated fields are present', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+                const warns = [];
+                s.warn = function (m) {
+                    warns.push(m);
+                };
+
+                out.on('input', function () {
+                    try {
+                        expect(warns.filter((w) => /DEPRECATED:/.test(w))).to.have.length(0);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({
+                    payload: {
+                        chatId: 123,
+                        type: 'message',
+                        content: 'no-deprecated-options',
+                        options: { reply_parameters: { message_id: 1 } },
+                    },
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('applies the shim to msg.payload.forward.options on the forwardMessage branch', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+                const warns = [];
+                s.warn = function (m) {
+                    warns.push(m);
+                };
+
+                out.on('input', function () {
+                    try {
+                        expect(record).to.have.length(1);
+                        expect(record[0].method).to.equal('forwardMessage');
+                        const fwdOptions = record[0].args[3];
+                        expect(fwdOptions.disable_web_page_preview).to.equal(undefined);
+                        expect(fwdOptions.link_preview_options).to.deep.equal({ is_disabled: true });
+                        expect(warns.filter((w) => /disable_web_page_preview/.test(w))).to.have.length(1);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({
+                    payload: {
+                        chatId: 123,
+                        messageId: 50,
+                        forward: { chatId: 456, options: { disable_web_page_preview: true } },
+                    },
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+});

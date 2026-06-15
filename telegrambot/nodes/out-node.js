@@ -719,14 +719,51 @@ module.exports = function (RED) {
                             break;
 
                         // restrictChatMember became 4-arg in v1.0.0: chatId, userId,
-                        // permissions, form. V17 flows pass `permissions` inside
-                        // msg.payload.options; pull it out to the new positional slot
-                        // so existing flows keep working unchanged.
+                        // permissions, form. Two V17 shapes need to keep working:
+                        //
+                        //   (a) Nested form: msg.payload.options = { permissions: { ... } }
+                        //   (b) Flat form  : msg.payload.options = { can_send_messages: ..., ... }
+                        //
+                        // (b) is what the supergroupadmin.json example flow ships, and
+                        // is the documented V17 ergonomics — "options IS the permissions
+                        // object". Detect either: if `options.permissions` exists, use
+                        // that; else lift any known ChatPermissions fields from the
+                        // top-level options into a fresh permissions object. Anything
+                        // not recognised as a permission field stays on the form arg
+                        // (e.g. `use_independent_chat_permissions`, `until_date`).
                         case 'restrictChatMember':
                             if (this.hasContent(msg, chatId, nodeDone)) {
                                 const rcmOpts = Object.assign({}, msg.payload.options || {});
-                                const rcmPermissions = rcmOpts.permissions || {};
-                                delete rcmOpts.permissions;
+                                let rcmPermissions;
+                                if (rcmOpts.permissions && typeof rcmOpts.permissions === 'object') {
+                                    rcmPermissions = rcmOpts.permissions;
+                                    delete rcmOpts.permissions;
+                                } else {
+                                    rcmPermissions = {};
+                                    const permissionFields = [
+                                        'can_send_messages',
+                                        'can_send_media_messages',
+                                        'can_send_audios',
+                                        'can_send_documents',
+                                        'can_send_photos',
+                                        'can_send_videos',
+                                        'can_send_video_notes',
+                                        'can_send_voice_notes',
+                                        'can_send_polls',
+                                        'can_send_other_messages',
+                                        'can_add_web_page_previews',
+                                        'can_change_info',
+                                        'can_invite_users',
+                                        'can_pin_messages',
+                                        'can_manage_topics',
+                                    ];
+                                    permissionFields.forEach(function (field) {
+                                        if (Object.prototype.hasOwnProperty.call(rcmOpts, field)) {
+                                            rcmPermissions[field] = rcmOpts[field];
+                                            delete rcmOpts[field];
+                                        }
+                                    });
+                                }
                                 telegramBot
                                     .restrictChatMember(chatId, msg.payload.content, rcmPermissions, rcmOpts)
                                     .catch(function (ex) {

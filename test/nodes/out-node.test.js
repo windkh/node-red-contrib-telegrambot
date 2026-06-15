@@ -24,6 +24,7 @@ function makeBotStub(record) {
         'copyMessage',
         'answerCallbackQuery',
         'editMessageMedia',
+        'restrictChatMember',
     ];
     methods.forEach(function (m) {
         stub[m] = function () {
@@ -735,6 +736,171 @@ describe('telegram sender (out-node) — editMessageMedia local-file wrap (V18 b
                         type: 'editMessageMedia',
                         content: { type: 'photo', media: 'AgACAgIAAxkBA-fake-file-id' },
                         options: { chat_id: 138708568, message_id: 34 },
+                    },
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+});
+
+describe('telegram sender (out-node) — restrictChatMember V17 ergonomics (examples/supergroupadmin.json)', function () {
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    function flow() {
+        return [
+            { id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' },
+            { id: 's1', type: 'telegram sender', bot: 'b1', wires: [['out']] },
+            { id: 'out', type: 'helper' },
+        ];
+    }
+
+    it('lifts flat permission fields into the positional permissions arg', function (done) {
+        // The shape supergroupadmin.json ships — options is the flat permissions
+        // object, not nested under options.permissions.
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+
+                out.on('input', function () {
+                    try {
+                        expect(record).to.have.length(1);
+                        expect(record[0].method).to.equal('restrictChatMember');
+                        const args = record[0].args;
+                        // v1.0.0 signature: (chatId, userId, permissions, form)
+                        expect(args[0]).to.equal(456); // chatId
+                        expect(args[1]).to.equal(42); // userId (content)
+                        expect(args[2]).to.deep.equal({
+                            can_send_messages: false,
+                            can_send_media_messages: false,
+                            can_send_polls: false,
+                            can_send_other_messages: false,
+                            can_add_web_page_previews: false,
+                            can_change_info: false,
+                            can_invite_users: false,
+                            can_pin_messages: false,
+                        });
+                        // No unknown fields → form is empty.
+                        expect(args[3]).to.deep.equal({});
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({
+                    payload: {
+                        chatId: 456,
+                        type: 'restrictChatMember',
+                        content: 42,
+                        options: {
+                            can_send_messages: false,
+                            can_send_media_messages: false,
+                            can_send_polls: false,
+                            can_send_other_messages: false,
+                            can_add_web_page_previews: false,
+                            can_change_info: false,
+                            can_invite_users: false,
+                            can_pin_messages: false,
+                        },
+                    },
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('still accepts the nested options.permissions form', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+
+                out.on('input', function () {
+                    try {
+                        const args = record[0].args;
+                        expect(args[2]).to.deep.equal({ can_send_messages: true });
+                        expect(args[3]).to.deep.equal({}); // permissions key was lifted
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({
+                    payload: {
+                        chatId: 456,
+                        type: 'restrictChatMember',
+                        content: 42,
+                        options: { permissions: { can_send_messages: true } },
+                    },
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('leaves non-permission fields on the form arg (until_date, use_independent_chat_permissions)', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+
+                out.on('input', function () {
+                    try {
+                        const args = record[0].args;
+                        // Permission lifted into args[2].
+                        expect(args[2]).to.deep.equal({ can_send_messages: false });
+                        // Non-permission stays in form (args[3]).
+                        expect(args[3]).to.deep.equal({
+                            until_date: 1234567890,
+                            use_independent_chat_permissions: true,
+                        });
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({
+                    payload: {
+                        chatId: 456,
+                        type: 'restrictChatMember',
+                        content: 42,
+                        options: {
+                            can_send_messages: false,
+                            until_date: 1234567890,
+                            use_independent_chat_permissions: true,
+                        },
                     },
                 });
             } catch (err) {

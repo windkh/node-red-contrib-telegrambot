@@ -453,3 +453,103 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
         });
     });
 });
+
+describe('telegram sender (out-node) — queue advance on empty-content drop (#450 retest, V18.0.0-beta)', function () {
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    function flow() {
+        return [
+            { id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' },
+            { id: 's1', type: 'telegram sender', bot: 'b1', wires: [['out']] },
+            { id: 'out', type: 'helper' },
+        ];
+    }
+
+    it('advances the per-chatId queue when msg.payload.content is missing', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+                s.warn = function () {};
+
+                out.on('input', function (msg) {
+                    try {
+                        // The SECOND (non-empty) message reaches the bot stub —
+                        // proving the queue advanced past the empty-content head.
+                        expect(record).to.have.length(1);
+                        expect(record[0].method).to.equal('sendMessage');
+                        expect(msg.payload.sentMessageId).to.equal(999);
+                        expect(s.queueManager.processing.get(123)).to.equal(false);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                // First: empty-content message that would historically wedge the
+                // queue (the case branch sees !hasContent, falls through to break
+                // without calling processResult/processError or processNext, so
+                // `processing` stays true forever).
+                s.receive({ payload: { chatId: 123, type: 'message' } });
+                // Second: proper content. Pre-fix, this would queue behind the
+                // wedged head and never fire. Post-fix, queue advance unblocks it.
+                s.receive({ payload: { chatId: 123, type: 'message', content: 'hello' } });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('also advances when chatId differs across messages (per-chatId isolation preserved)', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+                s.warn = function () {};
+
+                let outputs = 0;
+                out.on('input', function () {
+                    outputs++;
+                    if (outputs === 2) {
+                        try {
+                            // Both content-bearing sends got through.
+                            expect(record).to.have.length(2);
+                            expect(s.queueManager.processing.get(123)).to.equal(false);
+                            expect(s.queueManager.processing.get(456)).to.equal(false);
+                            done();
+                        } catch (err) {
+                            done(err);
+                        }
+                    }
+                });
+
+                s.receive({ payload: { chatId: 123, type: 'message' } }); // empty, drops + advances
+                s.receive({ payload: { chatId: 123, type: 'message', content: 'a' } });
+                s.receive({ payload: { chatId: 456, type: 'message' } }); // empty, drops + advances on a different queue
+                s.receive({ payload: { chatId: 456, type: 'message', content: 'b' } });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+});

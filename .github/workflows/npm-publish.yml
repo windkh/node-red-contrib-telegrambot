@@ -28,7 +28,11 @@ jobs:
                   node-version: 12
                   registry-url: https://registry.npmjs.org/
             - run: npm ci
-            - run: npm publish
+            # GitHub releases flagged "pre-release" publish to the `beta`
+            # dist-tag so existing users on Manage Palette (which tracks
+            # `latest`) don't auto-upgrade onto unproven builds. Stable
+            # releases publish to `latest` as before.
+            - run: npm publish ${{ github.event.release.prerelease && '--tag beta' || '' }}
               env:
                   NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 

@@ -47,16 +47,27 @@ module.exports = function (RED) {
         };
         // ------------------------------------------------------------------
 
-        this.hasContent = function (msg) {
-            let hasContent;
-            if (msg.payload.content) {
-                hasContent = true;
-            } else {
+        // Gate every "dispatch a bot call" branch on `msg.payload.content` being
+        // present. Crucially: when content is missing we MUST advance the
+        // queue head ourselves — every dispatching branch ends with a
+        // `processResult`/`processError` callback that calls `processNext`,
+        // but the no-content branch has no dispatch and would otherwise leave
+        // `processing` stuck `true` forever, silently swallowing every
+        // subsequent message on that chatId (issue #450: bug surfaced with a
+        // /foo command whose sender saw type='message' but empty content).
+        // Pass chatId so we can release the queue head; nodeDone is invoked
+        // too so the upstream node's promise chain settles.
+        this.hasContent = function (msg, chatId, nodeDone) {
+            let result = true;
+            if (!msg.payload.content) {
                 node.warn('msg.payload.content is empty');
-                hasContent = false;
+                if (nodeDone) nodeDone();
+                if (chatId !== undefined && node.queueManager) {
+                    node.queueManager.processNext(chatId);
+                }
+                result = false;
             }
-
-            return hasContent;
+            return result;
         };
 
         this.start = function () {
@@ -238,7 +249,7 @@ module.exports = function (RED) {
                     switch (type) {
                         // --------------------------------------------------------------------
                         case 'message':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 // The maximum message size is 4096, so we must split the message into smaller chunks.
                                 // Chunks are sent sequentially (one promise chain) so that:
                                 //   - Telegram receives them in order,
@@ -285,7 +296,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'photo':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendPhoto(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
@@ -297,7 +308,7 @@ module.exports = function (RED) {
                             }
                             break;
                         case 'mediaGroup':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 if (Array.isArray(msg.payload.content)) {
                                     for (let i = 0; i < msg.payload.content.length; i++) {
                                         let mediaItem = msg.payload.content[i];
@@ -324,7 +335,7 @@ module.exports = function (RED) {
                             }
                             break;
                         case 'audio':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendAudio(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
@@ -337,7 +348,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'document':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendDocument(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
@@ -350,7 +361,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'poll':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendPoll(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.optional)
                                     .catch(function (ex) {
@@ -363,7 +374,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'sticker':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendSticker(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
@@ -376,7 +387,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'dice':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendDice(chatId, msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
@@ -389,7 +400,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'animation':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendAnimation(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
@@ -402,7 +413,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'video':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendVideo(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
@@ -415,7 +426,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'video_note':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendVideoNote(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
@@ -428,7 +439,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'voice':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendVoice(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.fileOptions)
                                     .catch(function (ex) {
@@ -441,7 +452,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'location':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendLocation(chatId, msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options || {})
                                     .catch(function (ex) {
@@ -454,7 +465,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'venue':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendVenue(
                                         chatId,
@@ -474,7 +485,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'contact':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 if (msg.payload.content.last_name) {
                                     if (!msg.payload.options) {
                                         msg.payload.options = {};
@@ -494,7 +505,7 @@ module.exports = function (RED) {
                         // --------------------------------------------------------------------
 
                         case 'editMessageLiveLocation':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 node.addChatIdToOptions(chatId, msg.payload.options);
                                 telegramBot
                                     .editMessageLiveLocation(msg.payload.content.latitude, msg.payload.content.longitude, msg.payload.options || {})
@@ -509,7 +520,7 @@ module.exports = function (RED) {
 
                         case 'stopMessageLiveLocation':
                             // This message requires the options to be set!
-                            //if (this.hasContent(msg)) {
+                            //if (this.hasContent(msg, chatId, nodeDone)) {
                             node.addChatIdToOptions(chatId, msg.payload.options);
                             telegramBot
                                 .stopMessageLiveLocation(msg.payload.options)
@@ -549,7 +560,7 @@ module.exports = function (RED) {
 
                         case 'inline_query':
                         case 'answerInlineQuery':
-                            //if (this.hasContent(msg)) {
+                            //if (this.hasContent(msg, chatId, nodeDone)) {
                             // this type requires results to be set: see https://core.telegram.org/bots/api#inlinequeryresult
                             telegramBot
                                 .answerInlineQuery(msg.payload.inlineQueryId, msg.payload.results, msg.payload.options || {})
@@ -563,7 +574,7 @@ module.exports = function (RED) {
                             break;
 
                         case 'answerWebAppQuery':
-                            //if (this.hasContent(msg)) {
+                            //if (this.hasContent(msg, chatId, nodeDone)) {
                             // this type requires results to be set: see https://core.telegram.org/bots/api#inlinequeryresult
                             telegramBot
                                 .answerWebAppQuery(msg.payload.webAppQueryId, msg.payload.results, msg.payload.options || {})
@@ -578,7 +589,7 @@ module.exports = function (RED) {
 
                         case 'sendChatAction':
                         case 'action':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot
                                     .sendChatAction(chatId, msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
@@ -622,7 +633,7 @@ module.exports = function (RED) {
                         case 'editMessageCaption':
                         case 'editMessageText':
                         case 'editMessageReplyMarkup':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 node.addChatIdToOptions(chatId, msg.payload.options);
                                 telegramBot[type](msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
@@ -637,7 +648,7 @@ module.exports = function (RED) {
                         // TODO: https://github.com/windkh/node-red-contrib-telegrambot/issues/178
                         // https://github.com/yagop/node-telegram-bot-api/issues/876
                         case 'editMessageMedia':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 node.editMessageMedia(msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(chatId, ex, msg, nodeSend, nodeDone);
@@ -656,7 +667,7 @@ module.exports = function (RED) {
                         case 'setChatStickerSet':
                         case 'unpinChatMessage':
                         case 'deleteMessage':
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot[type](chatId, msg.payload.content)
                                     .catch(function (ex) {
                                         node.processError(chatId, ex, msg, nodeSend, nodeDone);
@@ -681,7 +692,7 @@ module.exports = function (RED) {
                         case 'setMessageReaction':
                             // The userId must be passed in msg.payload.content: note that this is is a number not the username.
                             // Right now there is no way for resolving the user_id by username in the official API.
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot[type](chatId, msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(chatId, ex, msg, nodeSend, nodeDone);
@@ -702,7 +713,7 @@ module.exports = function (RED) {
                         case 'editGeneralForumTopic':
                             // The message_thread_id must be passed in msg.payload.content: note that this is is a number not the username.
                             // Right now there is no way for resolving the user_id by username in the official API.
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot[type](chatId, msg.payload.content, msg.payload.options || {})
                                     .catch(function (ex) {
                                         node.processError(chatId, ex, msg, nodeSend, nodeDone);
@@ -721,7 +732,7 @@ module.exports = function (RED) {
                             // sendInvoice reads many fields off msg.payload.content (title, description,
                             // payload, providerToken, currency, prices); without the guard a missing
                             // payload.content crashes at the JS level instead of producing a clear warn.
-                            if (this.hasContent(msg)) {
+                            if (this.hasContent(msg, chatId, nodeDone)) {
                                 telegramBot[type](
                                     chatId,
                                     msg.payload.content.title,
@@ -743,7 +754,7 @@ module.exports = function (RED) {
 
                         case 'shipping_query':
                         case 'answerShippingQuery':
-                            //if (this.hasContent(msg)) {
+                            //if (this.hasContent(msg, chatId, nodeDone)) {
                             // this type requires ok to be set: see https://core.telegram.org/bots/api#answershippingquery
                             telegramBot
                                 .answerShippingQuery(msg.payload.shippingQueryId, msg.payload.ok, msg.payload.options || {})
@@ -758,7 +769,7 @@ module.exports = function (RED) {
 
                         case 'pre_checkout_query':
                         case 'answerPreCheckoutQuery':
-                            //if (this.hasContent(msg)) {
+                            //if (this.hasContent(msg, chatId, nodeDone)) {
                             // this type requires ok to be set: see https://core.telegram.org/bots/api#answerprecheckoutquery
                             telegramBot
                                 .answerPreCheckoutQuery(msg.payload.preCheckoutQueryId, msg.payload.ok, msg.payload.options || {})
@@ -782,7 +793,7 @@ module.exports = function (RED) {
                         default:
                             // unknown type we try the unthinkable.
                             if (type in telegramBot) {
-                                if (this.hasContent(msg)) {
+                                if (this.hasContent(msg, chatId, nodeDone)) {
                                     telegramBot[type](chatId, msg.payload.content, msg.payload.options || {})
                                         .catch(function (ex) {
                                             node.processError(chatId, ex, msg, nodeSend, nodeDone);

@@ -140,7 +140,12 @@ module.exports = function (RED) {
         // the UI checkbox is unchecked. Issue #411 retest, May 2026.
         this.verbose = !!n.verboselogging && n.verboselogging !== 'false';
 
-        this.baseApiUrl = n.baseapiurl;
+        // Coerce empty string to undefined so v1.0.0's `baseApiUrl ?? "https://api.telegram.org"`
+        // default kicks in. The `??` operator does NOT short-circuit on empty
+        // string, so passing '' through leaves the lib with a URL like
+        // `/bot<TOKEN>/getUpdates` (no scheme) which fetch rejects with
+        // `EFATAL: Failed to parse URL`.
+        this.baseApiUrl = n.baseapiurl ? n.baseapiurl : undefined;
         this.testEnvironment = n.testenvironment;
 
         this.updateMode = n.updatemode;

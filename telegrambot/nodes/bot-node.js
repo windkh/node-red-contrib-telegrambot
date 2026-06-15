@@ -336,11 +336,11 @@ module.exports = function (RED) {
                 };
             }
             newTelegramBot
-                .setWebHook(botUrl, setWebHookOptions)
+                .setWebhook(botUrl, setWebHookOptions)
                 .then(function (success) {
                     if (self.verbose) {
                         newTelegramBot
-                            .getWebHookInfo()
+                            .getWebhookInfo()
                             .then(function (result) {
                                 self.log('Webhook enabled: ' + JSON.stringify(result));
                             })
@@ -735,9 +735,9 @@ module.exports = function (RED) {
             }
             let p;
             if (!url || url === '') {
-                p = telegramBot.deleteWebHook();
+                p = telegramBot.deleteWebhook();
             } else {
-                p = telegramBot.setWebHook(url, options || {});
+                p = telegramBot.setWebhook(url, options || {});
             }
             p.then(
                 function (result) {
@@ -807,7 +807,7 @@ module.exports = function (RED) {
                     // local listener down so a redeploy with a new URL takes effect immediately.
                     // Either branch falls through to closing the local hook.
                     self.telegramBot
-                        .deleteWebHook()
+                        .deleteWebhook()
                         .catch(function () {
                             // ignore - we still want to close the local hook
                         })

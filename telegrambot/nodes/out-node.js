@@ -380,8 +380,18 @@ module.exports = function (RED) {
 
                         case 'poll':
                             if (this.hasContent(msg)) {
+                                // v1.0.0 expects pollOptions as `InputPollOption[]`
+                                // (objects with `text`), not the v0.x bare `string[]`.
+                                // Existing V17 flows pass string arrays; wrap them so
+                                // they keep working transparently.
+                                let pollOptions = msg.payload.options || [];
+                                if (Array.isArray(pollOptions)) {
+                                    pollOptions = pollOptions.map(function (item) {
+                                        return typeof item === 'string' ? { text: item } : item;
+                                    });
+                                }
                                 telegramBot
-                                    .sendPoll(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.optional)
+                                    .sendPoll(chatId, msg.payload.content, pollOptions, msg.payload.optional)
                                     .catch(function (ex) {
                                         node.processError(chatId, ex, msg, nodeSend, nodeDone);
                                     })
@@ -696,11 +706,30 @@ module.exports = function (RED) {
                             }
                             break;
 
+                        // restrictChatMember became 4-arg in v1.0.0: chatId, userId,
+                        // permissions, form. V17 flows pass `permissions` inside
+                        // msg.payload.options; pull it out to the new positional slot
+                        // so existing flows keep working unchanged.
+                        case 'restrictChatMember':
+                            if (this.hasContent(msg)) {
+                                const rcmOpts = Object.assign({}, msg.payload.options || {});
+                                const rcmPermissions = rcmOpts.permissions || {};
+                                delete rcmOpts.permissions;
+                                telegramBot
+                                    .restrictChatMember(chatId, msg.payload.content, rcmPermissions, rcmOpts)
+                                    .catch(function (ex) {
+                                        node.processError(chatId, ex, msg, nodeSend, nodeDone);
+                                    })
+                                    .then(function (result) {
+                                        node.processResult(chatId, result, msg, nodeSend, nodeDone);
+                                    });
+                            }
+                            break;
+
                         // 3 arguments: chatId, content, options
                         case 'pinChatMessage':
                         case 'unbanChatMember':
                         case 'banChatMember':
-                        case 'restrictChatMember':
                         case 'promoteChatMember':
                         case 'getChatMember':
                         case 'approveChatJoinRequest':

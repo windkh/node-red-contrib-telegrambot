@@ -23,6 +23,7 @@ function makeBotStub(record) {
         'forwardMessage',
         'copyMessage',
         'answerCallbackQuery',
+        'editMessageMedia',
     ];
     methods.forEach(function (m) {
         stub[m] = function () {
@@ -547,6 +548,195 @@ describe('telegram sender (out-node) — queue advance on empty-content drop (#4
                 s.receive({ payload: { chatId: 123, type: 'message', content: 'a' } });
                 s.receive({ payload: { chatId: 456, type: 'message' } }); // empty, drops + advances on a different queue
                 s.receive({ payload: { chatId: 456, type: 'message', content: 'b' } });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+});
+
+describe('telegram sender (out-node) — editMessageMedia local-file wrap (V18 beta retest)', function () {
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    let tmpFile;
+
+    before(function (done) {
+        // Real temp file on disk; the wrapper uses fs.existsSync to decide
+        // whether to apply the attach:// prefix.
+        tmpFile = path.join(os.tmpdir(), 'out-node-test-' + Date.now() + '.png');
+        fs.writeFileSync(tmpFile, Buffer.from([0x89, 0x50, 0x4e, 0x47])); // PNG magic
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        try {
+            fs.unlinkSync(tmpFile);
+        } catch (e) {
+            /* ignore */
+        }
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    function flow() {
+        return [
+            { id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' },
+            { id: 's1', type: 'telegram sender', bot: 'b1', wires: [['out']] },
+            { id: 'out', type: 'helper' },
+        ];
+    }
+
+    it('wraps a bare local file path with attach:// so v1.0.0 uploads it as multipart', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+
+                out.on('input', function () {
+                    try {
+                        expect(record).to.have.length(1);
+                        expect(record[0].method).to.equal('editMessageMedia');
+                        // First positional arg is the InputMedia object;
+                        // media.media must be the attach:// form (multipart
+                        // upload), not the bare path (which Telegram treats
+                        // as a URL → "Wrong port number specified" error).
+                        const media = record[0].args[0];
+                        expect(media.media).to.equal('attach://' + tmpFile);
+                        expect(media.type).to.equal('photo');
+                        expect(media.caption).to.equal('modified image');
+                        // Second positional arg is `form` carrying chat/message ids.
+                        const form = record[0].args[1];
+                        expect(form.chat_id).to.equal(138708568);
+                        expect(form.message_id).to.equal(34);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({
+                    payload: {
+                        chatId: 138708568,
+                        type: 'editMessageMedia',
+                        content: {
+                            type: 'photo',
+                            media: tmpFile,
+                            caption: 'modified image',
+                        },
+                        options: { chat_id: 138708568, message_id: 34 },
+                    },
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('leaves an attach:// path unchanged (idempotent on already-wrapped input)', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+
+                out.on('input', function () {
+                    try {
+                        expect(record[0].args[0].media).to.equal('attach://' + tmpFile);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({
+                    payload: {
+                        chatId: 138708568,
+                        type: 'editMessageMedia',
+                        content: { type: 'photo', media: 'attach://' + tmpFile },
+                        options: { chat_id: 138708568, message_id: 34 },
+                    },
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('leaves an https:// URL unchanged (no wrap; remote URL goes through as-is)', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+
+                out.on('input', function () {
+                    try {
+                        expect(record[0].args[0].media).to.equal('https://example.com/image.png');
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({
+                    payload: {
+                        chatId: 138708568,
+                        type: 'editMessageMedia',
+                        content: { type: 'photo', media: 'https://example.com/image.png' },
+                        options: { chat_id: 138708568, message_id: 34 },
+                    },
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('leaves a Telegram file_id unchanged (no fs path match, no wrap)', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+
+                out.on('input', function () {
+                    try {
+                        expect(record[0].args[0].media).to.equal('AgACAgIAAxkBA-fake-file-id');
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({
+                    payload: {
+                        chatId: 138708568,
+                        type: 'editMessageMedia',
+                        content: { type: 'photo', media: 'AgACAgIAAxkBA-fake-file-id' },
+                        options: { chat_id: 138708568, message_id: 34 },
+                    },
+                });
             } catch (err) {
                 done(err);
             }

@@ -927,27 +927,34 @@ module.exports = function (RED) {
             return promise;
         };
 
-        // Delegates to v1.0.0's public `bot.editMessageMedia(media, form, fileMeta)`.
-        // The wrapper used to reach into `_request` / `_formatSendData` (private
-        // helpers on v0.66) because the public method didn't expose the file-options
-        // hook. v1.0.0 exposes it via the third positional argument, so the
-        // wrapper is now a thin pass-through that preserves the V17 call shape.
+        // Delegates to v1.0.0's public `bot.editMessageMedia(media, form)`. The
+        // V17 wrapper used to reach into `_request` / `_formatSendData` (private
+        // helpers on v0.66) because the public v0.66 method didn't expose the
+        // file-options hook. v1.0.0 exposes everything via the InputMedia object
+        // (including `fileOptions`), so the wrapper is now a thin pass-through —
+        // EXCEPT for one important detail: v1.0.0 only uploads `media.media` as
+        // multipart when it matches `attach://<local-path>`. A bare file path
+        // (`c:\temp\sample2.png`) is treated as a URL and sent to Telegram as-is,
+        // which Telegram then rejects ("invalid file HTTP URL specified: Wrong
+        // port number specified in the URL", because `c:` looks like scheme +
+        // port). V17 flows pass bare paths; wrap them so the file actually gets
+        // uploaded.
         this.editMessageMedia = function (media, form = {}) {
             const payload = Object.assign({}, media);
-            const fileOptions = media.fileOptions;
-            const fileInput = media.media;
-            delete payload.media;
-            delete payload.fileOptions;
 
-            // Merge the inner caller-supplied options into the media payload so
-            // downstream `editMessageMedia(media, form)` receives a single
-            // InputMedia object with chat / message identifiers in `form`.
-            payload.media = fileInput;
+            if (
+                typeof payload.media === 'string' &&
+                !/^attach:\/\//.test(payload.media) &&
+                !/^https?:\/\//.test(payload.media) &&
+                fs.existsSync(payload.media)
+            ) {
+                payload.media = 'attach://' + payload.media;
+            }
 
             let telegramBot = this.config.getTelegramBot();
             let result;
             try {
-                result = telegramBot.editMessageMedia(payload, form, fileOptions);
+                result = telegramBot.editMessageMedia(payload, form);
             } catch (ex) {
                 result = Promise.reject(ex);
             }

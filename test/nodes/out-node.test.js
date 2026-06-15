@@ -454,7 +454,7 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
     });
 });
 
-describe('telegram sender (out-node) — queue advance on empty-content drop (#450 retest, V18.0.0-beta)', function () {
+describe('telegram sender (out-node) — queue advance on empty-content drop (#450)', function () {
     before(function (done) {
         helper.startServer(done);
     });
@@ -515,7 +515,7 @@ describe('telegram sender (out-node) — queue advance on empty-content drop (#4
         });
     });
 
-    it('also advances when chatId differs across messages (per-chatId isolation preserved)', function (done) {
+    it('per-chatId isolation preserved when both queues see an empty drop', function (done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');

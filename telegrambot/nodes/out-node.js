@@ -73,11 +73,11 @@ module.exports = function (RED) {
         // `processResult`/`processError` callback that calls `processNext`,
         // but the no-content branch has no dispatch and would otherwise leave
         // `processing` stuck `true` forever, silently swallowing every
-        // subsequent message on that chatId (issue surfaced by #450's reporter
-        // and reproduced cleanly with a /foo command whose sender saw
-        // type='message' but empty content). Pass chatId so we can release
-        // the queue head; nodeDone is invoked too so the upstream node's
-        // promise chain settles.
+        // subsequent message on that chatId (issue #450: bug surfaced with a
+        // /foo command whose sender saw type='message' but empty content,
+        // reproduced cleanly via a `telegram command` node wired into a
+        // `telegram sender`). Pass chatId so we can release the queue head;
+        // nodeDone is invoked too so the upstream node's promise chain settles.
         this.hasContent = function (msg, chatId, nodeDone) {
             let result = true;
             if (!msg.payload.content) {

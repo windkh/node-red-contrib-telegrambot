@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.15] - 2026-06-16
+### Fix sibling queue-wedge in `out-node.js`'s `processError` non-retryable branch (#450 round 2). WJ4IoT's V17.4.13 retest surfaced a second wedge mechanism that V17.4.14 didn't cover. Trigger: a Markdown-mode message containing an unescaped `_` (or `*`, `[`, etc.) causes Telegram to reject with `ETELEGRAM: 400 Bad Request: can't parse entities`. `processError` matches the non-retry branch (it's not 429 / ENOTFOUND / ECONNRESET), logs `node.error()`, invokes `nodeDone()` — and never calls `queueManager.processNext(chatId)`. Same wedge symptom as V17.4.14's empty-content drop fix: `processing[chatId]` stays `true` forever, subsequent messages on that chat queue but never start. WJ4IoT's manual repro: send a message with `_` in the text, then send a plain-text message — the second one silently never sends until redeploy.
+
+### Fix: add `node.queueManager.processNext(chatId)` after the non-retry branch's logging. The retry branch (429 / ENOTFOUND / ECONNRESET) uses `repeatProcessMessage` which re-runs the same message; a successful retry's `processResult` then advances naturally — so only the give-up path needed the explicit advance.
+
+### 1 new mocha regression case proves the fix end-to-end: a bot stub whose first `sendMessage` rejects with the canonical Markdown-parse-error string, second succeeds. Pre-fix the second send wouldn't reach the bot. Post-fix both calls land and `processing[123]` is `false`. 242 passing.
+
 # [17.4.14] - 2026-06-15
 ### Fix queue-wedge in `out-node.js` when `msg.payload.content` is missing (#450 root fix). The sender's per-chatId QueueManager (introduced in [6c44a22](https://github.com/windkh/node-red-contrib-telegrambot/commit/6c44a22) "fix #300 fix #413" on 2026-03-07) has had a latent bug since: when a message arrives with `msg.payload.type` set but `msg.payload.content` empty, `hasContent(msg)` warns "msg.payload.content is empty" and returns false. The dispatching switch's case branch (`if (this.hasContent(msg)) { ... } break;`) then falls through to `break` without ever calling `processResult` / `processError`, so the QueueManager's `processing[chatId]` flag stays `true` forever. Every subsequent send to that chatId enqueues but never starts, until the bot config is redeployed (which rebuilds the queue from scratch). Reproduces deterministically with a `telegram command` node wired to `telegram sender` where the command path produces a typed-but-empty payload.
 

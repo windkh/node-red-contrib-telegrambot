@@ -156,6 +156,17 @@ module.exports = function (RED) {
                         node.error(errorMessage, msg);
                     }
                 }
+                // The non-retry error branch logs the exception and moves on —
+                // but the queue head must also advance so subsequent messages
+                // on the same chatId can run. Without this, a non-retryable
+                // failure (e.g. `ETELEGRAM: 400 Bad Request: can't parse
+                // entities` when a Markdown-mode message contains an
+                // unescaped `_` / `*` / `[`) wedges the chat's queue
+                // permanently, exactly the way the empty-content drop did
+                // before V17.4.14 (#450 round 2). The retry branch below
+                // calls `repeatProcessMessage` which re-runs the head; only
+                // the give-up path needs explicit advance.
+                node.queueManager.processNext(chatId);
             } else {
                 let errorMessage = retryReason + ': retrying in ' + retryAfter + 's';
                 node.status({

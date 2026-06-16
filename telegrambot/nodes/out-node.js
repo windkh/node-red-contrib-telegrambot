@@ -372,6 +372,11 @@ module.exports = function (RED) {
                                         });
                                 } else {
                                     node.warn('msg.payload.content for mediaGroup is not an array of mediaItem');
+                                    // Drop-and-advance: no dispatch on this path, so the
+                                    // queue head would otherwise stay `processing: true`
+                                    // forever (#450 audit, sibling of the processError /
+                                    // hasContent fixes).
+                                    node.queueManager.processNext(chatId);
                                 }
                             }
                             break;
@@ -912,10 +917,18 @@ module.exports = function (RED) {
                             } else {
                                 // type is not supported.
                                 node.warn('msg.payload.type is not supported');
+                                // Drop-and-advance: no dispatch on this path, so the
+                                // queue head would otherwise stay `processing: true`
+                                // forever (#450 audit).
+                                node.queueManager.processNext(chatId);
                             }
                     }
                 } else {
                     node.warn('msg.payload.type is empty');
+                    // Drop-and-advance: same wedge shape as the other no-dispatch
+                    // branches — without this, a single payload with no `type`
+                    // wedges its chatId's queue (#450 audit).
+                    node.queueManager.processNext(chatId);
                 }
             } // forward
         };

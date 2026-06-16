@@ -185,8 +185,11 @@ module.exports = function (RED) {
         }
 
         this.on('input', function (msg) {
-            node.status({ fill: 'green', shape: 'ring', text: 'connected' });
-
+            // Do NOT force a status here. The connection status is owned by the config
+            // node's 'status' events (-> onStatusChanged -> start()/stop()). Painting
+            // "connected" unconditionally on every input lied about the state for no-op
+            // commands: e.g. injecting "stop" on an already-stopped bot left the node
+            // green because config.stop() short-circuits without emitting 'stopped'.
             if (msg.payload) {
                 let command = msg.payload.command;
                 switch (command) {

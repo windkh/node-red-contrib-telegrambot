@@ -322,3 +322,87 @@ describe('telegram sender (out-node) — queue advance on empty-content drop (#4
         });
     });
 });
+
+describe('telegram sender (out-node) — queue advance on non-retry processError (#450 round 2)', function () {
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    function flow() {
+        return [
+            { id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' },
+            { id: 's1', type: 'telegram sender', bot: 'b1', wires: [['out']] },
+            { id: 'out', type: 'helper' },
+        ];
+    }
+
+    function makeRejectingThenAcceptingBotStub(record) {
+        const stub = { options: { baseApiUrl: 'https://api.telegram.org' } };
+        let calls = 0;
+        stub.sendMessage = function () {
+            calls++;
+            record.push({ method: 'sendMessage', args: Array.from(arguments) });
+            if (calls === 1) {
+                return Promise.reject(new Error("ETELEGRAM: 400 Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 7"));
+            }
+            return Promise.resolve({ message_id: 999 });
+        };
+        return stub;
+    }
+
+    it('non-retryable error (Markdown parse failure) advances the queue so subsequent messages run', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeRejectingThenAcceptingBotStub(record);
+                };
+                s.error = function () {};
+                s.warn = function () {};
+
+                s.receive({
+                    payload: {
+                        chatId: 123,
+                        type: 'message',
+                        content: 'underscore _ inside',
+                        options: { parse_mode: 'Markdown' },
+                    },
+                });
+
+                setTimeout(function () {
+                    s.receive({
+                        payload: {
+                            chatId: 123,
+                            type: 'message',
+                            content: 'plain text, no markdown specials',
+                        },
+                    });
+
+                    setTimeout(function () {
+                        try {
+                            expect(record).to.have.length(2);
+                            expect(record[0].args[1]).to.include('underscore');
+                            expect(record[1].args[1]).to.include('plain text');
+                            expect(s.queueManager.processing.get(123)).to.equal(false);
+                            done();
+                        } catch (err) {
+                            done(err);
+                        }
+                    }, 50);
+                }, 50);
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+});

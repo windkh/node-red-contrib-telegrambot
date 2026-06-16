@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.16] - 2026-06-16
+### Close the three remaining queue-wedge sites in `out-node.js` surfaced by a systematic audit of `processMessage`'s no-dispatch branches (#450 audit). V17.4.14 fixed the `hasContent` empty-content drop; V17.4.15 fixed `processError`'s non-retryable branch. Audit found three more sibling sites with identical shape — warn-but-don't-dispatch, leaving `processing[chatId]` stuck `true` forever:
+
+### (1) `case 'mediaGroup'` else branch when `msg.payload.content` is not an array — warns "msg.payload.content for mediaGroup is not an array of mediaItem", no dispatch. (2) `default` case when `type` isn't a method on the bot — warns "msg.payload.type is not supported", no dispatch. (3) The else of `if (msg.payload.type)` — warns "msg.payload.type is empty", no dispatch. All three would wedge the chatId's queue if hit on a chat that has more messages queued behind.
+
+### Same fix shape as the prior two: add `node.queueManager.processNext(chatId)` after each warn so the queue head is released. 3 new mocha regression cases (one per branch) use the "two messages, first hits the no-dispatch path, second proves the queue advanced" pattern. 245 passing.
+
+### The audit also examined the `mediaGroup` inner validation loop. Its `break` exits the for loop but control falls THROUGH to `telegramBot.sendMediaGroup(...)` which DOES dispatch (with invalid content). Bot returns error → `processError` → queue advances. Not a wedge, just a code smell where the warn is misleading because the bot is called regardless. Left as-is; not a correctness issue and changing it would alter user-visible behaviour.
+
 # [17.4.15] - 2026-06-16
 ### Fix sibling queue-wedge in `out-node.js`'s `processError` non-retryable branch (#450 round 2). WJ4IoT's V17.4.13 retest surfaced a second wedge mechanism that V17.4.14 didn't cover. Trigger: a Markdown-mode message containing an unescaped `_` (or `*`, `[`, etc.) causes Telegram to reject with `ETELEGRAM: 400 Bad Request: can't parse entities`. `processError` matches the non-retry branch (it's not 429 / ENOTFOUND / ECONNRESET), logs `node.error()`, invokes `nodeDone()` — and never calls `queueManager.processNext(chatId)`. Same wedge symptom as V17.4.14's empty-content drop fix: `processing[chatId]` stays `true` forever, subsequent messages on that chat queue but never start. WJ4IoT's manual repro: send a message with `_` in the text, then send a plain-text message — the second one silently never sends until redeploy.
 

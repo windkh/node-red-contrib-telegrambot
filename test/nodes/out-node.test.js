@@ -406,3 +406,120 @@ describe('telegram sender (out-node) — queue advance on non-retry processError
         });
     });
 });
+
+describe('telegram sender (out-node) — queue advance on remaining no-dispatch branches (#450 audit)', function () {
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    function flow() {
+        return [
+            { id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' },
+            { id: 's1', type: 'telegram sender', bot: 'b1', wires: [['out']] },
+            { id: 'out', type: 'helper' },
+        ];
+    }
+
+    // Each test sends two messages on the same chatId: the first hits a
+    // no-dispatch branch (would historically wedge), the second is a normal
+    // send. If queue advance is wired up correctly, the second reaches the
+    // bot stub. Pre-fix, the second silently parks behind the wedged head.
+
+    it('mediaGroup with non-array content advances the queue', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+                s.warn = function () {};
+
+                out.on('input', function (msg) {
+                    try {
+                        expect(msg.payload.sentMessageId).to.equal(999);
+                        expect(s.queueManager.processing.get(789)).to.equal(false);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({ payload: { chatId: 789, type: 'mediaGroup', content: 'not-an-array' } });
+                s.receive({ payload: { chatId: 789, type: 'message', content: 'recovered' } });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('unknown msg.payload.type (no such bot method) advances the queue', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+                s.warn = function () {};
+
+                out.on('input', function (msg) {
+                    try {
+                        expect(msg.payload.sentMessageId).to.equal(999);
+                        expect(s.queueManager.processing.get(789)).to.equal(false);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({ payload: { chatId: 789, type: 'noSuchMethodOnBot', content: 'whatever' } });
+                s.receive({ payload: { chatId: 789, type: 'message', content: 'recovered' } });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('missing msg.payload.type advances the queue', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeBotStub(record);
+                };
+                s.warn = function () {};
+
+                out.on('input', function (msg) {
+                    try {
+                        expect(msg.payload.sentMessageId).to.equal(999);
+                        expect(s.queueManager.processing.get(789)).to.equal(false);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({ payload: { chatId: 789, content: 'whatever' } });
+                s.receive({ payload: { chatId: 789, type: 'message', content: 'recovered' } });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+});

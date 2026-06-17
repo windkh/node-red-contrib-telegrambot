@@ -520,6 +520,50 @@ The content format of the command arguments (required and optional) depends on t
 See also ["available methods" in the api core description](https://core.telegram.org/bots/api#available-methods). 
 
 
+### Calling the raw Bot API (`callApi`)
+The sender node only wires up dedicated `msg.payload.type` values for the most common methods (see the tables above). The underlying [`node-telegram-bot-api`](https://github.com/yagop/node-telegram-bot-api) library, however, exposes the **complete** Telegram Bot API surface — including methods that do not have a dedicated type yet (e.g. `setMyCommands`, `createInvoiceLink`, `refundStarPayment`, `forwardMessages`, and the newer gifts / stars / business-account methods).
+
+To reach any of those without waiting for a dedicated type, set `msg.payload.type` to **`callApi`** and provide:
+
+- `msg.payload.method` (string, required) — the library method name, e.g. `setMyCommands`.
+- `msg.payload.args` (array, optional) — the positional arguments passed to that method, **in order**. Defaults to `[]`.
+- `msg.payload.chatId` (optional) — only used to order this call in the per-chat send queue; it is **not** passed to the method. If the method needs a chat id, put it into `args`.
+
+The node invokes `bot[method](...args)` and forwards the return value on `msg.payload.content`. Errors are handled exactly like any other send (retry on flooding / connection loss, error output otherwise).
+
+Example — register the bot's command menu (`setMyCommands(commands, options)`):
+```json
+{
+  "payload": {
+    "type": "callApi",
+    "method": "setMyCommands",
+    "args": [
+      [
+        { "command": "help",  "description": "Show help" },
+        { "command": "start", "description": "Start the bot" }
+      ],
+      {}
+    ]
+  }
+}
+```
+
+Example — create a shareable payment link (`createInvoiceLink(title, description, payload, providerToken, currency, prices)`):
+```json
+{
+  "payload": {
+    "type": "callApi",
+    "method": "createInvoiceLink",
+    "args": ["My product", "A great product", "payload-123", "PROVIDER_TOKEN", "EUR", [{ "label": "Product", "amount": 999 }]]
+  }
+}
+```
+
+The order and shape of `args` mirror the library method signature exactly — refer to the [available methods](https://core.telegram.org/bots/api#available-methods) in the Bot API reference.
+
+> **Safety:** method names are validated. The connection / polling lifecycle (`startPolling`, `stopPolling`, `getUpdates`, `setWebHook`, `deleteWebHook`, `logOut`, `close`, …), the event-emitter and reply-listener surface (`on`, `off`, `onText`, `onReplyToMessage`, …) and library internals (names starting with `_`) are **blocked**, because calling them from a flow would break the node's managed bot instance. Use the *control node* to start/stop the bot.
+
+
 ## Command Node
 The command node can be used for triggering a message when a specified command is received: e.g. /help. See examples below.
 Note that commands always start with a / like /help, /start, /stop. if you have several bots in one group chat implementing the

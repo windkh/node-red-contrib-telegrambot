@@ -1121,3 +1121,275 @@ describe('telegram sender (out-node) — queue advance on remaining no-dispatch 
         });
     });
 });
+
+describe('telegram sender (out-node) — callApi raw-API escape hatch', function () {
+    before(function (done) {
+        helper.startServer(done);
+    });
+
+    after(function (done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    function flow() {
+        return [
+            { id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' },
+            { id: 's1', type: 'telegram sender', bot: 'b1', wires: [['out']] },
+            { id: 'out', type: 'helper' },
+        ];
+    }
+
+    // A richer stub than makeBotStub: records calls and resolves per-method.
+    // Includes a blocklisted method (stopPolling) and a synchronously-throwing
+    // method so we can prove neither wedges the queue.
+    function makeCallApiStub(record) {
+        const stub = { options: { baseApiUrl: 'https://api.telegram.org' } };
+        ['setMyCommands', 'getMe', 'stopPolling', 'sendMessage'].forEach(function (m) {
+            stub[m] = function () {
+                record.push({ method: m, args: Array.from(arguments) });
+                let result;
+                if (m === 'getMe') {
+                    result = { id: 1, is_bot: true };
+                } else if (m === 'sendMessage') {
+                    result = { message_id: 999 };
+                } else {
+                    result = { ok: true };
+                }
+                return Promise.resolve(result);
+            };
+        });
+        stub.boomSync = function () {
+            record.push({ method: 'boomSync', args: Array.from(arguments) });
+            throw new Error('synchronous boom');
+        };
+        return stub;
+    }
+
+    it('invokes the named method with the given args and forwards the result', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeCallApiStub(record);
+                };
+
+                out.on('input', function (msg) {
+                    try {
+                        expect(record).to.have.lengthOf(1);
+                        expect(record[0].method).to.equal('setMyCommands');
+                        expect(record[0].args).to.deep.equal([[{ command: 'help', description: 'Help' }], {}]);
+                        expect(msg.payload.content).to.deep.equal({ ok: true });
+                        expect(s.queueManager.processing.get(123)).to.equal(false);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({
+                    payload: {
+                        chatId: 123,
+                        type: 'callApi',
+                        method: 'setMyCommands',
+                        args: [[{ command: 'help', description: 'Help' }], {}],
+                    },
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('works without a chatId (bot-level call) and forwards the result', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeCallApiStub(record);
+                };
+
+                out.on('input', function (msg) {
+                    try {
+                        expect(record[0].method).to.equal('getMe');
+                        expect(msg.payload.content).to.deep.equal({ id: 1, is_bot: true });
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({ payload: { type: 'callApi', method: 'getMe', args: [] } });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('refuses a blocklisted lifecycle method and advances the queue', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeCallApiStub(record);
+                };
+                s.warn = function () {};
+
+                out.on('input', function (msg) {
+                    try {
+                        expect(record.some((r) => r.method === 'stopPolling')).to.equal(false);
+                        expect(msg.payload.sentMessageId).to.equal(999);
+                        expect(s.queueManager.processing.get(55)).to.equal(false);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({ payload: { chatId: 55, type: 'callApi', method: 'stopPolling', args: [] } });
+                s.receive({ payload: { chatId: 55, type: 'message', content: 'recovered' } });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('refuses an underscore-prefixed internal method and advances the queue', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    const stub = makeCallApiStub(record);
+                    stub._request = function () {
+                        record.push({ method: '_request', args: [] });
+                        return Promise.resolve({});
+                    };
+                    return stub;
+                };
+                s.warn = function () {};
+
+                out.on('input', function (msg) {
+                    try {
+                        expect(record.some((r) => r.method === '_request')).to.equal(false);
+                        expect(msg.payload.sentMessageId).to.equal(999);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({ payload: { chatId: 55, type: 'callApi', method: '_request', args: [] } });
+                s.receive({ payload: { chatId: 55, type: 'message', content: 'recovered' } });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('warns and advances the queue for a non-existent method', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeCallApiStub(record);
+                };
+                s.warn = function () {};
+
+                out.on('input', function (msg) {
+                    try {
+                        expect(msg.payload.sentMessageId).to.equal(999);
+                        expect(s.queueManager.processing.get(55)).to.equal(false);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({ payload: { chatId: 55, type: 'callApi', method: 'noSuchMethod', args: [] } });
+                s.receive({ payload: { chatId: 55, type: 'message', content: 'recovered' } });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('warns and advances the queue when args is not an array', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeCallApiStub(record);
+                };
+                s.warn = function () {};
+
+                out.on('input', function (msg) {
+                    try {
+                        expect(record.some((r) => r.method === 'setMyCommands')).to.equal(false);
+                        expect(msg.payload.sentMessageId).to.equal(999);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({ payload: { chatId: 55, type: 'callApi', method: 'setMyCommands', args: 'not-an-array' } });
+                s.receive({ payload: { chatId: 55, type: 'message', content: 'recovered' } });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('routes a synchronous throw into processError and advances the queue', function (done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const out = helper.getNode('out');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                cfg.getTelegramBot = function () {
+                    return makeCallApiStub(record);
+                };
+                s.warn = function () {};
+                s.error = function () {};
+
+                out.on('input', function (msg) {
+                    try {
+                        expect(record.some((r) => r.method === 'boomSync')).to.equal(true);
+                        expect(msg.payload.sentMessageId).to.equal(999);
+                        expect(s.queueManager.processing.get(55)).to.equal(false);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                });
+
+                s.receive({ payload: { chatId: 55, type: 'callApi', method: 'boomSync', args: [] } });
+                s.receive({ payload: { chatId: 55, type: 'message', content: 'recovered' } });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+});

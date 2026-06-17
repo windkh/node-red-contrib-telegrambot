@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [Unreleased]
+### New `callApi` raw-API escape hatch in the sender node. Set `msg.payload.type = "callApi"` with `msg.payload.method` (string) and `msg.payload.args` (ordered array) to invoke any `node-telegram-bot-api` method as `bot[method](...args)` — making the full Bot API surface (e.g. `setMyCommands`, `createInvoiceLink`, `refundStarPayment`, gifts/stars/business-account methods) reachable without a dedicated `msg.payload.type`. The result is forwarded on `msg.payload.content`; connection/polling lifecycle, the event-emitter/reply-listener surface, and `_`-prefixed internals are blocked for safety. First-class types for the most useful methods are tracked per tier in [#459](https://github.com/windkh/node-red-contrib-telegrambot/issues/459) / [#460](https://github.com/windkh/node-red-contrib-telegrambot/issues/460) / [#461](https://github.com/windkh/node-red-contrib-telegrambot/issues/461) / [#462](https://github.com/windkh/node-red-contrib-telegrambot/issues/462). See README → *Calling the raw Bot API*.
+
 # [18.0.0-beta.1] - 2026-06-15
 ### **Read [MIGRATION.md](MIGRATION.md) before upgrading.** Beta release; published under npm's `beta` dist-tag. Existing users on `latest` stay on V17.4.14 and will not auto-upgrade. Opt in with `npm install node-red-contrib-telegrambot@beta`.
 

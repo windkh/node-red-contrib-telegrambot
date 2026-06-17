@@ -6,6 +6,51 @@ module.exports = function (RED) {
     const safeStringify = require('../lib/safe-stringify.js');
     const { migrateLegacyOptions } = require('../lib/legacy-options.js');
 
+    // Methods the `callApi` raw-API escape hatch refuses to invoke: the
+    // connection/polling lifecycle, webhook (de)registration, and the
+    // EventEmitter / reply-listener surface. Calling these from a flow would
+    // break the node's managed bot instance rather than perform a Bot API
+    // request. Everything else on the bot (the sendX/getX/setX request API) is
+    // allowed; names starting with `_` are also blocked (library internals).
+    const CALL_API_BLOCKLIST = new Set([
+        'startPolling',
+        'stopPolling',
+        'isPolling',
+        'getUpdates',
+        'processUpdate',
+        'openWebHook',
+        'closeWebHook',
+        'hasOpenWebHook',
+        'setWebHook',
+        'setWebhook',
+        'deleteWebHook',
+        'deleteWebhook',
+        'logOut',
+        'close',
+        'on',
+        'off',
+        'once',
+        'addListener',
+        'removeListener',
+        'removeAllListeners',
+        'prependListener',
+        'prependOnceListener',
+        'emit',
+        'eventNames',
+        'listeners',
+        'listenerCount',
+        'rawListeners',
+        'setMaxListeners',
+        'getMaxListeners',
+        'onText',
+        'onReplyToMessage',
+        'removeTextListener',
+        'removeReplyListener',
+        'clearTextListeners',
+        'clearReplyListeners',
+        'getFileStream',
+    ]);
+
     // --------------------------------------------------------------------------------------------
     // The output node sends to the chat and passes the msg through.
     // The payload needs three fields
@@ -26,6 +71,8 @@ module.exports = function (RED) {
     // action      content is one of the following:
     //                      typing, upload_photo, record_video, upload_video, record_audio, upload_audio,
     //                      upload_document, find_location, record_video_note, upload_video_note
+    // callApi     raw Bot API escape hatch: msg.payload.method (string) + msg.payload.args (array)
+    //             invokes bot[method](...args). Reaches any library method without a dedicated type.
     function TelegramOutNode(config) {
         RED.nodes.createNode(this, config);
         let node = this;
@@ -894,13 +941,53 @@ module.exports = function (RED) {
                             //}
                             break;
 
-                        // TODO:
-                        // setChatPermissions
-                        // editChatInviteLink, revokeChatInviteLink
-                        // getUserProfilePhotos,
-                        // getMyCommands
-                        // sendGame, setGameScore, getGameHighScores
-                        // uploadStickerFile, createNewStickerSet, addStickerToSet, setStickerPositionInSet, deleteStickerFromSet
+                        // First-class types for the methods below are tracked in
+                        // issues #459 (Tier 1), #460 (Tier 2), #461 (Tier 3), #462 (Tier 4).
+                        // Until then they are all reachable through the `callApi`
+                        // escape hatch implemented just below.
+                        case 'callApi': {
+                            // Raw Bot API escape hatch: invoke any library method by name with a
+                            // positional `args` array — `bot[method](...args)`. Makes every
+                            // current and future Bot API method reachable without a dedicated
+                            // `case`. msg.payload.chatId is optional and only used for queue
+                            // ordering. Result and errors flow through the normal
+                            // processResult/processError path, which advances the queue.
+                            let method = msg.payload.method;
+                            let args = msg.payload.args === undefined ? [] : msg.payload.args;
+
+                            let invalidReason;
+                            if (typeof method !== 'string' || method.length === 0) {
+                                invalidReason = 'callApi: msg.payload.method must be a non-empty string';
+                            } else if (!Array.isArray(args)) {
+                                invalidReason = 'callApi: msg.payload.args must be an array';
+                            } else if (method.charAt(0) === '_' || CALL_API_BLOCKLIST.has(method)) {
+                                invalidReason = 'callApi: method "' + method + '" is not allowed';
+                            } else if (typeof telegramBot[method] !== 'function') {
+                                invalidReason = 'callApi: method "' + method + '" does not exist on the bot';
+                            }
+
+                            if (invalidReason === undefined) {
+                                // Promise.resolve().then(...) funnels a synchronous throw from the
+                                // method (e.g. bad arguments) into processError exactly like a
+                                // rejected promise, so neither failure mode can wedge the queue.
+                                Promise.resolve()
+                                    .then(function () {
+                                        return telegramBot[method](...args);
+                                    })
+                                    .then(function (result) {
+                                        node.processResult(chatId, result, msg, nodeSend, nodeDone);
+                                    })
+                                    .catch(function (ex) {
+                                        node.processError(chatId, ex, msg, nodeSend, nodeDone);
+                                    });
+                            } else {
+                                node.warn(invalidReason);
+                                // Drop-and-advance: no dispatch on this path, so the queue head
+                                // would otherwise stay `processing: true` forever (#450 pattern).
+                                node.queueManager.processNext(chatId);
+                            }
+                            break;
+                        }
 
                         default:
                             // unknown type we try the unthinkable.

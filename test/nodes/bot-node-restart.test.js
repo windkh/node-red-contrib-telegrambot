@@ -491,14 +491,16 @@ describe('bot-node — abortBot stops polling cleanly (issue #440, V17.4.8)', fu
     function makeFakePollingBot(behaviour) {
         behaviour = behaviour || {};
         const calls = { cancel: [], stopPolling: [] };
-        const fake = {
-            _polling: {
-                _lastRequest: {
-                    cancel: function (reason) {
-                        calls.cancel.push(reason);
-                    },
+        const polling = {
+            _abort: false,
+            _lastRequest: {
+                cancel: function (reason) {
+                    calls.cancel.push(reason);
                 },
             },
+        };
+        const fake = {
+            _polling: polling,
             stopPolling: function (options) {
                 calls.stopPolling.push(options);
                 if (behaviour.stopPollingRejects) {
@@ -507,22 +509,27 @@ describe('bot-node — abortBot stops polling cleanly (issue #440, V17.4.8)', fu
                 return Promise.resolve();
             },
         };
-        return { bot: fake, calls };
+        return { bot: fake, calls, polling };
     }
 
     it('cancels in-flight _lastRequest before stopPolling resolves', function (done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
-                const { bot, calls } = makeFakePollingBot();
+                const { bot, calls, polling } = makeFakePollingBot();
                 n.telegramBot = bot;
                 n.abortBot('test', function () {
                     try {
                         expect(calls.cancel).to.deep.equal(['abortBot']);
-                        // stopPolling MUST be called with cancel:false (the only way to set
-                        // _abort=true in the lib, which is the only way to halt the recursive
-                        // polling loop).
-                        expect(calls.stopPolling).to.deep.equal([{ cancel: false }]);
+                        // Close path sets polling._abort = true directly (disarms the
+                        // recursive setTimeout in _polling()'s .finally), then calls
+                        // stopPolling({cancel:true}) so the lib returns Promise.resolve()
+                        // immediately instead of waiting for the in-flight long-poll to
+                        // settle. The recursive loop is already disarmed by _abort=true,
+                        // so the 409-Conflict race that V17.3.0 hit with cancel:true alone
+                        // cannot occur.
+                        expect(polling._abort).to.equal(true);
+                        expect(calls.stopPolling).to.deep.equal([{ cancel: true }]);
                         expect(n.telegramBot).to.equal(null);
                         done();
                     } catch (err) {
@@ -543,7 +550,7 @@ describe('bot-node — abortBot stops polling cleanly (issue #440, V17.4.8)', fu
                 n.telegramBot = bot;
                 n.abortBot('test', function () {
                     try {
-                        expect(calls.stopPolling).to.deep.equal([{ cancel: false }]);
+                        expect(calls.stopPolling).to.deep.equal([{ cancel: true }]);
                         expect(n.telegramBot).to.equal(null);
                         done();
                     } catch (err) {
@@ -568,7 +575,7 @@ describe('bot-node — abortBot stops polling cleanly (issue #440, V17.4.8)', fu
                 n.abortBot('test', function () {
                     try {
                         expect(calls.cancel).to.deep.equal([]); // no cancel attempted
-                        expect(calls.stopPolling).to.deep.equal([{ cancel: false }]);
+                        expect(calls.stopPolling).to.deep.equal([{ cancel: true }]);
                         expect(n.telegramBot).to.equal(null);
                         done();
                     } catch (err) {
@@ -591,7 +598,7 @@ describe('bot-node — abortBot stops polling cleanly (issue #440, V17.4.8)', fu
                 n.abortBot('test', function () {
                     try {
                         expect(calls.cancel).to.deep.equal([]);
-                        expect(calls.stopPolling).to.deep.equal([{ cancel: false }]);
+                        expect(calls.stopPolling).to.deep.equal([{ cancel: true }]);
                         expect(n.telegramBot).to.equal(null);
                         done();
                     } catch (err) {

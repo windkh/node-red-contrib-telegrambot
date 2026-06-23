@@ -895,11 +895,30 @@ module.exports = function (RED) {
                     // V17.3.0 dropped the explicit `.cancel()` in favour of cancel:true, and
                     // V17.4.4 added a `_polling = null` hack to compensate. Neither actually
                     // stopped the recursive loop. This restores the pattern that does.
+                    // V17.4.16 issue: stopPolling({cancel:false}) returns
+                    // `lastRequest.finally(() => {_abort = false})`, which waits for the
+                    // in-flight long-poll to settle. The .cancel('abortBot') above
+                    // does not propagate through @cypress/request-promise's chained
+                    // .then() promise back to the HTTP socket in all setups, so the
+                    // request runs to its natural pollTimeout (10s hardcoded). With
+                    // sibling-node cleanup overhead on a busy flow, total close time
+                    // routinely crosses Node-RED's 15s nodeCloseTimeout → "Error
+                    // stopping node: Close timed out" on every deploy.
+                    //
+                    // Fix: set _abort = true on the polling instance directly (this
+                    // is the recursive-setTimeout disarm that the comment block above
+                    // explained was the reason for picking cancel:false in V17.4.8),
+                    // then use cancel:true. The lib's stop() returns Promise.resolve()
+                    // immediately on cancel:true, so close completes without waiting.
+                    // The recursive loop is already disarmed by _abort=true, so the
+                    // 409-Conflict race that V17.3.0 hit with cancel:true alone
+                    // cannot occur.
                     const polling = self.telegramBot._polling;
+                    polling._abort = true;
                     if (polling._lastRequest && typeof polling._lastRequest.cancel === 'function') {
                         polling._lastRequest.cancel('abortBot');
                     }
-                    self.telegramBot.stopPolling({ cancel: false }).then(setStatusDisconnected, setStatusDisconnected);
+                    self.telegramBot.stopPolling({ cancel: true }).then(setStatusDisconnected, setStatusDisconnected);
                 } else if (self.telegramBot._webHook) {
                     // Telegram keeps the previously registered webhook URL on file until we tell it
                     // to drop it. Wait for deleteWebHook to complete (or fail) before tearing the

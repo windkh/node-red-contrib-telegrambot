@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [17.4.17] - 2026-06-23
+### Fix `Error stopping node: Close timed out` on every redeploy in polling mode (#463, PR #464 by @ajanulis). The close path called `stopPolling({ cancel: false })`, which in node-telegram-bot-api 0.66.0 returns `lastRequest.finally(...)` — waiting up to the hardcoded 10s `pollTimeout` for the in-flight long-poll to settle. The manual `_lastRequest.cancel('abortBot')` does not reliably abort the underlying `@cypress/request-promise` socket, so on a busy multi-node flow the total close time crossed Node-RED's 15s `nodeCloseTimeout`.
+
+### Fix: in `abortBot`, set `polling._abort = true` directly on the polling instance (the recursive-`setTimeout` disarm that `cancel:false` used to provide) and switch to `stopPolling({ cancel: true })`, which returns `Promise.resolve()` immediately. Both halves matter: `_abort = true` prevents the recursive poll loop from rescheduling (the 409-Conflict race V17.3.0 hit with `cancel:true` alone), and `cancel:true` avoids the up-to-10s wait. Deploy close time drops from ~12–15s to <1s. V17-only — the V18 line already uses `stopPolling({ cancel: true })` against lib 1.x, which handles both halves internally.
+
 # [17.4.16] - 2026-06-16
 ### Close the three remaining queue-wedge sites in `out-node.js` surfaced by a systematic audit of `processMessage`'s no-dispatch branches (#450 audit). V17.4.14 fixed the `hasContent` empty-content drop; V17.4.15 fixed `processError`'s non-retryable branch. Audit found three more sibling sites with identical shape — warn-but-don't-dispatch, leaving `processing[chatId]` stuck `true` forever:
 

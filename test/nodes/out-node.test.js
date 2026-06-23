@@ -569,15 +569,17 @@ describe('telegram sender (out-node) — queue advance on empty-content drop (#4
     });
 });
 
-describe('telegram sender (out-node) — editMessageMedia local-file wrap (V18 beta retest)', function () {
+describe('telegram sender (out-node) — editMessageMedia pass-through (lib v1.1.1 handles local files natively)', function () {
     const fs = require('fs');
     const os = require('os');
     const path = require('path');
     let tmpFile;
 
     before(function (done) {
-        // Real temp file on disk; the wrapper uses fs.existsSync to decide
-        // whether to apply the attach:// prefix.
+        // Real temp file on disk. As of lib v1.1.1 the node no longer pre-wraps
+        // local paths with attach:// — the library uploads a bare local path
+        // natively (detecting it via fs.existsSync) — so these tests assert the
+        // wrapper passes msg.payload.content.media through unchanged.
         tmpFile = path.join(os.tmpdir(), 'out-node-test-' + Date.now() + '.png');
         fs.writeFileSync(tmpFile, Buffer.from([0x89, 0x50, 0x4e, 0x47])); // PNG magic
         helper.startServer(done);
@@ -604,7 +606,7 @@ describe('telegram sender (out-node) — editMessageMedia local-file wrap (V18 b
         ];
     }
 
-    it('wraps a bare local file path with attach:// so v1.0.0 uploads it as multipart', function (done) {
+    it('passes a bare local file path through unchanged (lib v1.1.1 uploads it as multipart)', function (done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -619,12 +621,12 @@ describe('telegram sender (out-node) — editMessageMedia local-file wrap (V18 b
                     try {
                         expect(record).to.have.length(1);
                         expect(record[0].method).to.equal('editMessageMedia');
-                        // First positional arg is the InputMedia object;
-                        // media.media must be the attach:// form (multipart
-                        // upload), not the bare path (which Telegram treats
-                        // as a URL → "Wrong port number specified" error).
+                        // First positional arg is the InputMedia object. The node no
+                        // longer pre-wraps the path: it is passed through verbatim and
+                        // the library uploads the local file natively (see the real-lib
+                        // test below that asserts the multipart attach:// form).
                         const media = record[0].args[0];
-                        expect(media.media).to.equal('attach://' + tmpFile);
+                        expect(media.media).to.equal(tmpFile);
                         expect(media.type).to.equal('photo');
                         expect(media.caption).to.equal('modified image');
                         // Second positional arg is `form` carrying chat/message ids.
@@ -755,6 +757,72 @@ describe('telegram sender (out-node) — editMessageMedia local-file wrap (V18 b
                 done(err);
             }
         });
+    });
+});
+
+describe('editMessageMedia — real library uploads a local file as multipart (lib v1.1.1)', function () {
+    // This exercises the REAL node-telegram-bot-api class (not a stub), proving the
+    // node no longer needs its own attach:// pre-wrap: the library uploads a bare
+    // local path natively, and the legacy attach://<path> form resolves identically.
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    let TelegramBot;
+    let tmpFile;
+
+    before(async function () {
+        TelegramBot = await loadTelegramBot();
+        tmpFile = path.join(os.tmpdir(), 'out-node-reallib-' + Date.now() + '.png');
+        fs.writeFileSync(tmpFile, Buffer.from([0x89, 0x50, 0x4e, 0x47])); // PNG magic
+    });
+
+    after(function () {
+        try {
+            fs.unlinkSync(tmpFile);
+        } catch (e) {
+            /* ignore */
+        }
+    });
+
+    // Build a real bot and capture what reaches the HTTP layer via _request.
+    function captureRequest() {
+        const bot = new TelegramBot('123456:fake-token', { polling: false });
+        const captured = {};
+        bot._request = function (method, opts) {
+            captured.method = method;
+            captured.opts = opts;
+            return Promise.resolve({});
+        };
+        return { bot, captured };
+    }
+
+    it('rewrites a bare local path to attach://0_media and attaches the file part', async function () {
+        const { bot, captured } = captureRequest();
+        await bot.editMessageMedia({ type: 'photo', media: tmpFile, caption: 'x' }, { chat_id: 1, message_id: 2 });
+
+        expect(captured.method).to.equal('editMessageMedia');
+        const media = JSON.parse(captured.opts.form.media);
+        expect(media.media).to.equal('attach://0_media');
+        expect(media.type).to.equal('photo');
+        expect(captured.opts.formData).to.have.property('0_media');
+    });
+
+    it('resolves the legacy attach://<local-path> form to the same multipart upload', async function () {
+        const { bot, captured } = captureRequest();
+        await bot.editMessageMedia({ type: 'photo', media: 'attach://' + tmpFile }, { chat_id: 1, message_id: 2 });
+
+        const media = JSON.parse(captured.opts.form.media);
+        expect(media.media).to.equal('attach://0_media');
+        expect(captured.opts.formData).to.have.property('0_media');
+    });
+
+    it('passes a remote URL through without attaching a file', async function () {
+        const { bot, captured } = captureRequest();
+        await bot.editMessageMedia({ type: 'photo', media: 'https://example.com/i.png' }, { chat_id: 1, message_id: 2 });
+
+        const media = JSON.parse(captured.opts.form.media);
+        expect(media.media).to.equal('https://example.com/i.png');
+        expect(captured.opts.formData).to.not.have.property('0_media');
     });
 });
 

@@ -1075,34 +1075,27 @@ module.exports = function (RED) {
             return promise;
         };
 
-        // Delegates to v1.0.0's public `bot.editMessageMedia(media, form)`. The
-        // V17 wrapper used to reach into `_request` / `_formatSendData` (private
-        // helpers on v0.66) because the public v0.66 method didn't expose the
-        // file-options hook. v1.0.0 exposes everything via the InputMedia object
-        // (including `fileOptions`), so the wrapper is now a thin pass-through —
-        // EXCEPT for one important detail: v1.0.0 only uploads `media.media` as
-        // multipart when it matches `attach://<local-path>`. A bare file path
-        // (`c:\temp\sample2.png`) is treated as a URL and sent to Telegram as-is,
-        // which Telegram then rejects ("invalid file HTTP URL specified: Wrong
-        // port number specified in the URL", because `c:` looks like scheme +
-        // port). V17 flows pass bare paths; wrap them so the file actually gets
-        // uploaded.
+        // Delegates to the library's public `bot.editMessageMedia(media, form)`.
+        //
+        // History: the V17 wrapper reached into `_request` / `_formatSendData`
+        // (v0.66 privates). The V18 beta (lib v1.0/1.1.0) needed to pre-wrap a bare
+        // local path with `attach://` because those versions only uploaded
+        // `media.media` as multipart for the `attach://<local-path>` form and
+        // otherwise treated `c:\temp\x.png` as a URL ("Wrong port number").
+        //
+        // lib v1.1.1 fixed this: `editMessageMedia` now uploads a Buffer / stream /
+        // local file path natively, detecting local files via `fs.existsSync`
+        // (so a bare Windows path works), and it strips a legacy `attach://<path>`
+        // prefix for back-compat. The pre-wrap is therefore dead code — the prefix
+        // would just be stripped and the same path re-resolved — so the wrapper is
+        // now a thin pass-through. It only converts a synchronous throw (e.g. an
+        // unsupported input type) into a rejected promise so `processError` runs
+        // and the queue advances.
         this.editMessageMedia = function (media, form = {}) {
-            const payload = Object.assign({}, media);
-
-            if (
-                typeof payload.media === 'string' &&
-                !/^attach:\/\//.test(payload.media) &&
-                !/^https?:\/\//.test(payload.media) &&
-                fs.existsSync(payload.media)
-            ) {
-                payload.media = 'attach://' + payload.media;
-            }
-
             let telegramBot = this.config.getTelegramBot();
             let result;
             try {
-                result = telegramBot.editMessageMedia(payload, form);
+                result = telegramBot.editMessageMedia(media, form);
             } catch (ex) {
                 result = Promise.reject(ex);
             }

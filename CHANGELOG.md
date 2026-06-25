@@ -1,12 +1,18 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# [Unreleased]
+# [18.0.0-beta.2] - 2026-06-25
+### Second public beta. Published under npm's `beta` dist-tag; existing users on `latest` stay on V17 and will not auto-upgrade. Opt in with `npm install node-red-contrib-telegrambot@beta`. Rolls up the changes below since beta.1, plus the V17.4.15–17.4.17 fixes reconciled from `master` into this branch.
+
 ### Bump `node-telegram-bot-api` floor to `^1.1.1` (#465). 1.1.1 is the npm `latest` and is already what fresh installs of the V18 beta resolved to (the dep was `^1.0.0`); this pins the floor and aligns the lockfile. Full suite green against 1.1.1. 1.1.1 adds per-instance transport options (`request.fetch` / `request.fetchOptions`) and fixes `editMessageMedia` to natively upload a Buffer / stream / local file path via an `attach://` part (detecting local files with `fs.existsSync`, so a bare Windows path works) — and it strips a legacy `attach://<local-path>` prefix for back-compat.
 
 ### Simplify the `editMessageMedia` wrapper in `out-node.js` to a thin pass-through (#465). The V18-beta wrapper pre-wrapped a bare local path with `attach://` to force a multipart upload on lib 1.0/1.1.0; on 1.1.1 that prefix is stripped and the path re-resolved identically, so the pre-wrap is dead code. The library now handles bare local paths, Buffers, streams, and the legacy `attach://` form itself. Added real-library tests asserting a bare local path becomes `attach://0_media` with the file attached, the legacy form resolves identically, and remote URLs pass through with no file part. (Note: sticker-set methods `createNewStickerSet`/`addStickerToSet` reached via `callApi` now require the new `stickers: InputSticker[]` shape — the old `png_sticker`/`emojis` fields were already rejected by Telegram.)
 
 ### New `callApi` raw-API escape hatch in the sender node. Set `msg.payload.type = "callApi"` with `msg.payload.method` (string) and `msg.payload.args` (ordered array) to invoke any `node-telegram-bot-api` method as `bot[method](...args)` — making the full Bot API surface (e.g. `setMyCommands`, `createInvoiceLink`, `refundStarPayment`, gifts/stars/business-account methods) reachable without a dedicated `msg.payload.type`. The result is forwarded on `msg.payload.content`; connection/polling lifecycle, the event-emitter/reply-listener surface, and `_`-prefixed internals are blocked for safety. First-class types for the most useful methods are tracked per tier in [#459](https://github.com/windkh/node-red-contrib-telegrambot/issues/459) / [#460](https://github.com/windkh/node-red-contrib-telegrambot/issues/460) / [#461](https://github.com/windkh/node-red-contrib-telegrambot/issues/461) / [#462](https://github.com/windkh/node-red-contrib-telegrambot/issues/462). See README → *Calling the raw Bot API*.
+
+### Control node: stop forcing a green "connected" status on every input. The input handler painted "connected" unconditionally before inspecting the command, so injecting `stop` on an already-stopped bot left the node green (config.stop short-circuits without emitting a status event). Status is now owned solely by the config node's status events.
+
+### Examples + tests: refreshed example flows from V18 manual testing (#457, now closed); fixed an `out-node.test.js` first-load flake by pre-resolving the dynamic `node-telegram-bot-api` import in a root `before` hook.
 
 # [18.0.0-beta.1] - 2026-06-15
 ### **Read [MIGRATION.md](MIGRATION.md) before upgrading.** Beta release; published under npm's `beta` dist-tag. Existing users on `latest` stay on V17.4.14 and will not auto-upgrade. Opt in with `npm install node-red-contrib-telegrambot@beta`.

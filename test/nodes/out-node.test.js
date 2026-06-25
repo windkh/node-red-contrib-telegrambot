@@ -1,21 +1,8 @@
 const helper = require('node-red-node-test-helper');
 const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
-const { loadTelegramBot } = require('../../telegrambot/lib/telegram-bot-loader');
 
 helper.init(require.resolve('node-red'));
-
-// Pre-resolve the dynamic import of node-telegram-bot-api once, before any
-// test loads a flow. The flows below construct a `telegram bot` config node,
-// whose module-level subclass (`TelegramBotEx` in bot-node.js) is only ready
-// after that import settles. In production the import has long since resolved
-// by the time a flow runs, but mocha calls helper.load synchronously right
-// after the module require — so on a cold run (this file first / in isolation)
-// the bot is constructed before the import resolves and the flow fails to
-// materialise its nodes. Awaiting here removes that first-load race.
-before(async function () {
-    await loadTelegramBot();
-});
 
 // Minimal stub of the bot instance — records which method was called with which args
 // and returns a resolved promise carrying a synthetic message_id.
@@ -767,11 +754,11 @@ describe('editMessageMedia — real library uploads a local file as multipart (l
     const fs = require('fs');
     const os = require('os');
     const path = require('path');
-    let TelegramBot;
+    // lib v1.1.2 restored CommonJS — require the class synchronously.
+    const TelegramBot = require('node-telegram-bot-api').default;
     let tmpFile;
 
-    before(async function () {
-        TelegramBot = await loadTelegramBot();
+    before(function () {
         tmpFile = path.join(os.tmpdir(), 'out-node-reallib-' + Date.now() + '.png');
         fs.writeFileSync(tmpFile, Buffer.from([0x89, 0x50, 0x4e, 0x47])); // PNG magic
     });

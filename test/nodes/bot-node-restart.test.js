@@ -1,17 +1,8 @@
 const helper = require('node-red-node-test-helper');
 const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
-const { loadTelegramBot } = require('../../telegrambot/lib/telegram-bot-loader');
 
 helper.init(require.resolve('node-red'));
-
-// Pre-resolve the dynamic import of node-telegram-bot-api before any test runs,
-// so instantiateBot can construct a real bot synchronously (the module-level
-// TelegramBotEx subclass is only ready once the import settles). See the same
-// note in out-node.test.js — avoids a cold-run first-load race.
-before(async function () {
-    await loadTelegramBot();
-});
 
 // Wait for a predicate to become true, polling every 10 ms up to maxMs.
 function waitFor(predicate, maxMs) {

@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 # [Unreleased]
 ### Bump `node-telegram-bot-api` floor to `^1.1.2` (#467). 1.1.2 is the lib's npm `latest` and is what fresh installs already resolved to (dep was `^1.1.1`); pinned and verified, full suite green. 1.1.2's only change is **restored CommonJS consumption** — it now ships a dual ESM + CJS build whose `exports` map exposes a `require` condition, so `require('node-telegram-bot-api')` works again (the v1.0.0 dynamic-`import()` workaround is no longer strictly required). No breaking changes, no signature/error-handling changes.
 
+### Drop the dynamic-import loader; load the library synchronously via `require()` (#467). Now that v1.1.2 restores CommonJS, `bot-node.js` does `const TelegramBot = require('node-telegram-bot-api').default` at module load and defines the `TelegramBotEx` subclass synchronously, instead of the memoised `await import(...)` bridge. Removed `telegrambot/lib/telegram-bot-loader.js` and its test, the `instantiateBot` "library not yet loaded" guard, and the `await loadTelegramBot()` preloads in the test suites. This **permanently eliminates the first-load race** the dynamic import caused (the `out-node.test.js` cold-run flake) — verified 0/5 isolated cold runs. Requires the `^1.1.2` floor (CJS exists only from 1.1.2), which is now pinned.
+
 # [18.0.0-beta.3] - 2026-06-25
 ### Third public beta. Published under npm's `beta` dist-tag; `latest` users stay on V17. `npm install node-red-contrib-telegrambot@beta`.
 

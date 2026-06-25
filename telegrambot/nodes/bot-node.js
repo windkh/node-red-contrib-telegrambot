@@ -1,7 +1,47 @@
 const { formatErrorChain } = require('../lib/error-chain');
 const { evalContextExpression } = require('../lib/context-expression');
-const { loadTelegramBot } = require('../lib/telegram-bot-loader');
 const { buildDispatcher, closeDispatcher } = require('../lib/undici-pool');
+
+// node-telegram-bot-api v1.1.2 restored CommonJS consumption (dual ESM + CJS
+// build), so we load the constructor synchronously at module load: require()
+// returns the module namespace and `.default` is the TelegramBot class. The
+// v1.0.0–1.1.1 ESM-only era forced an async dynamic-import shim
+// (telegram-bot-loader.js, now removed); with the floor pinned to ^1.1.2 the
+// synchronous require is always available, which also removes the first-load
+// race the dynamic import caused.
+const TelegramBot = require('node-telegram-bot-api').default;
+
+// A TelegramBot subclass that emits getUpdates_start / getUpdates_end so the
+// control node can drive its "live polling activity" status, and 'update' so
+// the receiver node can dispatch any update shape. Defined once at module load
+// (depends only on TelegramBot, not RED).
+class TelegramBotEx extends TelegramBot {
+    constructor(token, options = {}) {
+        super(token, options);
+        this.cycle = 0;
+    }
+
+    getUpdates(form = {}) {
+        this.cycle++;
+        this.emit('getUpdates_start', this.cycle);
+        const startTime = Date.now();
+        const result = super.getUpdates(form);
+        result
+            .then((updates) => {
+                this.emit('getUpdates_end', this.cycle, Date.now() - startTime, updates);
+            })
+            .catch(() => {
+                // Errors from getUpdates are handled by the caller;
+                // suppress unhandled rejection here.
+            });
+        return result;
+    }
+
+    processUpdate(update) {
+        this.emit('update', update);
+        super.processUpdate(update);
+    }
+}
 
 module.exports = function (RED) {
     // See this.conflict409Times in the config-node constructor for the rationale.
@@ -17,59 +57,6 @@ module.exports = function (RED) {
     // 'error' event, so the V17.4.5 agent-pool rebuild never ran.
     const POLLING_ERROR_THRESHOLD = 5;
     const POLLING_ERROR_WINDOW_MS = 60000;
-
-    // node-telegram-bot-api v1.0.0 is ESM-only; the dynamic import resolves to
-    // the default-exported constructor. We kick it off at module load and cache
-    // a `telegramBotEx` subclass once the import settles. Node-RED instantiates
-    // config nodes synchronously when flows deploy, but bots are not actually
-    // constructed until the first send / receive / poll path runs — by which
-    // time this Promise has long since settled. If a bot construction races
-    // ahead of the import (very early test code paths, mostly), the
-    // `createTelegramBot*` helpers below detect a null subclass and surface a
-    // node.error rather than hanging.
-    let TelegramBotEx = null;
-    let telegramBotLoadError = null;
-    loadTelegramBot().then(
-        function (TelegramBot) {
-            TelegramBotEx = class telegramBotEx extends TelegramBot {
-                constructor(token, options = {}) {
-                    super(token, options);
-                    this.cycle = 0;
-                }
-
-                // Emit getUpdates_start / getUpdates_end so the control node
-                // can drive its "live polling activity" status indicator.
-                // Public API on TelegramBot in both v0.66 and v1.0.0.
-                getUpdates(form = {}) {
-                    this.cycle++;
-                    this.emit('getUpdates_start', this.cycle);
-                    const startTime = Date.now();
-                    const result = super.getUpdates(form);
-                    result
-                        .then((updates) => {
-                            this.emit('getUpdates_end', this.cycle, Date.now() - startTime, updates);
-                        })
-                        .catch(() => {
-                            // Errors from getUpdates are handled by the caller;
-                            // suppress unhandled rejection here.
-                        });
-                    return result;
-                }
-
-                // Emit 'update' so the receiver node can dispatch any update
-                // shape (not just bot-emitted built-ins like 'message').
-                processUpdate(update) {
-                    this.emit('update', update);
-                    super.processUpdate(update);
-                }
-            };
-        },
-        function (err) {
-            telegramBotLoadError = err;
-            // eslint-disable-next-line no-console
-            console.error('node-red-contrib-telegrambot: failed to load node-telegram-bot-api:', err);
-        }
-    );
 
     // --------------------------------------------------------------------------------------------
 
@@ -579,36 +566,26 @@ module.exports = function (RED) {
         // Construct a bot (subclass of TelegramBot with our event-emitting
         // overrides), giving it a freshly-built per-instance undici dispatcher
         // (address-family / SOCKS configuration) via the v1.1.1
-        // `request.fetchOptions.dispatcher` transport hook. Returns null if
-        // the dynamic import of node-telegram-bot-api hasn't resolved yet
-        // (vanishingly rare in practice — the import settles in ms during
-        // module load, long before any flow can trigger bot creation).
+        // `request.fetchOptions.dispatcher` transport hook. TelegramBotEx is
+        // require()'d synchronously at module load (lib v1.1.2 CJS), so it's
+        // always available here.
         this.instantiateBot = function (token, options) {
-            let bot = null;
-            if (!TelegramBotEx) {
-                if (telegramBotLoadError) {
-                    self.error('Bot library failed to load: ' + telegramBotLoadError.message);
-                } else {
-                    self.error('Bot library not yet loaded; redeploy in a moment to retry.');
-                }
-            } else {
-                const dispatcher = buildDispatcher(self.buildDispatcherOptions());
-                // Close any previous dispatcher we never explicitly tore down
-                // (e.g. a control-node stop→start that re-instantiates without
-                // going through on('close') / scheduleRestart) so its pool
-                // doesn't leak. Fire-and-forget: the old bot is already gone.
-                const previous = self.dispatcher;
-                self.dispatcher = dispatcher;
-                if (previous && previous !== dispatcher) {
-                    closeDispatcher(previous).catch(function () {});
-                }
-                // Merge the dispatcher into options.request.fetchOptions without
-                // clobbering any request fields a caller may already have set.
-                const request = Object.assign({}, options.request);
-                request.fetchOptions = Object.assign({}, request.fetchOptions, { dispatcher });
-                const optionsWithTransport = Object.assign({}, options, { request });
-                bot = new TelegramBotEx(token, optionsWithTransport);
+            const dispatcher = buildDispatcher(self.buildDispatcherOptions());
+            // Close any previous dispatcher we never explicitly tore down
+            // (e.g. a control-node stop→start that re-instantiates without
+            // going through on('close') / scheduleRestart) so its pool
+            // doesn't leak. Fire-and-forget: the old bot is already gone.
+            const previous = self.dispatcher;
+            self.dispatcher = dispatcher;
+            if (previous && previous !== dispatcher) {
+                closeDispatcher(previous).catch(function () {});
             }
+            // Merge the dispatcher into options.request.fetchOptions without
+            // clobbering any request fields a caller may already have set.
+            const request = Object.assign({}, options.request);
+            request.fetchOptions = Object.assign({}, request.fetchOptions, { dispatcher });
+            const optionsWithTransport = Object.assign({}, options, { request });
+            const bot = new TelegramBotEx(token, optionsWithTransport);
             return bot;
         };
 

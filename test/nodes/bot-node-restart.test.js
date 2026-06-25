@@ -1,8 +1,17 @@
 const helper = require('node-red-node-test-helper');
 const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
+const { loadTelegramBot } = require('../../telegrambot/lib/telegram-bot-loader');
 
 helper.init(require.resolve('node-red'));
+
+// Pre-resolve the dynamic import of node-telegram-bot-api before any test runs,
+// so instantiateBot can construct a real bot synchronously (the module-level
+// TelegramBotEx subclass is only ready once the import settles). See the same
+// note in out-node.test.js — avoids a cold-run first-load race.
+before(async function () {
+    await loadTelegramBot();
+});
 
 // Wait for a predicate to become true, polling every 10 ms up to maxMs.
 function waitFor(predicate, maxMs) {
@@ -431,6 +440,59 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
                     password: 'p',
                 });
                 done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('instantiateBot wires a per-instance dispatcher via request.fetchOptions (#465/#466)', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const bot = n.instantiateBot('123:fake', { baseApiUrl: 'https://api.telegram.org' });
+                expect(bot, 'bot should be constructed (library loaded in before hook)').to.exist;
+                // The per-bot dispatcher is stored on the node and threaded into
+                // the bot's request.fetchOptions.dispatcher (the v1.1.1 hook).
+                expect(n.dispatcher).to.exist;
+                expect(bot.options.request.fetchOptions.dispatcher).to.equal(n.dispatcher);
+                // And it is NOT installed under the old process-global symbol.
+                expect(global[Symbol.for('undici.globalDispatcher.1')]).to.not.equal(n.dispatcher);
+                done();
+            } catch (err) {
+                done(err);
+            } finally {
+                helper.getNode('b1') && helper.getNode('b1').destroyDispatcher && helper.getNode('b1').destroyDispatcher().catch(() => {});
+            }
+        });
+    });
+
+    it('destroyDispatcher closes the per-instance dispatcher and clears the reference', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                n.instantiateBot('123:fake', {});
+                const dispatcher = n.dispatcher;
+                expect(dispatcher).to.exist;
+                // Replace close with a resolving fake so the assertion doesn't
+                // depend on undici's real pool-drain timing (the connection-less
+                // Agent is GC'd). We only verify destroyDispatcher's contract.
+                let closed = false;
+                dispatcher.close = function () {
+                    closed = true;
+                    return Promise.resolve();
+                };
+                n.destroyDispatcher().then(function () {
+                    try {
+                        expect(closed).to.equal(true);
+                        expect(n.dispatcher).to.equal(null);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                }, done);
             } catch (err) {
                 done(err);
             }

@@ -1,7 +1,7 @@
 const { formatErrorChain } = require('../lib/error-chain');
 const { evalContextExpression } = require('../lib/context-expression');
 const { loadTelegramBot } = require('../lib/telegram-bot-loader');
-const { installDispatcher, destroyDispatcher } = require('../lib/undici-pool');
+const { buildDispatcher, closeDispatcher } = require('../lib/undici-pool');
 
 module.exports = function (RED) {
     // See this.conflict409Times in the config-node constructor for the rationale.
@@ -194,16 +194,19 @@ module.exports = function (RED) {
         // 4. optional when request via SOCKS is used.
         this.useSocks = n.usesocks;
 
-        // Builds the options object passed to `installDispatcher` (see
-        // telegrambot/lib/undici-pool). The dispatcher backs every fetch
-        // call from the bot library because node-telegram-bot-api v1.0.0
-        // uses native fetch with no per-instance hook — we install a
-        // process-global undici Agent (or `fetch-socks` socksDispatcher)
-        // and route every bot through it.
-        //
-        // Pool isolation per bot is gone (the symbol-based install is
-        // process-global), but the V17.4.5 / V17.4.13 #442 defence is
-        // preserved via destroy+rebuild on `scheduleRestart`.
+        // The undici dispatcher backing THIS bot's outbound HTTPS traffic.
+        // Built in instantiateBot, passed to the bot via
+        // request.fetchOptions.dispatcher, and closed in destroyDispatcher
+        // (on node close and on scheduleRestart). Per-bot, not process-global.
+        this.dispatcher = null;
+
+        // Builds the options object passed to `buildDispatcher` (see
+        // telegrambot/lib/undici-pool). node-telegram-bot-api v1.1.1 accepts a
+        // per-instance transport via `request.fetchOptions.dispatcher`, so each
+        // bot gets its own undici Agent (or `fetch-socks` socksDispatcher) —
+        // restoring the per-bot pool/proxy isolation V17 had. The V17.4.5 /
+        // V17.4.13 #442 defence is preserved via close+rebuild on
+        // `scheduleRestart`.
         this.buildDispatcherOptions = function () {
             const agent = { keepAliveTimeout: 4000 };
             if (self.addressFamily === 4 || self.addressFamily === 6) {
@@ -574,8 +577,9 @@ module.exports = function (RED) {
         };
 
         // Construct a bot (subclass of TelegramBot with our event-emitting
-        // overrides) and install the process-global undici dispatcher under
-        // the bot's address-family / SOCKS configuration. Returns null if
+        // overrides), giving it a freshly-built per-instance undici dispatcher
+        // (address-family / SOCKS configuration) via the v1.1.1
+        // `request.fetchOptions.dispatcher` transport hook. Returns null if
         // the dynamic import of node-telegram-bot-api hasn't resolved yet
         // (vanishingly rare in practice — the import settles in ms during
         // module load, long before any flow can trigger bot creation).
@@ -588,10 +592,33 @@ module.exports = function (RED) {
                     self.error('Bot library not yet loaded; redeploy in a moment to retry.');
                 }
             } else {
-                installDispatcher(self.buildDispatcherOptions());
-                bot = new TelegramBotEx(token, options);
+                const dispatcher = buildDispatcher(self.buildDispatcherOptions());
+                // Close any previous dispatcher we never explicitly tore down
+                // (e.g. a control-node stop→start that re-instantiates without
+                // going through on('close') / scheduleRestart) so its pool
+                // doesn't leak. Fire-and-forget: the old bot is already gone.
+                const previous = self.dispatcher;
+                self.dispatcher = dispatcher;
+                if (previous && previous !== dispatcher) {
+                    closeDispatcher(previous).catch(function () {});
+                }
+                // Merge the dispatcher into options.request.fetchOptions without
+                // clobbering any request fields a caller may already have set.
+                const request = Object.assign({}, options.request);
+                request.fetchOptions = Object.assign({}, request.fetchOptions, { dispatcher });
+                const optionsWithTransport = Object.assign({}, options, { request });
+                bot = new TelegramBotEx(token, optionsWithTransport);
             }
             return bot;
+        };
+
+        // Close this bot's undici dispatcher (draining its keep-alive pool) and
+        // clear the reference. Returns a promise so callers can await a clean
+        // shutdown. Replaces the V18-beta.1 process-global destroyDispatcher().
+        this.destroyDispatcher = function () {
+            const dispatcher = self.dispatcher;
+            self.dispatcher = null;
+            return closeDispatcher(dispatcher);
         };
 
         this.createTelegramBot = function () {
@@ -778,11 +805,11 @@ module.exports = function (RED) {
                 }
             }
             self.abortBot('closing', function () {
-                // Tear down the global undici dispatcher so a redeploy doesn't
+                // Tear down this bot's undici dispatcher so a redeploy doesn't
                 // leave dangling sockets behind. Async — wait for the pool to
                 // drain before calling done() so Node-RED's close timeout
                 // sees a clean shutdown.
-                destroyDispatcher().then(done, done);
+                self.destroyDispatcher().then(done, done);
             });
         });
 
@@ -956,13 +983,13 @@ module.exports = function (RED) {
                 self.restartTimer = null;
                 self.abortBot('pre-restart', function () {
                     // abortBot already nulled self.telegramBot via setStatusDisconnected.
-                    // Destroy the process-global undici dispatcher (which closes
-                    // every keep-alive socket in the pool) and let the next
-                    // bot construction install a fresh one. Same #442 defence
-                    // as V17.4.5 / V17.4.13 — half-dead sockets from the
-                    // previous outage cannot survive into the new bot.
+                    // Close this bot's undici dispatcher (which closes every
+                    // keep-alive socket in the pool) and let the next bot
+                    // construction build a fresh one. Same #442 defence as
+                    // V17.4.5 / V17.4.13 — half-dead sockets from the previous
+                    // outage cannot survive into the new bot.
                     self.status = 'disconnected';
-                    destroyDispatcher().catch(function () {
+                    self.destroyDispatcher().catch(function () {
                         // Pool drain failures are non-fatal — proceed with
                         // the new bot construction regardless.
                     });

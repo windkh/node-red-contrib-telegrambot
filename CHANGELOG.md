@@ -1,7 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# [Unreleased]
+# [18.0.0-beta.3] - 2026-06-25
+### Third public beta. Published under npm's `beta` dist-tag; `latest` users stay on V17. `npm install node-red-contrib-telegrambot@beta`.
+
 ### Move the undici dispatcher to a per-bot-instance transport (#466 / #465). Previously the dispatcher (plain `undici.Agent`, or `fetch-socks` `socksDispatcher` for SOCKS) was installed under the process-global `globalThis[Symbol.for("undici.globalDispatcher.1")]` symbol, because lib v1.0/v1.1.0 exposed no per-instance hook. node-telegram-bot-api v1.1.1 added `request.fetch` / `request.fetchOptions`, so each bot is now constructed with `request.fetchOptions.dispatcher` set to its own dispatcher. This restores the per-bot pool/proxy isolation V17 had (each `telegram bot` config node gets its own pool again) and removes the process-global side effect. `bot-node.js` owns the dispatcher lifecycle: built in `instantiateBot`, closed in `destroyDispatcher` on node close and on `scheduleRestart` (the #442 keep-alive defence is now genuinely per-bot), and the previous dispatcher is closed on re-instantiation (e.g. control-node stop→start) so pools don't leak. `lib/undici-pool.js` slimmed to `buildDispatcher` + `closeDispatcher`; the global-symbol install/destroy removed. Tests updated accordingly (incl. a real-`fetch` check that an undici `dispatcher` passed in the init is honoured on Node 20+).
 
 # [18.0.0-beta.2] - 2026-06-25

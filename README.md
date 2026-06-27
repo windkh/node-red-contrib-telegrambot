@@ -54,6 +54,7 @@ If you want to support this free project. Any help is welcome. You can donate by
  - MK-2001: for providing pullrequest with safe stringify
  - gtalusan: for providing pullrequest with handlers for promise rejections when offline
  - ajanulis: for fixing the redeploy "Close timed out" hang in polling mode
+ - petermeter69: for the detailed long-running testing and logs behind the polling-recovery fix (#442)
 
 # 👥 Contributors
 

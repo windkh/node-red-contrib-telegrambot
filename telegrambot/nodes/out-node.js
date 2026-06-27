@@ -4,6 +4,52 @@ module.exports = function (RED) {
     const fs = require('fs');
     const QueueManager = require('../lib/queue-manager.js');
     const safeStringify = require('../lib/safe-stringify.js');
+    const { migrateLegacyOptions } = require('../lib/legacy-options.js');
+
+    // Methods the `callApi` raw-API escape hatch refuses to invoke: the
+    // connection/polling lifecycle, webhook (de)registration, and the
+    // EventEmitter / reply-listener surface. Calling these from a flow would
+    // break the node's managed bot instance rather than perform a Bot API
+    // request. Everything else on the bot (the sendX/getX/setX request API) is
+    // allowed; names starting with `_` are also blocked (library internals).
+    const CALL_API_BLOCKLIST = new Set([
+        'startPolling',
+        'stopPolling',
+        'isPolling',
+        'getUpdates',
+        'processUpdate',
+        'openWebHook',
+        'closeWebHook',
+        'hasOpenWebHook',
+        'setWebHook',
+        'setWebhook',
+        'deleteWebHook',
+        'deleteWebhook',
+        'logOut',
+        'close',
+        'on',
+        'off',
+        'once',
+        'addListener',
+        'removeListener',
+        'removeAllListeners',
+        'prependListener',
+        'prependOnceListener',
+        'emit',
+        'eventNames',
+        'listeners',
+        'listenerCount',
+        'rawListeners',
+        'setMaxListeners',
+        'getMaxListeners',
+        'onText',
+        'onReplyToMessage',
+        'removeTextListener',
+        'removeReplyListener',
+        'clearTextListeners',
+        'clearReplyListeners',
+        'getFileStream',
+    ]);
 
     // --------------------------------------------------------------------------------------------
     // The output node sends to the chat and passes the msg through.
@@ -25,6 +71,8 @@ module.exports = function (RED) {
     // action      content is one of the following:
     //                      typing, upload_photo, record_video, upload_video, record_audio, upload_audio,
     //                      upload_document, find_location, record_video_note, upload_video_note
+    // callApi     raw Bot API escape hatch: msg.payload.method (string) + msg.payload.args (array)
+    //             invokes bot[method](...args). Reaches any library method without a dedicated type.
     function TelegramOutNode(config) {
         RED.nodes.createNode(this, config);
         let node = this;
@@ -32,6 +80,25 @@ module.exports = function (RED) {
         this.messagesProcessed = 0;
         this.retryDelayError429 = 3; // 3s when too many requests
         this.retryDelayErrorNoConnection = 10; // 10s when not connected to internet
+
+        // Set of deprecation-warn strings that have already been emitted for
+        // this node, so each deprecated msg.payload.options form is reported
+        // exactly once per node lifetime instead of once per send. Cleared on
+        // node close.
+        this.deprecationWarnsSeen = new Set();
+
+        // Run the legacy-options shim on the user-supplied options, warning
+        // once per deprecated field per node. Tolerates undefined / non-object
+        // input (the shim itself short-circuits). Called wherever the node
+        // forwards `msg.payload.*` option objects into the bot library.
+        this.migrateOptions = function (options) {
+            return migrateLegacyOptions(options, function (warnMsg) {
+                if (!node.deprecationWarnsSeen.has(warnMsg)) {
+                    node.deprecationWarnsSeen.add(warnMsg);
+                    node.warn(warnMsg);
+                }
+            });
+        };
 
         let haserroroutput = config.haserroroutput || false;
 
@@ -54,9 +121,10 @@ module.exports = function (RED) {
         // but the no-content branch has no dispatch and would otherwise leave
         // `processing` stuck `true` forever, silently swallowing every
         // subsequent message on that chatId (issue #450: bug surfaced with a
-        // /foo command whose sender saw type='message' but empty content).
-        // Pass chatId so we can release the queue head; nodeDone is invoked
-        // too so the upstream node's promise chain settles.
+        // /foo command whose sender saw type='message' but empty content,
+        // reproduced cleanly via a `telegram command` node wired into a
+        // `telegram sender`). Pass chatId so we can release the queue head;
+        // nodeDone is invoked too so the upstream node's promise chain settles.
         this.hasContent = function (msg, chatId, nodeDone) {
             let result = true;
             if (!msg.payload.content) {
@@ -104,6 +172,13 @@ module.exports = function (RED) {
             if (msg.payload.caption !== undefined) {
                 options.caption = msg.payload.caption;
             }
+
+            // Backward-compat shim for the 5 deprecated msg.payload.options
+            // fields removed in node-telegram-bot-api v1.0.0. Runs once here
+            // (the central preprocessing point for the main send dispatch);
+            // forward/copy branches handle their own options separately
+            // below.
+            node.migrateOptions(options);
 
             msg.payload.options = options;
 
@@ -163,9 +238,9 @@ module.exports = function (RED) {
                 // entities` when a Markdown-mode message contains an
                 // unescaped `_` / `*` / `[`) wedges the chat's queue
                 // permanently, exactly the way the empty-content drop did
-                // before V17.4.14 (#450 round 2). The retry branch below
-                // calls `repeatProcessMessage` which re-runs the head; only
-                // the give-up path needs explicit advance.
+                // before V17.4.14 (#450). The retry branch below calls
+                // `repeatProcessMessage` which re-runs the head; only the
+                // give-up path needs explicit advance.
                 node.queueManager.processNext(chatId);
             } else {
                 let errorMessage = retryReason + ': retrying in ' + retryAfter + 's';
@@ -208,6 +283,7 @@ module.exports = function (RED) {
                 let toChatId = msg.payload.forward.chatId;
 
                 let messageId = msg.payload.messageId;
+                node.migrateOptions(msg.payload.forward.options);
                 telegramBot
                     .forwardMessage(toChatId, chatId, messageId, msg.payload.forward.options)
                     .catch(function (ex) {
@@ -221,6 +297,7 @@ module.exports = function (RED) {
                 let toChatId = msg.payload.copy.chatId;
 
                 let messageId = msg.payload.messageId;
+                node.migrateOptions(msg.payload.copy.options);
                 telegramBot
                     .copyMessage(toChatId, chatId, messageId, msg.payload.copy.options)
                     .catch(function (ex) {
@@ -378,8 +455,18 @@ module.exports = function (RED) {
 
                         case 'poll':
                             if (this.hasContent(msg, chatId, nodeDone)) {
+                                // v1.0.0 expects pollOptions as `InputPollOption[]`
+                                // (objects with `text`), not the v0.x bare `string[]`.
+                                // Existing V17 flows pass string arrays; wrap them so
+                                // they keep working transparently.
+                                let pollOptions = msg.payload.options || [];
+                                if (Array.isArray(pollOptions)) {
+                                    pollOptions = pollOptions.map(function (item) {
+                                        return typeof item === 'string' ? { text: item } : item;
+                                    });
+                                }
                                 telegramBot
-                                    .sendPoll(chatId, msg.payload.content, msg.payload.options || {}, msg.payload.optional)
+                                    .sendPoll(chatId, msg.payload.content, pollOptions, msg.payload.optional)
                                     .catch(function (ex) {
                                         node.processError(chatId, ex, msg, nodeSend, nodeDone);
                                     })
@@ -694,11 +781,67 @@ module.exports = function (RED) {
                             }
                             break;
 
+                        // restrictChatMember became 4-arg in v1.0.0: chatId, userId,
+                        // permissions, form. Two V17 shapes need to keep working:
+                        //
+                        //   (a) Nested form: msg.payload.options = { permissions: { ... } }
+                        //   (b) Flat form  : msg.payload.options = { can_send_messages: ..., ... }
+                        //
+                        // (b) is what the supergroupadmin.json example flow ships, and
+                        // is the documented V17 ergonomics — "options IS the permissions
+                        // object". Detect either: if `options.permissions` exists, use
+                        // that; else lift any known ChatPermissions fields from the
+                        // top-level options into a fresh permissions object. Anything
+                        // not recognised as a permission field stays on the form arg
+                        // (e.g. `use_independent_chat_permissions`, `until_date`).
+                        case 'restrictChatMember':
+                            if (this.hasContent(msg, chatId, nodeDone)) {
+                                const rcmOpts = Object.assign({}, msg.payload.options || {});
+                                let rcmPermissions;
+                                if (rcmOpts.permissions && typeof rcmOpts.permissions === 'object') {
+                                    rcmPermissions = rcmOpts.permissions;
+                                    delete rcmOpts.permissions;
+                                } else {
+                                    rcmPermissions = {};
+                                    const permissionFields = [
+                                        'can_send_messages',
+                                        'can_send_media_messages',
+                                        'can_send_audios',
+                                        'can_send_documents',
+                                        'can_send_photos',
+                                        'can_send_videos',
+                                        'can_send_video_notes',
+                                        'can_send_voice_notes',
+                                        'can_send_polls',
+                                        'can_send_other_messages',
+                                        'can_add_web_page_previews',
+                                        'can_change_info',
+                                        'can_invite_users',
+                                        'can_pin_messages',
+                                        'can_manage_topics',
+                                    ];
+                                    permissionFields.forEach(function (field) {
+                                        if (Object.prototype.hasOwnProperty.call(rcmOpts, field)) {
+                                            rcmPermissions[field] = rcmOpts[field];
+                                            delete rcmOpts[field];
+                                        }
+                                    });
+                                }
+                                telegramBot
+                                    .restrictChatMember(chatId, msg.payload.content, rcmPermissions, rcmOpts)
+                                    .catch(function (ex) {
+                                        node.processError(chatId, ex, msg, nodeSend, nodeDone);
+                                    })
+                                    .then(function (result) {
+                                        node.processResult(chatId, result, msg, nodeSend, nodeDone);
+                                    });
+                            }
+                            break;
+
                         // 3 arguments: chatId, content, options
                         case 'pinChatMessage':
                         case 'unbanChatMember':
                         case 'banChatMember':
-                        case 'restrictChatMember':
                         case 'promoteChatMember':
                         case 'getChatMember':
                         case 'approveChatJoinRequest':
@@ -798,13 +941,53 @@ module.exports = function (RED) {
                             //}
                             break;
 
-                        // TODO:
-                        // setChatPermissions
-                        // editChatInviteLink, revokeChatInviteLink
-                        // getUserProfilePhotos,
-                        // getMyCommands
-                        // sendGame, setGameScore, getGameHighScores
-                        // uploadStickerFile, createNewStickerSet, addStickerToSet, setStickerPositionInSet, deleteStickerFromSet
+                        // First-class types for the methods below are tracked in
+                        // issues #459 (Tier 1), #460 (Tier 2), #461 (Tier 3), #462 (Tier 4).
+                        // Until then they are all reachable through the `callApi`
+                        // escape hatch implemented just below.
+                        case 'callApi': {
+                            // Raw Bot API escape hatch: invoke any library method by name with a
+                            // positional `args` array — `bot[method](...args)`. Makes every
+                            // current and future Bot API method reachable without a dedicated
+                            // `case`. msg.payload.chatId is optional and only used for queue
+                            // ordering. Result and errors flow through the normal
+                            // processResult/processError path, which advances the queue.
+                            let method = msg.payload.method;
+                            let args = msg.payload.args === undefined ? [] : msg.payload.args;
+
+                            let invalidReason;
+                            if (typeof method !== 'string' || method.length === 0) {
+                                invalidReason = 'callApi: msg.payload.method must be a non-empty string';
+                            } else if (!Array.isArray(args)) {
+                                invalidReason = 'callApi: msg.payload.args must be an array';
+                            } else if (method.charAt(0) === '_' || CALL_API_BLOCKLIST.has(method)) {
+                                invalidReason = 'callApi: method "' + method + '" is not allowed';
+                            } else if (typeof telegramBot[method] !== 'function') {
+                                invalidReason = 'callApi: method "' + method + '" does not exist on the bot';
+                            }
+
+                            if (invalidReason === undefined) {
+                                // Promise.resolve().then(...) funnels a synchronous throw from the
+                                // method (e.g. bad arguments) into processError exactly like a
+                                // rejected promise, so neither failure mode can wedge the queue.
+                                Promise.resolve()
+                                    .then(function () {
+                                        return telegramBot[method](...args);
+                                    })
+                                    .then(function (result) {
+                                        node.processResult(chatId, result, msg, nodeSend, nodeDone);
+                                    })
+                                    .catch(function (ex) {
+                                        node.processError(chatId, ex, msg, nodeSend, nodeDone);
+                                    });
+                            } else {
+                                node.warn(invalidReason);
+                                // Drop-and-advance: no dispatch on this path, so the queue head
+                                // would otherwise stay `processing: true` forever (#450 pattern).
+                                node.queueManager.processNext(chatId);
+                            }
+                            break;
+                        }
 
                         default:
                             // unknown type we try the unthinkable.
@@ -892,35 +1075,31 @@ module.exports = function (RED) {
             return promise;
         };
 
-        // TODO: https://github.com/windkh/node-red-contrib-telegrambot/issues/178
-        // TODO: https://github.com/yagop/node-telegram-bot-api/issues/876
+        // Delegates to the library's public `bot.editMessageMedia(media, form)`.
+        //
+        // History: the V17 wrapper reached into `_request` / `_formatSendData`
+        // (v0.66 privates). The V18 beta (lib v1.0/1.1.0) needed to pre-wrap a bare
+        // local path with `attach://` because those versions only uploaded
+        // `media.media` as multipart for the `attach://<local-path>` form and
+        // otherwise treated `c:\temp\x.png` as a URL ("Wrong port number").
+        //
+        // lib v1.1.1 fixed this: `editMessageMedia` now uploads a Buffer / stream /
+        // local file path natively, detecting local files via `fs.existsSync`
+        // (so a bare Windows path works), and it strips a legacy `attach://<path>`
+        // prefix for back-compat. The pre-wrap is therefore dead code — the prefix
+        // would just be stripped and the same path re-resolved — so the wrapper is
+        // now a thin pass-through. It only converts a synchronous throw (e.g. an
+        // unsupported input type) into a rejected promise so `processError` runs
+        // and the queue advances.
         this.editMessageMedia = function (media, form = {}) {
-            const opts = {
-                qs: form,
-            };
-            opts.formData = {};
-
-            const payload = Object.assign({}, media);
-            delete payload.media;
-            delete payload.fileOptions;
-
             let telegramBot = this.config.getTelegramBot();
-
+            let result;
             try {
-                const attachName = String(0);
-                const [formData, fileId] = telegramBot._formatSendData(attachName, media.media, media.fileOptions);
-                if (formData) {
-                    opts.formData[attachName] = formData[attachName];
-                    payload.media = `attach://${attachName}`;
-                } else {
-                    payload.media = fileId;
-                }
+                result = telegramBot.editMessageMedia(media, form);
             } catch (ex) {
-                return Promise.reject(ex);
+                result = Promise.reject(ex);
             }
-
-            opts.qs.media = JSON.stringify(payload);
-            return telegramBot._request('editMessageMedia', opts);
+            return result;
         };
 
         this.config = RED.nodes.getNode(this.bot);
@@ -1009,6 +1188,9 @@ module.exports = function (RED) {
             if (node.onStatusChanged) {
                 node.config.removeListener('status', node.onStatusChanged);
             }
+
+            // Reset the dedup set so a redeploy gets a fresh warn cycle.
+            node.deprecationWarnsSeen.clear();
 
             node.status({});
             done();

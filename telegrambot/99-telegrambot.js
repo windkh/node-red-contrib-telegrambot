@@ -1,11 +1,10 @@
 // Created by Karl-Heinz Wind
 
-// NTBA_FIX_319 was an opt-in flag node-telegram-bot-api once consulted to disable automatic
-// Bluebird promise cancellation (introduced for the 0.30.0 API). Upstream stopped reading the
-// flag well before 0.66.0, so setting it here is a no-op - removed.
-
-const Bluebird = require('bluebird');
-Bluebird.config({ cancellation: true });
+// node-telegram-bot-api v1.0.0 uses native Promises (Bluebird was dropped
+// together with the legacy `request` HTTP layer). The historical
+// `Bluebird.config({ cancellation: true })` call here is no longer
+// applicable; native Promises don't support cancellation and the lib's
+// new HTTP layer uses AbortController instead.
 
 module.exports = function (RED) {
     'use strict';

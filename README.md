@@ -16,6 +16,20 @@
 This package contains a receiver and a sender node which act as a Telegram Bot.
 The only thing required is the `token` that can be retrieved by the `@botfather` [Telegram Bot](https://core.telegram.org/bots).
 
+> ## ⚠ Upgrading from V17 to V18
+>
+> V18.0.0 swaps the underlying `node-telegram-bot-api` library from v0.66 to v1.0.0 — a substantial rewrite that drops several legacy `msg.payload.options` field names. Existing V17 flows keep working transparently via a built-in compatibility shim that emits a one-time deprecation warning per node and rewrites the field on-the-fly, but the recommended migration target is the new shape. See [MIGRATION.md](MIGRATION.md) for the full list and rewrite recipes.
+>
+> **V18 is in beta while real-world testing settles.** Existing installations on the `latest` dist-tag stay on V17.4.13 and will not auto-upgrade. To opt into the V18 beta:
+>
+> ```bash
+> cd ~/.node-red
+> npm install node-red-contrib-telegrambot@beta
+> node-red-restart
+> ```
+>
+> To roll back to V17: `npm install node-red-contrib-telegrambot@17.4.13`.
+
 # Thanks for your donation
 If you want to support this free project. Any help is welcome. You can donate by clicking one of the following links:
 <a target="blank" href="https://blockchain.com/btc/payment_request?address=1PBi7BoZ1mBLQx4ePbwh1MVoK2RaoiDsp5"><img src="https://img.shields.io/badge/Donate-Bitcoin-green.svg"/></a>
@@ -452,8 +466,8 @@ The `msg.payload.type` needs to be set to one of the following values:
 | **stopMessageLiveLocation** | - | optional arguments | https://core.telegram.org/bots/api#stopmessagelivelocation |
 | **callback_query** | url (string) | optional arguments | https://core.telegram.org/bots/api#answercallbackquery |
 | **answerCallbackQuery** | url (string) | optional arguments | https://core.telegram.org/bots/api#answercallbackquery |
-| **inline_query** | { inlineQueryId (string), results (array of InlineQueryResult) } | optional arguments | https://core.telegram.org/bots/api#answerinlinequery |
-| **answerInlineQuery** | { inlineQueryId (string), results (array of InlineQueryResult) } | optional arguments | https://core.telegram.org/bots/api#answerinlinequery |
+| **inline_query** | *(top-level, not under content)* `msg.payload.inlineQueryId` (string) + `msg.payload.results` (array of InlineQueryResult) | other answerInlineQuery args: `button`, `cache_time`, `is_personal`, `next_offset` | https://core.telegram.org/bots/api#answerinlinequery |
+| **answerInlineQuery** | *(top-level, not under content)* `msg.payload.inlineQueryId` (string) + `msg.payload.results` (array of InlineQueryResult) | other answerInlineQuery args: `button`, `cache_time`, `is_personal`, `next_offset` | https://core.telegram.org/bots/api#answerinlinequery |
 | **answerWebAppQuery** | { webAppQueryId (string), result (InlineQueryResult) } | - | https://core.telegram.org/bots/api#answerwebappquery |
 | **action** | action (string) | optional arguments | https://core.telegram.org/bots/api#sendchataction |
 | **sendChatAction** | action (string) | optional arguments | https://core.telegram.org/bots/api#sendchataction |
@@ -506,6 +520,50 @@ The `msg.payload.type` needs to be set to one of the following values:
 
 The content format of the command arguments (required and optional) depends on the api command.  
 See also ["available methods" in the api core description](https://core.telegram.org/bots/api#available-methods). 
+
+
+### Calling the raw Bot API (`callApi`)
+The sender node only wires up dedicated `msg.payload.type` values for the most common methods (see the tables above). The underlying [`node-telegram-bot-api`](https://github.com/yagop/node-telegram-bot-api) library, however, exposes the **complete** Telegram Bot API surface — including methods that do not have a dedicated type yet (e.g. `setMyCommands`, `createInvoiceLink`, `refundStarPayment`, `forwardMessages`, and the newer gifts / stars / business-account methods).
+
+To reach any of those without waiting for a dedicated type, set `msg.payload.type` to **`callApi`** and provide:
+
+- `msg.payload.method` (string, required) — the library method name, e.g. `setMyCommands`.
+- `msg.payload.args` (array, optional) — the positional arguments passed to that method, **in order**. Defaults to `[]`.
+- `msg.payload.chatId` (optional) — only used to order this call in the per-chat send queue; it is **not** passed to the method. If the method needs a chat id, put it into `args`.
+
+The node invokes `bot[method](...args)` and forwards the return value on `msg.payload.content`. Errors are handled exactly like any other send (retry on flooding / connection loss, error output otherwise).
+
+Example — register the bot's command menu (`setMyCommands(commands, options)`):
+```json
+{
+  "payload": {
+    "type": "callApi",
+    "method": "setMyCommands",
+    "args": [
+      [
+        { "command": "help",  "description": "Show help" },
+        { "command": "start", "description": "Start the bot" }
+      ],
+      {}
+    ]
+  }
+}
+```
+
+Example — create a shareable payment link (`createInvoiceLink(title, description, payload, providerToken, currency, prices)`):
+```json
+{
+  "payload": {
+    "type": "callApi",
+    "method": "createInvoiceLink",
+    "args": ["My product", "A great product", "payload-123", "PROVIDER_TOKEN", "EUR", [{ "label": "Product", "amount": 999 }]]
+  }
+}
+```
+
+The order and shape of `args` mirror the library method signature exactly — refer to the [available methods](https://core.telegram.org/bots/api#available-methods) in the Bot API reference.
+
+> **Safety:** method names are validated. The connection / polling lifecycle (`startPolling`, `stopPolling`, `getUpdates`, `setWebHook`, `deleteWebHook`, `logOut`, `close`, …), the event-emitter and reply-listener surface (`on`, `off`, `onText`, `onReplyToMessage`, …) and library internals (names starting with `_`) are **blocked**, because calling them from a flow would break the node's managed bot instance. Use the *control node* to start/stop the bot.
 
 
 ## Command Node
@@ -899,7 +957,7 @@ The answer is send to the second output triggering the lower flow. Data is passe
 context.global.keyboard = { pending : true };
 
 var opts = {
-  reply_to_message_id: msg.payload.messageId,
+  reply_parameters: { message_id: msg.payload.messageId },
   reply_markup: JSON.stringify({
     keyboard: [
       ['Yes'],
@@ -958,7 +1016,7 @@ the get reply node will not be triggered.
 ```javascript
 msg.payload.type = 'message';
 msg.payload.content = 'Really?';
-msg.payload.options = {reply_to_message_id : msg.payload.messageId}
+msg.payload.options = {reply_parameters: { message_id: msg.payload.messageId }}
 
 return [ msg ];
 ```
@@ -996,7 +1054,7 @@ There you can add your code to trigger the desired bot command. The answer conta
 
 ```javascript
 var opts = {
-  reply_to_message_id: msg.payload.messageId,
+  reply_parameters: { message_id: msg.payload.messageId },
   reply_markup: JSON.stringify({
     "inline_keyboard": [[
                 {
@@ -1056,7 +1114,7 @@ The switch node *evaluate callback query* just handles the response and hides th
 context.global.keyboard = { pending : true, messageId : msg.payload.messageId };
 
 var opts = {
-  reply_to_message_id: msg.payload.messageId,
+  reply_parameters: { message_id: msg.payload.messageId },
   reply_markup: JSON.stringify({
     "inline_keyboard": [[
                 {
@@ -1228,7 +1286,7 @@ var results = [
         input_message_content : {
             message_text : "The message 1",
             parse_mode : "Markdown",
-            disable_web_page_preview : true
+            link_preview_options: { is_disabled: true }
         }
     },
 
@@ -1242,7 +1300,7 @@ var results = [
         input_message_content : {
             message_text : "The message 2",
             parse_mode : "Markdown",
-            disable_web_page_preview : false
+            link_preview_options: { is_disabled: false }
         }
     }
 ];
@@ -1747,7 +1805,7 @@ var message = 'You can also send *markdown* formatted messages.';
 msg.payload = {chatId : 138708568, type : 'message', content : message};
 
 // activate markdown
-msg.payload.options = {disable_web_page_preview : true, parse_mode : "Markdown"};
+msg.payload.options = {link_preview_options: { is_disabled: true }, parse_mode : "Markdown"};
 
 return msg;
 ```
@@ -1757,9 +1815,9 @@ return msg;
 
 
 Telegram always adds a preview when you send a web link. To suppress this behavior you can disable the preview
-by setting the *disable_web_page_preview* options property as follows:
+by setting the *link_preview_options.is_disabled* options property as follows:
 ```javascript
-msg.payload.options = {disable_web_page_preview : true};
+msg.payload.options = {link_preview_options: { is_disabled: true }};
 ```
 
 The callback query answer has a show_alert option to control the visibility of the answer on the client.

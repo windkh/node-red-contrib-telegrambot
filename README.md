@@ -466,8 +466,8 @@ The `msg.payload.type` needs to be set to one of the following values:
 | **stopMessageLiveLocation** | - | optional arguments | https://core.telegram.org/bots/api#stopmessagelivelocation |
 | **callback_query** | url (string) | optional arguments | https://core.telegram.org/bots/api#answercallbackquery |
 | **answerCallbackQuery** | url (string) | optional arguments | https://core.telegram.org/bots/api#answercallbackquery |
-| **inline_query** | { inlineQueryId (string), results (array of InlineQueryResult) } | optional arguments | https://core.telegram.org/bots/api#answerinlinequery |
-| **answerInlineQuery** | { inlineQueryId (string), results (array of InlineQueryResult) } | optional arguments | https://core.telegram.org/bots/api#answerinlinequery |
+| **inline_query** | *(top-level, not under content)* `msg.payload.inlineQueryId` (string) + `msg.payload.results` (array of InlineQueryResult) | other answerInlineQuery args: `button`, `cache_time`, `is_personal`, `next_offset` | https://core.telegram.org/bots/api#answerinlinequery |
+| **answerInlineQuery** | *(top-level, not under content)* `msg.payload.inlineQueryId` (string) + `msg.payload.results` (array of InlineQueryResult) | other answerInlineQuery args: `button`, `cache_time`, `is_personal`, `next_offset` | https://core.telegram.org/bots/api#answerinlinequery |
 | **answerWebAppQuery** | { webAppQueryId (string), result (InlineQueryResult) } | - | https://core.telegram.org/bots/api#answerwebappquery |
 | **action** | action (string) | optional arguments | https://core.telegram.org/bots/api#sendchataction |
 | **sendChatAction** | action (string) | optional arguments | https://core.telegram.org/bots/api#sendchataction |

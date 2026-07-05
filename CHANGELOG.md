@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [18.0.0] - 2026-06-27
+### First stable V18 release — promoted from `beta` to the `latest` dist-tag. Consolidates everything from V18.0.0-beta.1 → beta.4 (detailed below). Migrates the underlying `node-telegram-bot-api` from v0.66 (CJS, `request`) to v1.x (dual ESM+CJS, native `fetch`/`undici`, TypeScript). **Read [MIGRATION.md](MIGRATION.md) before upgrading.** Requires Node.js >= 20. Existing V17 flows keep working via the built-in legacy-options compatibility shim.
+
+### Highlights since V17: per-bot undici dispatcher transport (SOCKS via `fetch-socks`) restoring per-bot pool/proxy isolation; synchronous `require()` of the library (v1.1.2 CJS); `callApi` raw-API escape hatch; `editMessageMedia` native local-file upload; and all V17.4.13–17.4.17 polling-recovery / queue-wedge fixes carried forward. Dependency floor `node-telegram-bot-api@^1.1.2`; dropped `bluebird` and `socks-proxy-agent`; added `undici` and `fetch-socks`.
+
 # [18.0.0-beta.4] - 2026-06-25
 ### Fourth public beta. Published under npm's `beta` dist-tag; `latest` users stay on V17. `npm install node-red-contrib-telegrambot@beta`.
 

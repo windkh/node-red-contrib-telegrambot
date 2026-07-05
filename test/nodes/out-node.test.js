@@ -778,6 +778,21 @@ describe('editMessageMedia — real library uploads a local file as multipart (l
         bot._request = function (method, opts) {
             captured.method = method;
             captured.opts = opts;
+            // The lib created an fs.ReadStream for any local-file part. We stub the
+            // HTTP layer so nothing consumes it — its lazy fd open would otherwise
+            // fire AFTER after() unlinks the temp file and surface as an uncaught
+            // ENOENT (flaky, timing-dependent; hit Node 22 CI in #469). Attach an
+            // error handler and close it now, deterministically, before the test ends.
+            const formData = opts && opts.formData;
+            if (formData) {
+                Object.keys(formData).forEach(function (key) {
+                    const value = formData[key] && formData[key].value;
+                    if (value && typeof value.on === 'function' && typeof value.destroy === 'function') {
+                        value.on('error', function () {});
+                        value.destroy();
+                    }
+                });
+            }
             return Promise.resolve({});
         };
         return { bot, captured };

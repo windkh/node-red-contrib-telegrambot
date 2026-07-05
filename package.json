@@ -53,7 +53,7 @@
         "eslint-plugin-prettier": "^4.2.1",
         "husky": "^8.0.1",
         "mocha": "^10.4.0",
-        "node-red": "^4.0.0",
+        "node-red": "^5.0.1",
         "node-red-node-test-helper": "^0.3.4",
         "prettier": "^2.7.1",
         "proxyquire": "^2.1.3"

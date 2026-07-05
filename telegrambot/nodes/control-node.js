@@ -21,17 +21,24 @@ module.exports = function (RED) {
 
         node.isOnline = undefined; // see checkConnection function.
 
+        // Track our own listener references so stop() can remove them
+        // explicitly. Without tracking, the historical `telegramBot.off(event)`
+        // pattern (no listener arg) crashes on modern Node:
+        // `TypeError: The "listener" argument must be of type function`.
+        node._getUpdatesStartHandler = null;
+        node._getUpdatesEndHandler = null;
+
         this.start = function () {
             let telegramBot = node.config.getTelegramBot();
             if (telegramBot) {
-                telegramBot.on('getUpdates_start', function (cycle) {
+                node._getUpdatesStartHandler = function (cycle) {
                     node.status({
                         fill: 'green',
                         shape: 'ring',
                         text: 'polling cycle ' + cycle,
                     });
-                });
-                telegramBot.on('getUpdates_end', function (cycle, duration, updates) {
+                };
+                node._getUpdatesEndHandler = function (cycle, duration, updates) {
                     let durationMs = Math.round(duration);
 
                     node.status({
@@ -48,7 +55,10 @@ module.exports = function (RED) {
                         },
                     };
                     node.send(msg);
-                });
+                };
+
+                telegramBot.on('getUpdates_start', node._getUpdatesStartHandler);
+                telegramBot.on('getUpdates_end', node._getUpdatesEndHandler);
 
                 node.status({
                     fill: 'green',
@@ -68,8 +78,14 @@ module.exports = function (RED) {
         this.stop = function () {
             let telegramBot = node.config.getTelegramBot(false);
             if (telegramBot) {
-                telegramBot.off('getUpdates_start');
-                telegramBot.off('getUpdates_end');
+                if (node._getUpdatesStartHandler) {
+                    telegramBot.off('getUpdates_start', node._getUpdatesStartHandler);
+                    node._getUpdatesStartHandler = null;
+                }
+                if (node._getUpdatesEndHandler) {
+                    telegramBot.off('getUpdates_end', node._getUpdatesEndHandler);
+                    node._getUpdatesEndHandler = null;
+                }
             }
 
             node.status({
@@ -169,8 +185,11 @@ module.exports = function (RED) {
         }
 
         this.on('input', function (msg) {
-            node.status({ fill: 'green', shape: 'ring', text: 'connected' });
-
+            // Do NOT force a status here. The connection status is owned by the config
+            // node's 'status' events (-> onStatusChanged -> start()/stop()). Painting
+            // "connected" unconditionally on every input lied about the state for no-op
+            // commands: e.g. injecting "stop" on an already-stopped bot left the node
+            // green because config.stop() short-circuits without emitting 'stopped'.
             if (msg.payload) {
                 let command = msg.payload.command;
                 switch (command) {

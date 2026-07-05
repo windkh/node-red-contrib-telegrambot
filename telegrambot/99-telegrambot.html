@@ -721,6 +721,18 @@
      <li><code>chatId</code> the chatId number or an array of chatIds</li>
      </ul>
 
+    <h3>Calling the raw Bot API</h3>
+    <p>To call any Bot API method that has no dedicated <code>type</code>, set
+     <code>type</code> to <code>callApi</code> and provide:</p>
+     <ul>
+     <li><code>method</code> the library method name, e.g. <code>setMyCommands</code></li>
+     <li><code>args</code> an array of positional arguments passed to the method, in order</li>
+     </ul>
+    <p>The node invokes <code>bot[method](...args)</code> and returns the result on
+     <code>msg.payload.content</code>. <code>chatId</code> is optional and only orders the
+     call in the per-chat queue. Connection/polling lifecycle and event-listener methods are
+     blocked for safety. See the README section "Calling the raw Bot API" for examples.</p>
+
 </script>
 <!-- ------------------------------------------------------------------------------------------ -->
 

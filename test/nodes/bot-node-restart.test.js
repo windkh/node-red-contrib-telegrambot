@@ -345,7 +345,7 @@ describe('bot-node — fatal-error log suppression while restart is queued (issu
     });
 });
 
-describe('bot-node — request pool rebuild on scheduleRestart (issue #442, V17.4.5)', function () {
+describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.0 migration)', function () {
     this.timeout(5000);
 
     before(function (done) {
@@ -360,15 +360,13 @@ describe('bot-node — request pool rebuild on scheduleRestart (issue #442, V17.
         helper.unload();
     });
 
-    it('constructor wires up a per-bot requestPool object', function (done) {
+    it('config node exposes buildDispatcherOptions and instantiateBot helpers', function (done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
-                expect(n.requestPool).to.be.an('object');
-                expect(n.request.pool).to.equal(n.requestPool);
-                expect(n.buildRequestOptions).to.be.a('function');
-                expect(n.destroyRequestPool).to.be.a('function');
+                expect(n.buildDispatcherOptions).to.be.a('function');
+                expect(n.instantiateBot).to.be.a('function');
                 done();
             } catch (err) {
                 done(err);
@@ -376,15 +374,15 @@ describe('bot-node — request pool rebuild on scheduleRestart (issue #442, V17.
         });
     });
 
-    it('buildRequestOptions returns a fresh pool object each call', function (done) {
+    it('buildDispatcherOptions returns plain agent opts for the non-SOCKS path', function (done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
-                const first = n.buildRequestOptions();
-                const second = n.buildRequestOptions();
-                expect(first.pool).to.not.equal(second.pool);
-                expect(n.requestPool).to.equal(second.pool); // tracked is the latest one
+                const opts = n.buildDispatcherOptions();
+                expect(opts.socks).to.equal(undefined);
+                expect(opts.agent).to.be.an('object');
+                expect(opts.agent.keepAliveTimeout).to.be.a('number');
                 done();
             } catch (err) {
                 done(err);
@@ -392,27 +390,13 @@ describe('bot-node — request pool rebuild on scheduleRestart (issue #442, V17.
         });
     });
 
-    it('destroyRequestPool calls destroy() on every agent and nulls the pool', function (done) {
-        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+    it('buildDispatcherOptions sets the family override when addressFamily is 4 or 6', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly', addressfamily: 4 }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
-                const destroyed = [];
-                n.requestPool['https:'] = {
-                    destroy: function () {
-                        destroyed.push('https');
-                    },
-                };
-                n.requestPool['http:'] = {
-                    destroy: function () {
-                        destroyed.push('http');
-                    },
-                };
-                // An entry without .destroy must be tolerated, not crash.
-                n.requestPool['weird'] = { foo: 'bar' };
-                n.destroyRequestPool();
-                expect(destroyed.sort()).to.deep.equal(['http', 'https']);
-                expect(n.requestPool).to.equal(null);
+                const opts = n.buildDispatcherOptions();
+                expect(opts.agent.connect).to.deep.equal({ family: 4 });
                 done();
             } catch (err) {
                 done(err);
@@ -420,56 +404,94 @@ describe('bot-node — request pool rebuild on scheduleRestart (issue #442, V17.
         });
     });
 
-    it('destroyRequestPool with no pool set is a no-op', function (done) {
-        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
-        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
-            try {
-                const n = helper.getNode('b1');
-                n.requestPool = null;
-                n.destroyRequestPool(); // must not throw
-                expect(n.requestPool).to.equal(null);
-                done();
-            } catch (err) {
-                done(err);
-            }
-        });
-    });
-
-    it('non-SOCKS bot uses keepAlive agentOptions and a pool field', function (done) {
-        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
-        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
-            try {
-                const n = helper.getNode('b1');
-                expect(n.request.agentOptions).to.be.an('object');
-                expect(n.request.agentOptions.keepAlive).to.equal(true);
-                expect(n.request.pool).to.be.an('object');
-                expect(n.request.agentClass).to.equal(undefined);
-                done();
-            } catch (err) {
-                done(err);
-            }
-        });
-    });
-
-    it('close handler destroys the request pool', async function () {
-        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
-        await new Promise(function (resolve) {
-            helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, resolve);
-        });
-        const n = helper.getNode('b1');
-        let destroyed = false;
-        n.requestPool['https:'] = {
-            destroy: function () {
-                destroyed = true;
+    it('buildDispatcherOptions emits SOCKS shape when usesocks is set', function (done) {
+        const flow = [
+            {
+                id: 'b1',
+                type: 'telegram bot',
+                botname: 'b',
+                updatemode: 'sendonly',
+                usesocks: true,
+                socksprotocol: 'socks5',
+                sockshost: '127.0.0.1',
+                socksport: 1080,
+                socksusername: 'u',
+                sockspassword: 'p',
             },
-        };
-        await helper.unload();
-        expect(destroyed).to.equal(true);
-        expect(n.requestPool).to.equal(null);
+        ];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const opts = n.buildDispatcherOptions();
+                expect(opts.socks).to.deep.equal({
+                    type: 5,
+                    host: '127.0.0.1',
+                    port: 1080,
+                    userId: 'u',
+                    password: 'p',
+                });
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('instantiateBot wires a per-instance dispatcher via request.fetchOptions (#465/#466)', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const bot = n.instantiateBot('123:fake', { baseApiUrl: 'https://api.telegram.org' });
+                expect(bot, 'bot should be constructed (library loaded in before hook)').to.exist;
+                // The per-bot dispatcher is stored on the node and threaded into
+                // the bot's request.fetchOptions.dispatcher (the v1.1.1 hook).
+                expect(n.dispatcher).to.exist;
+                expect(bot.options.request.fetchOptions.dispatcher).to.equal(n.dispatcher);
+                // And it is NOT installed under the old process-global symbol.
+                expect(global[Symbol.for('undici.globalDispatcher.1')]).to.not.equal(n.dispatcher);
+                done();
+            } catch (err) {
+                done(err);
+            } finally {
+                helper.getNode('b1') && helper.getNode('b1').destroyDispatcher && helper.getNode('b1').destroyDispatcher().catch(() => {});
+            }
+        });
+    });
+
+    it('destroyDispatcher closes the per-instance dispatcher and clears the reference', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                n.instantiateBot('123:fake', {});
+                const dispatcher = n.dispatcher;
+                expect(dispatcher).to.exist;
+                // Replace close with a resolving fake so the assertion doesn't
+                // depend on undici's real pool-drain timing (the connection-less
+                // Agent is GC'd). We only verify destroyDispatcher's contract.
+                let closed = false;
+                dispatcher.close = function () {
+                    closed = true;
+                    return Promise.resolve();
+                };
+                n.destroyDispatcher().then(function () {
+                    try {
+                        expect(closed).to.equal(true);
+                        expect(n.dispatcher).to.equal(null);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                }, done);
+            } catch (err) {
+                done(err);
+            }
+        });
     });
 });
 
-describe('bot-node — abortBot stops polling cleanly (issue #440, V17.4.8)', function () {
+describe('bot-node — abortBot stops polling cleanly (#440, updated for v1.0.0)', function () {
     this.timeout(5000);
 
     before(function (done) {
@@ -488,19 +510,15 @@ describe('bot-node — abortBot stops polling cleanly (issue #440, V17.4.8)', fu
         return [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
     }
 
+    // v1.0.0's stopPolling({cancel: true}) handles both the AbortController
+    // cancel of the in-flight getUpdates AND the `_abort = true` flag that
+    // halts the recursive polling loop. The V17.4.8 two-step (manual
+    // `_lastRequest.cancel()` then `stopPolling({cancel: false})`) is gone.
     function makeFakePollingBot(behaviour) {
         behaviour = behaviour || {};
-        const calls = { cancel: [], stopPolling: [] };
-        const polling = {
-            _abort: false,
-            _lastRequest: {
-                cancel: function (reason) {
-                    calls.cancel.push(reason);
-                },
-            },
-        };
+        const calls = { stopPolling: [] };
         const fake = {
-            _polling: polling,
+            _polling: {},
             stopPolling: function (options) {
                 calls.stopPolling.push(options);
                 if (behaviour.stopPollingRejects) {
@@ -509,26 +527,17 @@ describe('bot-node — abortBot stops polling cleanly (issue #440, V17.4.8)', fu
                 return Promise.resolve();
             },
         };
-        return { bot: fake, calls, polling };
+        return { bot: fake, calls };
     }
 
-    it('cancels in-flight _lastRequest before stopPolling resolves', function (done) {
+    it('calls stopPolling({cancel: true}) and resolves the done callback', function (done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
-                const { bot, calls, polling } = makeFakePollingBot();
+                const { bot, calls } = makeFakePollingBot();
                 n.telegramBot = bot;
                 n.abortBot('test', function () {
                     try {
-                        expect(calls.cancel).to.deep.equal(['abortBot']);
-                        // Close path sets polling._abort = true directly (disarms the
-                        // recursive setTimeout in _polling()'s .finally), then calls
-                        // stopPolling({cancel:true}) so the lib returns Promise.resolve()
-                        // immediately instead of waiting for the in-flight long-poll to
-                        // settle. The recursive loop is already disarmed by _abort=true,
-                        // so the 409-Conflict race that V17.3.0 hit with cancel:true alone
-                        // cannot occur.
-                        expect(polling._abort).to.equal(true);
                         expect(calls.stopPolling).to.deep.equal([{ cancel: true }]);
                         expect(n.telegramBot).to.equal(null);
                         done();
@@ -550,54 +559,6 @@ describe('bot-node — abortBot stops polling cleanly (issue #440, V17.4.8)', fu
                 n.telegramBot = bot;
                 n.abortBot('test', function () {
                     try {
-                        expect(calls.stopPolling).to.deep.equal([{ cancel: true }]);
-                        expect(n.telegramBot).to.equal(null);
-                        done();
-                    } catch (err) {
-                        done(err);
-                    }
-                });
-            } catch (err) {
-                done(err);
-            }
-        });
-    });
-
-    it('tolerates _lastRequest without a cancel function', function (done) {
-        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
-            try {
-                const n = helper.getNode('b1');
-                const { bot, calls } = makeFakePollingBot();
-                // Replace _lastRequest with a shape that doesn't expose .cancel — e.g.
-                // a lib version where the internal API has shifted. We must not crash.
-                bot._polling._lastRequest = { foo: 'bar' };
-                n.telegramBot = bot;
-                n.abortBot('test', function () {
-                    try {
-                        expect(calls.cancel).to.deep.equal([]); // no cancel attempted
-                        expect(calls.stopPolling).to.deep.equal([{ cancel: true }]);
-                        expect(n.telegramBot).to.equal(null);
-                        done();
-                    } catch (err) {
-                        done(err);
-                    }
-                });
-            } catch (err) {
-                done(err);
-            }
-        });
-    });
-
-    it('tolerates _polling without an in-flight _lastRequest', function (done) {
-        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
-            try {
-                const n = helper.getNode('b1');
-                const { bot, calls } = makeFakePollingBot();
-                bot._polling._lastRequest = null;
-                n.telegramBot = bot;
-                n.abortBot('test', function () {
-                    try {
-                        expect(calls.cancel).to.deep.equal([]);
                         expect(calls.stopPolling).to.deep.equal([{ cancel: true }]);
                         expect(n.telegramBot).to.equal(null);
                         done();

@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [18.0.1] - 2026-07-13
+### Fix spurious `MaxListenersExceededWarning` on the bot after upgrading to V18 (#471). `node-telegram-bot-api` v1.x leaves the EventEmitter default `maxListeners` of 10 on the bot instance (v0.66 had raised it), so a flow with 11+ `telegram receiver` / `command` / `event` nodes on the same bot tripped `Possible EventEmitter memory leak detected. 11 message listeners added to [TelegramBotEx]`. The listeners are legitimate (one per node) and are removed on node close — not a leak. `TelegramBotEx` now calls `setMaxListeners(0)` (unlimited) in its constructor, since the listener count is bounded only by how many nodes the user wires to the bot. Cosmetic warning only; no behavioural change.
+
 # [18.0.0] - 2026-06-27
 ### First stable V18 release — promoted from `beta` to the `latest` dist-tag. Consolidates everything from V18.0.0-beta.1 → beta.4 (detailed below). Migrates the underlying `node-telegram-bot-api` from v0.66 (CJS, `request`) to v1.x (dual ESM+CJS, native `fetch`/`undici`, TypeScript). **Read [MIGRATION.md](MIGRATION.md) before upgrading.** Requires Node.js >= 20. Existing V17 flows keep working via the built-in legacy-options compatibility shim.
 

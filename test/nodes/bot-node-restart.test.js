@@ -459,6 +459,24 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
         });
     });
 
+    it('lifts the EventEmitter maxListeners cap on the bot instance (#471)', function (done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const bot = n.instantiateBot('123:fake', {});
+                // Default EventEmitter cap is 10; a flow with 11+ receiver/command/
+                // event nodes on one bot would otherwise trip MaxListenersExceededWarning.
+                expect(bot.getMaxListeners()).to.equal(0); // 0 = unlimited
+                done();
+            } catch (err) {
+                done(err);
+            } finally {
+                helper.getNode('b1') && helper.getNode('b1').destroyDispatcher && helper.getNode('b1').destroyDispatcher().catch(() => {});
+            }
+        });
+    });
+
     it('destroyDispatcher closes the per-instance dispatcher and clears the reference', function (done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {

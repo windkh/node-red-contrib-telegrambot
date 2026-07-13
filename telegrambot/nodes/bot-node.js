@@ -18,6 +18,15 @@ const TelegramBot = require('node-telegram-bot-api').default;
 class TelegramBotEx extends TelegramBot {
     constructor(token, options = {}) {
         super(token, options);
+        // Every telegram receiver / command / event node attaches its own
+        // listener to this bot instance (e.g. 'message', or a specific event).
+        // node-telegram-bot-api v1.x leaves the EventEmitter default cap of 10,
+        // so a flow with 11+ such nodes on one bot trips a spurious
+        // MaxListenersExceededWarning (v0.66 had raised the cap, so this was a
+        // V18 regression — #471). The listeners are legitimate and are removed
+        // on node close, so lift the cap entirely (0 = unlimited); the count is
+        // bounded only by how many nodes the user wires to the bot.
+        this.setMaxListeners(0);
         this.cycle = 0;
     }
 

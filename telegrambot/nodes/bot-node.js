@@ -214,7 +214,7 @@ module.exports = function (RED) {
                 const socks = {
                     type: socksType,
                     host: n.sockshost,
-                    port: n.socksport,
+                    port: Number(n.socksport),
                 };
                 if (n.socksusername) socks.userId = n.socksusername;
                 if (n.sockspassword) socks.password = n.sockspassword;

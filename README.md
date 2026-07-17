@@ -69,6 +69,7 @@ If you want to support this free project. Any help is welcome. You can donate by
  - gtalusan: for providing pullrequest with handlers for promise rejections when offline
  - ajanulis: for fixing the redeploy "Close timed out" hang in polling mode
  - petermeter69: for the detailed long-running testing and logs behind the polling-recovery fix (#442)
+ - Alexey-Tsarev: for fixing the SOCKS proxy port coercion under V18 (#472)
 
 # 👥 Contributors
 

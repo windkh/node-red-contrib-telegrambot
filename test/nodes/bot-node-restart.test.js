@@ -404,7 +404,7 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
         });
     });
 
-    it('buildDispatcherOptions emits SOCKS shape when usesocks is set', function (done) {
+    it('buildDispatcherOptions emits SOCKS shape when usesocks is set, coercing port to a number (#472)', function (done) {
         const flow = [
             {
                 id: 'b1',
@@ -414,7 +414,10 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
                 usesocks: true,
                 socksprotocol: 'socks5',
                 sockshost: '127.0.0.1',
-                socksport: 1080,
+                // Node-RED stores the config field as a STRING. The `socks` package
+                // rejects a string port ("Invalid SOCKS proxy details were provided"),
+                // so buildDispatcherOptions must coerce it to a number (#472).
+                socksport: '1080',
                 socksusername: 'u',
                 sockspassword: 'p',
             },
@@ -430,6 +433,7 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
                     userId: 'u',
                     password: 'p',
                 });
+                expect(opts.socks.port).to.be.a('number');
                 done();
             } catch (err) {
                 done(err);

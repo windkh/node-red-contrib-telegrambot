@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [18.0.2] - 2026-07-17
+### Fix SOCKS proxy under V18 (#472, by @Alexey-Tsarev). Node-RED stores the `socksport` config field as a **string**, but the v1.x transport path (`fetch-socks` → `socks`) validates that the proxy port is a **number** and otherwise throws `Invalid SOCKS proxy details were provided` (`EFATAL` / `fetch failed`), so SOCKS-proxied bots never connected on V18. `buildDispatcherOptions` now coerces the port with `Number(...)`. Regression test updated to pass the port as a string (as the real config does) and assert a numeric result. V17's `socks-proxy-agent` tolerated string ports, so this only affected V18.
+
 # [18.0.1] - 2026-07-13
 ### Fix spurious `MaxListenersExceededWarning` on the bot after upgrading to V18 (#471). `node-telegram-bot-api` v1.x leaves the EventEmitter default `maxListeners` of 10 on the bot instance (v0.66 had raised it), so a flow with 11+ `telegram receiver` / `command` / `event` nodes on the same bot tripped `Possible EventEmitter memory leak detected. 11 message listeners added to [TelegramBotEx]`. The listeners are legitimate (one per node) and are removed on node close — not a leak. `TelegramBotEx` now calls `setMaxListeners(0)` (unlimited) in its constructor, since the listener count is bounded only by how many nodes the user wires to the bot. Cosmetic warning only; no behavioural change.
 

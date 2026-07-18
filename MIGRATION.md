@@ -7,7 +7,7 @@ V18.0.0 swaps the underlying `node-telegram-bot-api` library from v0.66 to v1.0.
 - **Most flows keep working unchanged.** The shim transparently rewrites five deprecated `msg.payload.options` fields at send time.
 - **Watch the Node-RED debug pane on upgrade day.** Each section below shows what to look for and what to change.
 - **SOCKS proxy users:** the underlying library switched from `socks-proxy-agent` to `fetch-socks`. Your bot config UI fields are unchanged.
-- **Rollback** to V17.4.13 anytime: `npm install node-red-contrib-telegrambot@17.4.13` then `node-red-restart`.
+- **Rollback** to V17 anytime: `npm install node-red-contrib-telegrambot@17.4.17` then `node-red-restart`.
 
 ## How do I know if I need to change anything?
 
@@ -45,7 +45,7 @@ msg.payload.options = {
 };
 ```
 
-Affected examples: `examples/replytomessage.json`, `examples/onreplymessage.json`, `examples/inlinekeyboard.json`, `examples/editinlinekeyboard.json`, `examples/keyboard.json`, `examples/sendkeyboardtochat.json`, `examples/sendinvoice.json`, `examples/sendInvoice2.json`, `examples/simplebot.json`, `examples/supergroupadmin.json`, `examples/webappdata.json` (already updated for you in V18.0.0-beta).
+Affected examples: `examples/replytomessage.json`, `examples/onreplymessage.json`, `examples/inlinekeyboard.json`, `examples/editinlinekeyboard.json`, `examples/keyboard.json`, `examples/sendkeyboardtochat.json`, `examples/sendinvoice.json`, `examples/sendInvoice2.json`, `examples/simplebot.json`, `examples/supergroupadmin.json`, `examples/webappdata.json` (already updated for you in V18.0.0).
 
 ### 2. `thumb` → `thumbnail`
 
@@ -107,7 +107,7 @@ msg.payload.options = {
 };
 ```
 
-Affected examples (still using string-shorthand at V18.0.0-beta release): `basiccustomkeyboard.json`, `basicinlinekeyboard.json`, `editinlinekeyboard.json`, `inlinekeyboard.json`, `keyboard.json`, `sendkeyboardtochat.json`, `simplebot.json`, `webappdata.json`. The shim wraps them at runtime; rewriting silences the warning.
+Affected examples (still using string-shorthand at the V18.0.0 release): `basiccustomkeyboard.json`, `basicinlinekeyboard.json`, `editinlinekeyboard.json`, `inlinekeyboard.json`, `keyboard.json`, `sendkeyboardtochat.json`, `simplebot.json`, `webappdata.json`. The shim wraps them at runtime; rewriting silences the warning.
 
 ### 5. `allow_sending_without_reply` → fold into `reply_parameters`
 
@@ -169,13 +169,15 @@ The package's own call sites already use the options-object form; only flows tha
 
 ## SOCKS proxy users
 
-If your bot config has SOCKS configured, the V18 upgrade is invisible: the underlying lib has switched from `socks-proxy-agent` to `fetch-socks`, the config UI fields are unchanged, and the dispatcher install path is automatic. Reinstall the package and redeploy as usual.
+If your bot config has SOCKS configured, the underlying lib has switched from `socks-proxy-agent` to `fetch-socks`; the config UI fields are unchanged and the dispatcher install path is automatic. Reinstall the package and redeploy as usual.
+
+> **Use V18.0.2 or newer.** V18.0.0 and V18.0.1 had a bug where the SOCKS port (stored as a string by Node-RED) was rejected by the new proxy layer (`Invalid SOCKS proxy details were provided`), so SOCKS bots wouldn't connect. Fixed in V18.0.2 (#472).
 
 ## Other behaviour changes worth knowing
 
 - **Native fetch + undici under the hood.** V1.0.0 drops the legacy `request` HTTP library. Your bot's outbound HTTPS traffic now uses Node's built-in fetch via a per-process undici dispatcher (installed automatically). The `keep-alive socket pool` defence from V17.4.5 / V17.4.13 (issue #442) is preserved: `scheduleRestart` destroys and rebuilds the dispatcher to clear any wedged sockets.
 - **Automatic 429 retry inside the lib.** V1.0.0's HTTP client retries `429 Too Many Requests` up to twice automatically, honouring the server-side `retry_after`. The sender's own queue-based retry path is still in place for defence-in-depth (issue #450 covers the queue-wedge edge cases).
-- **ESM-only library.** This package is still CommonJS for Node-RED compatibility; the migration to `import('node-telegram-bot-api')` happens internally via a memoised CJS-to-ESM bridge. Users don't see anything different.
+- **Dual ESM+CJS library.** As of `node-telegram-bot-api` v1.1.2 the library ships both an ESM and a CommonJS build, so this package loads it with a plain synchronous `require()`. (The v1.0.0–1.1.1 ESM-only releases needed an internal dynamic-import bridge; that was removed once CJS was restored.) Users don't see anything different.
 
 ## Symptoms of a broken upgrade
 
@@ -186,7 +188,7 @@ If your bot config has SOCKS configured, the V18 upgrade is invisible: the under
 | `auto-restart hit 60s ceiling — sustained failure (...)` | The exponential backoff ramped out; bot keeps retrying every 60 s until network returns. One alert per outage. |
 | `ETELEGRAM: 400 Bad Request: can't parse entities` | Markdown parse error; check your text for unescaped `*`, `_`, `[`, `]`. (Unrelated to V18, just worth knowing.) |
 | `ETELEGRAM: 400 Bad Request: <other>` on a flow that worked on V17 | Likely a not-shimmable change above. Check the four cases. |
-| `node-telegram-bot-api: failed to load: ...` at Node-RED startup | The dynamic import of the lib failed (network, npm install corruption, Node version). Reinstall the package. |
+| `Cannot find module 'node-telegram-bot-api'` (or a require error) at Node-RED startup | The library isn't installed correctly (npm install corruption, or Node < 20). Reinstall the package on Node.js >= 20. |
 
 ## Rollback
 
@@ -194,11 +196,11 @@ If V18.0.0 breaks your flow and you can't immediately fix it:
 
 ```bash
 cd ~/.node-red
-npm install node-red-contrib-telegrambot@17.4.13
+npm install node-red-contrib-telegrambot@17.4.17
 node-red-restart
 ```
 
-V17.4.13 will keep working on the `latest` dist-tag as long as V18 is in beta. No deadline pressure on the upgrade.
+V17.4.17 is the last V17 release and remains installable by exact version. V18 is the current `latest`, so there's no auto-rollback — pin the V17 version explicitly if you need to stay on it.
 
 ## Where to ask for help
 

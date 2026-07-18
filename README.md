@@ -20,15 +20,15 @@ The only thing required is the `token` that can be retrieved by the `@botfather`
 >
 > V18.0.0 swaps the underlying `node-telegram-bot-api` library from v0.66 to v1.0.0 — a substantial rewrite that drops several legacy `msg.payload.options` field names. Existing V17 flows keep working transparently via a built-in compatibility shim that emits a one-time deprecation warning per node and rewrites the field on-the-fly, but the recommended migration target is the new shape. See [MIGRATION.md](MIGRATION.md) for the full list and rewrite recipes.
 >
-> **V18 is in beta while real-world testing settles.** Existing installations on the `latest` dist-tag stay on V17.4.13 and will not auto-upgrade. To opt into the V18 beta:
+> **V18 is now the stable release** on the `latest` dist-tag — Manage Palette will offer it as the current version. To upgrade:
 >
 > ```bash
 > cd ~/.node-red
-> npm install node-red-contrib-telegrambot@beta
+> npm install node-red-contrib-telegrambot@latest
 > node-red-restart
 > ```
 >
-> To roll back to V17: `npm install node-red-contrib-telegrambot@17.4.13`.
+> Requires Node.js >= 20. To roll back to V17: `npm install node-red-contrib-telegrambot@17.4.17`.
 
 # Thanks for your donation
 If you want to support this free project. Any help is welcome. You can donate by clicking one of the following links:

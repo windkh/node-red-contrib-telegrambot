@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [18.1.0] - 2026-07-18
+### Bump `node-telegram-bot-api` floor to `^1.2.0` (#473). 1.2.0 adds Telegram Bot API 10.2 support (Ephemeral Messages, Rich Message media/blocks, Communities, subscription updates) and is purely additive — no breaking changes; full suite green.
+
+### Add the missing update types to the **event node** dropdown so they're selectable as first-class events (they were already reachable via the receiver's "handle all updates"): `guest_message` (10.0), `purchased_paid_media` (previously a "not supported yet" placeholder), `managed_bot` (9.6), and `subscription` (10.2). The dropdown now mirrors the library's full `UPDATE_TYPES` list. The new Bot API 10.2 Ephemeral Message methods (`editEphemeralMessageText` / `Media` / `Caption` / `ReplyMarkup`, `deleteEphemeralMessage`) remain reachable via the `callApi` escape hatch; the new send options (`receiver_user_id`, `callback_query_id`, `ephemeral_message_id`) already pass through `msg.payload.options`.
+
 # [18.0.2] - 2026-07-17
 ### Fix SOCKS proxy under V18 (#472, by @Alexey-Tsarev). Node-RED stores the `socksport` config field as a **string**, but the v1.x transport path (`fetch-socks` → `socks`) validates that the proxy port is a **number** and otherwise throws `Invalid SOCKS proxy details were provided` (`EFATAL` / `fetch failed`), so SOCKS-proxied bots never connected on V18. `buildDispatcherOptions` now coerces the port with `Number(...)`. Regression test updated to pass the port as a string (as the real config does) and assert a numeric result. V17's `socks-proxy-agent` tolerated string ports, so this only affected V18.
 

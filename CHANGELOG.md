@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [18.1.1] - 2026-07-18
+### Trim the published npm tarball with a `files` whitelist. The package previously shipped the full test suite, CI config, `doc/`, and ~3.5 MB of README screenshots to every install (195 files / 4.0 MB packed). It now ships only what an installed Node-RED package needs — `telegrambot/` (nodes, lib, html, icons), `examples/` (required for Node-RED's import-examples), plus `README`/`LICENSE`/`CHANGELOG`/`MIGRATION` — reducing the tarball to ~72 files / ~125 kB packed. No code change; README image links resolve to the GitHub repo, so npm / flows.nodered.org rendering is unaffected.
+
 # [18.1.0] - 2026-07-18
 ### Bump `node-telegram-bot-api` floor to `^1.2.0` (#473). 1.2.0 adds Telegram Bot API 10.2 support (Ephemeral Messages, Rich Message media/blocks, Communities, subscription updates) and is purely additive — no breaking changes; full suite green.
 

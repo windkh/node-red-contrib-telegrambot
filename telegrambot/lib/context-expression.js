@@ -66,7 +66,7 @@ function evalContextExpression(node, expression) {
                 if (!subScope && method === 'get' && args.length === 1) {
                     try {
                         result = node._flow.getSetting(args[0]);
-                    } catch (e) {
+                    } catch {
                         // ignore — result stays undefined
                     }
                 }
@@ -81,7 +81,7 @@ function evalContextExpression(node, expression) {
                 if (target && typeof target[method] === 'function') {
                     try {
                         result = target[method](...args);
-                    } catch (e) {
+                    } catch {
                         // ignore — result stays undefined
                     }
                 }

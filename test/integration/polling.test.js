@@ -1,12 +1,12 @@
+const { describe, it, before, after, afterEach } = require('node:test');
+const assert = require('node:assert');
 const helper = require('node-red-node-test-helper');
-const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
 const { startMock } = require('../fixtures/telegram-mock.js');
 
 helper.init(require.resolve('node-red'));
 
 describe('integration: polling transport against a mocked Telegram API', function () {
-    this.timeout(10000);
 
     let mock;
 
@@ -50,14 +50,14 @@ describe('integration: polling transport against a mocked Telegram API', functio
         ];
     }
 
-    it('starts polling the mock and delivers a queued update to the receiver', function (done) {
+    it('starts polling the mock and delivers a queued update to the receiver', function (t, done) {
         helper.load(telegrambotModule, pollingFlow(), { b1: { token: 'fake' } }, function () {
             const out = helper.getNode('out');
             out.on('input', function (msg) {
                 try {
-                    expect(msg.payload.type).to.equal('message');
-                    expect(msg.payload.content).to.equal('first update');
-                    expect(mock.callsTo('getUpdates').length).to.be.greaterThan(0);
+                    assert.strictEqual(msg.payload.type, 'message');
+                    assert.strictEqual(msg.payload.content, 'first update');
+                    assert.ok(mock.callsTo('getUpdates').length > 0);
                     done();
                 } catch (err) {
                     done(err);
@@ -78,7 +78,7 @@ describe('integration: polling transport against a mocked Telegram API', functio
         });
     });
 
-    it('keeps polling after a 502 Bad Gateway error from the API', function (done) {
+    it('keeps polling after a 502 Bad Gateway error from the API', function (t, done) {
         helper.load(telegrambotModule, pollingFlow(), { b1: { token: 'fake' } }, function () {
             const out = helper.getNode('out');
 
@@ -87,9 +87,9 @@ describe('integration: polling transport against a mocked Telegram API', functio
 
             out.on('input', function (msg) {
                 try {
-                    expect(msg.payload.content).to.equal('after error');
+                    assert.strictEqual(msg.payload.content, 'after error');
                     // Expect at least 2 calls: the one that 502'd plus a successor.
-                    expect(mock.callsTo('getUpdates').length).to.be.greaterThan(1);
+                    assert.ok(mock.callsTo('getUpdates').length > 1);
                     done();
                 } catch (err) {
                     done(err);
@@ -112,7 +112,7 @@ describe('integration: polling transport against a mocked Telegram API', functio
         });
     });
 
-    it('delivers updates to multiple receivers attached to the same bot', function (done) {
+    it('delivers updates to multiple receivers attached to the same bot', function (t, done) {
         const flow = pollingFlow();
         flow.push({ id: 'r2', type: 'telegram receiver', bot: 'b1', wires: [['out2'], ['unauth2']] });
         flow.push({ id: 'out2', type: 'helper' });
@@ -124,7 +124,7 @@ describe('integration: polling transport against a mocked Telegram API', functio
             let received = 0;
             const expectAt = function (msg) {
                 try {
-                    expect(msg.payload.content).to.equal('broadcast');
+                    assert.strictEqual(msg.payload.content, 'broadcast');
                     received++;
                     if (received === 2) done();
                 } catch (err) {
@@ -147,7 +147,7 @@ describe('integration: polling transport against a mocked Telegram API', functio
         });
     });
 
-    it('routes an unauthorized user to output 2', function (done) {
+    it('routes an unauthorized user to output 2', function (t, done) {
         const flow = pollingFlow({ usernames: 'bob' });
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             const out = helper.getNode('out');
@@ -157,7 +157,7 @@ describe('integration: polling transport against a mocked Telegram API', functio
             });
             unauth.on('input', function (msg) {
                 try {
-                    expect(msg.payload.content).to.equal('hello bot');
+                    assert.strictEqual(msg.payload.content, 'hello bot');
                     done();
                 } catch (err) {
                     done(err);

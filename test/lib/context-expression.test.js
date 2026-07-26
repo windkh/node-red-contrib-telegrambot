@@ -1,4 +1,5 @@
-const { expect } = require('chai');
+const { describe, it } = require('node:test');
+const assert = require('node:assert');
 const { parseStringArgList, evalContextExpression } = require('../../telegrambot/lib/context-expression');
 
 // =============================================================================
@@ -8,114 +9,114 @@ const { parseStringArgList, evalContextExpression } = require('../../telegrambot
 describe('context-expression — parseStringArgList', function () {
     describe('valid inputs', function () {
         it('returns [] for empty input', function () {
-            expect(parseStringArgList('')).to.deep.equal([]);
+            assert.deepStrictEqual(parseStringArgList(''), []);
         });
 
         it('returns [] for whitespace-only input', function () {
-            expect(parseStringArgList('   \t  ')).to.deep.equal([]);
+            assert.deepStrictEqual(parseStringArgList('   \t  '), []);
         });
 
         it('parses a single double-quoted string', function () {
-            expect(parseStringArgList('"foo"')).to.deep.equal(['foo']);
+            assert.deepStrictEqual(parseStringArgList('"foo"'), ['foo']);
         });
 
         it('parses a single single-quoted string', function () {
-            expect(parseStringArgList("'foo'")).to.deep.equal(['foo']);
+            assert.deepStrictEqual(parseStringArgList("'foo'"), ['foo']);
         });
 
         it('parses two comma-separated strings', function () {
-            expect(parseStringArgList('"a", "b"')).to.deep.equal(['a', 'b']);
+            assert.deepStrictEqual(parseStringArgList('"a", "b"'), ['a', 'b']);
         });
 
         it('parses three strings with mixed quoting', function () {
-            expect(parseStringArgList('"a", \'b\', "c"')).to.deep.equal(['a', 'b', 'c']);
+            assert.deepStrictEqual(parseStringArgList('"a", \'b\', "c"'), ['a', 'b', 'c']);
         });
 
         it('tolerates whitespace around quotes and commas', function () {
-            expect(parseStringArgList('  "a"  ,  "b"  ')).to.deep.equal(['a', 'b']);
+            assert.deepStrictEqual(parseStringArgList('  "a"  ,  "b"  '), ['a', 'b']);
         });
 
         it('returns [] for an empty quoted string', function () {
-            expect(parseStringArgList('""')).to.deep.equal(['']);
+            assert.deepStrictEqual(parseStringArgList('""'), ['']);
         });
 
         it('handles a single-char value', function () {
-            expect(parseStringArgList('"x"')).to.deep.equal(['x']);
+            assert.deepStrictEqual(parseStringArgList('"x"'), ['x']);
         });
     });
 
     describe('escape sequences', function () {
         it('decodes \\n to a newline', function () {
-            expect(parseStringArgList('"a\\nb"')).to.deep.equal(['a\nb']);
+            assert.deepStrictEqual(parseStringArgList('"a\\nb"'), ['a\nb']);
         });
 
         it('decodes \\t to a tab', function () {
-            expect(parseStringArgList('"a\\tb"')).to.deep.equal(['a\tb']);
+            assert.deepStrictEqual(parseStringArgList('"a\\tb"'), ['a\tb']);
         });
 
         it('decodes \\r to a CR', function () {
-            expect(parseStringArgList('"a\\rb"')).to.deep.equal(['a\rb']);
+            assert.deepStrictEqual(parseStringArgList('"a\\rb"'), ['a\rb']);
         });
 
         it('passes through escaped quote', function () {
-            expect(parseStringArgList('"a\\"b"')).to.deep.equal(['a"b']);
+            assert.deepStrictEqual(parseStringArgList('"a\\"b"'), ['a"b']);
         });
 
         it('passes through escaped backslash', function () {
-            expect(parseStringArgList('"a\\\\b"')).to.deep.equal(['a\\b']);
+            assert.deepStrictEqual(parseStringArgList('"a\\\\b"'), ['a\\b']);
         });
 
         it('passes through any other escaped char as itself', function () {
             // Unknown escapes (e.g. \z) are stripped to just the following char.
-            expect(parseStringArgList('"a\\zb"')).to.deep.equal(['azb']);
+            assert.deepStrictEqual(parseStringArgList('"a\\zb"'), ['azb']);
         });
 
         it('allows single-quote inside double-quoted', function () {
-            expect(parseStringArgList('"a\'b"')).to.deep.equal(["a'b"]);
+            assert.deepStrictEqual(parseStringArgList('"a\'b"'), ["a'b"]);
         });
 
         it('allows double-quote inside single-quoted', function () {
-            expect(parseStringArgList('\'a"b\'')).to.deep.equal(['a"b']);
+            assert.deepStrictEqual(parseStringArgList('\'a"b\''), ['a"b']);
         });
     });
 
     describe('rejected inputs (returns null)', function () {
         it('rejects unquoted input', function () {
-            expect(parseStringArgList('foo')).to.equal(null);
+            assert.strictEqual(parseStringArgList('foo'), null);
         });
 
         it('rejects an unterminated double-quoted string', function () {
-            expect(parseStringArgList('"foo')).to.equal(null);
+            assert.strictEqual(parseStringArgList('"foo'), null);
         });
 
         it('rejects an unterminated single-quoted string', function () {
-            expect(parseStringArgList("'foo")).to.equal(null);
+            assert.strictEqual(parseStringArgList("'foo"), null);
         });
 
         it('accepts a trailing comma (like JS array literals)', function () {
             // Permissive on the trailing case; consistent with how JS itself parses arrays.
             // What's NOT accepted is a leading comma or an empty middle element — covered below.
-            expect(parseStringArgList('"a",')).to.deep.equal(['a']);
+            assert.deepStrictEqual(parseStringArgList('"a",'), ['a']);
         });
 
         it('rejects a leading comma', function () {
-            expect(parseStringArgList(',"a"')).to.equal(null);
+            assert.strictEqual(parseStringArgList(',"a"'), null);
         });
 
         it('rejects an empty middle element', function () {
-            expect(parseStringArgList('"a", , "b"')).to.equal(null);
+            assert.strictEqual(parseStringArgList('"a", , "b"'), null);
         });
 
         it('rejects two values without a comma', function () {
-            expect(parseStringArgList('"a" "b"')).to.equal(null);
+            assert.strictEqual(parseStringArgList('"a" "b"'), null);
         });
 
         it('rejects unquoted second argument', function () {
-            expect(parseStringArgList('"a", b')).to.equal(null);
+            assert.strictEqual(parseStringArgList('"a", b'), null);
         });
 
         it('rejects bare punctuation', function () {
-            expect(parseStringArgList(';')).to.equal(null);
+            assert.strictEqual(parseStringArgList(';'), null);
         });
     });
 });
@@ -170,91 +171,91 @@ describe('context-expression — evalContextExpression', function () {
     describe('flow / global / context lookups', function () {
         it('resolves flow.get("key")', function () {
             const node = makeNode({ flow: { token: 'F-1' } });
-            expect(evalContextExpression(node, 'flow.get("token")')).to.equal('F-1');
+            assert.strictEqual(evalContextExpression(node, 'flow.get("token")'), 'F-1');
         });
 
         it('resolves global.get("key")', function () {
             const node = makeNode({ global: { token: 'G-1' } });
-            expect(evalContextExpression(node, 'global.get("token")')).to.equal('G-1');
+            assert.strictEqual(evalContextExpression(node, 'global.get("token")'), 'G-1');
         });
 
         it('resolves context.get("key")', function () {
             const node = makeNode({ ctx: { token: 'C-1' } });
-            expect(evalContextExpression(node, 'context.get("token")')).to.equal('C-1');
+            assert.strictEqual(evalContextExpression(node, 'context.get("token")'), 'C-1');
         });
 
         it('resolves context.flow.get("key") and context.global.get("key")', function () {
             const node = makeNode({ flow: { token: 'F-1' }, global: { token: 'G-1' } });
-            expect(evalContextExpression(node, 'context.flow.get("token")')).to.equal('F-1');
-            expect(evalContextExpression(node, 'context.global.get("token")')).to.equal('G-1');
+            assert.strictEqual(evalContextExpression(node, 'context.flow.get("token")'), 'F-1');
+            assert.strictEqual(evalContextExpression(node, 'context.global.get("token")'), 'G-1');
         });
 
         it('passes through multiple args (flow.get("key", "store"))', function () {
             const node = makeNode({ flow: { token: 'F-1' } });
-            expect(evalContextExpression(node, 'flow.get("token", "memory")')).to.equal('F-1@memory');
+            assert.strictEqual(evalContextExpression(node, 'flow.get("token", "memory")'), 'F-1@memory');
         });
 
         it('returns undefined when the key is not present', function () {
             const node = makeNode({ flow: {} });
-            expect(evalContextExpression(node, 'flow.get("missing")')).to.be.undefined;
+            assert.strictEqual(evalContextExpression(node, 'flow.get("missing")'), undefined);
         });
     });
 
     describe('keys() variants', function () {
         it('resolves flow.keys()', function () {
             const node = makeNode({ flowKeys: ['a', 'b'] });
-            expect(evalContextExpression(node, 'flow.keys()')).to.deep.equal(['a', 'b']);
+            assert.deepStrictEqual(evalContextExpression(node, 'flow.keys()'), ['a', 'b']);
         });
 
         it('resolves global.keys()', function () {
             const node = makeNode({ globalKeys: ['x'] });
-            expect(evalContextExpression(node, 'global.keys()')).to.deep.equal(['x']);
+            assert.deepStrictEqual(evalContextExpression(node, 'global.keys()'), ['x']);
         });
 
         it('resolves context.keys()', function () {
             const node = makeNode({ ctxKeys: ['k1'] });
-            expect(evalContextExpression(node, 'context.keys()')).to.deep.equal(['k1']);
+            assert.deepStrictEqual(evalContextExpression(node, 'context.keys()'), ['k1']);
         });
     });
 
     describe('env.get', function () {
         it('resolves env.get("VAR") via node._flow.getSetting', function () {
             const node = makeNode({ env: { TG_TOKEN: 'env-1' } });
-            expect(evalContextExpression(node, 'env.get("TG_TOKEN")')).to.equal('env-1');
+            assert.strictEqual(evalContextExpression(node, 'env.get("TG_TOKEN")'), 'env-1');
         });
 
         it('returns undefined when the env var is not set', function () {
             const node = makeNode({ env: {} });
-            expect(evalContextExpression(node, 'env.get("MISSING")')).to.be.undefined;
+            assert.strictEqual(evalContextExpression(node, 'env.get("MISSING")'), undefined);
         });
 
         it('returns undefined for env.keys() — only get is supported', function () {
             const node = makeNode({ env: { X: 1 } });
-            expect(evalContextExpression(node, 'env.keys()')).to.be.undefined;
+            assert.strictEqual(evalContextExpression(node, 'env.keys()'), undefined);
         });
 
         it('returns undefined for env.get() with the wrong arity', function () {
             const node = makeNode({ env: { X: 1 } });
-            expect(evalContextExpression(node, 'env.get()')).to.be.undefined;
-            expect(evalContextExpression(node, 'env.get("X", "Y")')).to.be.undefined;
+            assert.strictEqual(evalContextExpression(node, 'env.get()'), undefined);
+            assert.strictEqual(evalContextExpression(node, 'env.get("X", "Y")'), undefined);
         });
 
         it('returns undefined for env.flow.get(...) — env has no sub-scope', function () {
             const node = makeNode({ env: { X: 1 } });
             // The regex permits the sub-scope grammar, but env doesn't support it.
-            expect(evalContextExpression(node, 'env.flow.get("X")')).to.be.undefined;
+            assert.strictEqual(evalContextExpression(node, 'env.flow.get("X")'), undefined);
         });
     });
 
     describe('whitespace tolerance', function () {
         it('accepts leading and trailing whitespace', function () {
             const node = makeNode({ flow: { x: 1 } });
-            expect(evalContextExpression(node, '   flow.get("x")   ')).to.equal(1);
+            assert.strictEqual(evalContextExpression(node, '   flow.get("x")   '), 1);
         });
 
         it('accepts whitespace around the method parens', function () {
             const node = makeNode({ flow: { x: 1 } });
-            expect(evalContextExpression(node, 'flow.get  ( "x" )')).to.equal(1);
+            assert.strictEqual(evalContextExpression(node, 'flow.get  ( "x" )'), 1);
         });
     });
 
@@ -282,7 +283,7 @@ describe('context-expression — evalContextExpression', function () {
 
         malicious.forEach(function (expr) {
             it('rejects: ' + JSON.stringify(expr), function () {
-                expect(evalContextExpression(node, expr)).to.be.undefined;
+                assert.strictEqual(evalContextExpression(node, expr), undefined);
             });
         });
     });
@@ -290,12 +291,12 @@ describe('context-expression — evalContextExpression', function () {
     describe('robustness against throwing context', function () {
         it('catches throws from flow.get and returns undefined', function () {
             const node = makeNode({ flowGetThrows: true });
-            expect(evalContextExpression(node, 'flow.get("x")')).to.be.undefined;
+            assert.strictEqual(evalContextExpression(node, 'flow.get("x")'), undefined);
         });
 
         it('catches throws from env.get and returns undefined', function () {
             const node = makeNode({ envThrows: true });
-            expect(evalContextExpression(node, 'env.get("X")')).to.be.undefined;
+            assert.strictEqual(evalContextExpression(node, 'env.get("X")'), undefined);
         });
     });
 
@@ -304,13 +305,13 @@ describe('context-expression — evalContextExpression', function () {
             const node = makeNode({ flow: { x: 42 } });
             // A user passing { toString: () => 'flow.get("x")' } would still work.
             const expr = { toString: () => 'flow.get("x")' };
-            expect(evalContextExpression(node, expr)).to.equal(42);
+            assert.strictEqual(evalContextExpression(node, expr), 42);
         });
 
         it('returns undefined for null / undefined expressions', function () {
             const node = makeNode();
-            expect(evalContextExpression(node, null)).to.be.undefined;
-            expect(evalContextExpression(node, undefined)).to.be.undefined;
+            assert.strictEqual(evalContextExpression(node, null), undefined);
+            assert.strictEqual(evalContextExpression(node, undefined), undefined);
         });
     });
 });

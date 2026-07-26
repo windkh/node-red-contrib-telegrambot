@@ -357,7 +357,6 @@ module.exports = function (RED) {
                                             // adapt the following if so that MarkdownV2 also works.
                                             let next;
                                             const isMarkdownParseError =
-                                                // eslint-disable-next-line quotes
                                                 String(err).includes("can't parse entities in message text:") &&
                                                 msg.payload.options &&
                                                 msg.payload.options.parse_mode === 'Markdown';

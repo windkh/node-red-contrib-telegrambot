@@ -1,5 +1,6 @@
+const { describe, it, before, after, afterEach } = require('node:test');
+const assert = require('node:assert');
 const helper = require('node-red-node-test-helper');
-const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
 
 helper.init(require.resolve('node-red'));
@@ -17,13 +18,12 @@ function waitFor(predicate, maxMs) {
 }
 
 describe('bot-node — auto-restart on fatal error (issue #442 / #440)', function () {
-    this.timeout(5000);
 
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -35,13 +35,13 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
         return [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
     }
 
-    it('scheduleRestart is a function on the config node', function (done) {
+    it('scheduleRestart is a function on the config node', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
-                expect(n.scheduleRestart).to.be.a('function');
-                expect(n.restartCount).to.equal(0);
-                expect(n.restartTimer).to.equal(null);
+                assert.strictEqual(typeof n.scheduleRestart, 'function');
+                assert.strictEqual(n.restartCount, 0);
+                assert.strictEqual(n.restartTimer, null);
                 done();
             } catch (err) {
                 done(err);
@@ -49,16 +49,16 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
         });
     });
 
-    it('scheduleRestart sets restartTimer and increments restartCount (single-flight)', function (done) {
+    it('scheduleRestart sets restartTimer and increments restartCount (single-flight)', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
                 n.scheduleRestart('first');
-                expect(n.restartTimer).to.not.equal(null);
-                expect(n.restartCount).to.equal(1);
+                assert.notStrictEqual(n.restartTimer, null);
+                assert.strictEqual(n.restartCount, 1);
                 // Second call must be dropped while a restart is queued.
                 n.scheduleRestart('second');
-                expect(n.restartCount).to.equal(1);
+                assert.strictEqual(n.restartCount, 1);
                 // Cancel so the test cleanup doesn't trip the actual restart.
                 clearTimeout(n.restartTimer);
                 n.restartTimer = null;
@@ -69,11 +69,11 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
         });
     });
 
-    it('initialises restartCeilingAnnounced to false on construction', function (done) {
+    it('initialises restartCeilingAnnounced to false on construction', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
-                expect(n.restartCeilingAnnounced).to.equal(false);
+                assert.strictEqual(n.restartCeilingAnnounced, false);
                 done();
             } catch (err) {
                 done(err);
@@ -81,7 +81,7 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
         });
     });
 
-    it('keeps retrying past the old 8-attempt cap — no permanent give-up (#442 retest 2026-05-27)', function (done) {
+    it('keeps retrying past the old 8-attempt cap — no permanent give-up (#442 retest 2026-05-27)', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
@@ -97,19 +97,15 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
                 n.restartCeilingAnnounced = true; // pretend the operator was already alerted
                 n.scheduleRestart('still-broken');
                 // A restart MUST be scheduled — the helper no longer surrenders.
-                expect(n.restartTimer).to.not.equal(null);
+                assert.notStrictEqual(n.restartTimer, null);
                 // No "gave up" message — that branch is gone.
-                expect(
-                    errorMsgs.some(function (m) {
+                assert.strictEqual(errorMsgs.some(function (m) {
                         return /gave up restarting/.test(m);
-                    })
-                ).to.equal(false);
+                    }), false);
                 // The warn line still announces the scheduled restart at the cap.
-                expect(
-                    warnMsgs.some(function (m) {
+                assert.strictEqual(warnMsgs.some(function (m) {
                         return /will restart in 60000ms/.test(m);
-                    })
-                ).to.equal(true);
+                    }), true);
                 clearTimeout(n.restartTimer);
                 n.restartTimer = null;
                 done();
@@ -119,7 +115,7 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
         });
     });
 
-    it('emits exactly one node.error the first time the 60s ceiling is reached and stays silent after', function (done) {
+    it('emits exactly one node.error the first time the 60s ceiling is reached and stays silent after', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
@@ -132,25 +128,25 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
                 // count=4 → delay=48000, still below the ceiling — no node.error yet.
                 n.restartCount = 4;
                 n.scheduleRestart('approaching');
-                expect(errorMsgs).to.deep.equal([]);
-                expect(n.restartCeilingAnnounced).to.equal(false);
+                assert.deepStrictEqual(errorMsgs, []);
+                assert.strictEqual(n.restartCeilingAnnounced, false);
                 clearTimeout(n.restartTimer);
                 n.restartTimer = null;
 
                 // count=5 → delay=60000, first time at the ceiling — node.error fires once.
                 n.restartCount = 5;
                 n.scheduleRestart('at-ceiling');
-                expect(errorMsgs).to.have.length(1);
-                expect(errorMsgs[0]).to.match(/auto-restart hit 60s ceiling/);
-                expect(errorMsgs[0]).to.include('at-ceiling');
-                expect(n.restartCeilingAnnounced).to.equal(true);
+                assert.strictEqual((errorMsgs).length, 1);
+                assert.match(errorMsgs[0], /auto-restart hit 60s ceiling/);
+                assert.ok((errorMsgs[0]).includes('at-ceiling'));
+                assert.strictEqual(n.restartCeilingAnnounced, true);
                 clearTimeout(n.restartTimer);
                 n.restartTimer = null;
 
                 // count=6 → still at the ceiling but the flag is set — no further node.errors.
                 n.restartCount = 6;
                 n.scheduleRestart('still-at-ceiling');
-                expect(errorMsgs).to.have.length(1); // unchanged
+                assert.strictEqual((errorMsgs).length, 1); // unchanged
                 clearTimeout(n.restartTimer);
                 n.restartTimer = null;
                 done();
@@ -160,7 +156,7 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
         });
     });
 
-    it('uses exponential back-off capped at 60 s', function (done) {
+    it('uses exponential back-off capped at 60 s', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
@@ -180,7 +176,7 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
                 } finally {
                     global.setTimeout = origSetTimeout;
                 }
-                expect(delays).to.deep.equal([3000, 6000, 12000, 24000, 48000, 60000]);
+                assert.deepStrictEqual(delays, [3000, 6000, 12000, 24000, 48000, 60000]);
                 done();
             } catch (err) {
                 global.setTimeout = require('timers').setTimeout;
@@ -195,22 +191,21 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
         });
         const n = helper.getNode('b1');
         n.scheduleRestart('queued');
-        expect(n.restartTimer).to.not.equal(null);
+        assert.notStrictEqual(n.restartTimer, null);
         await helper.unload();
         // After unload, the close handler must have cleared the timer; otherwise
         // it'd fire later against a deleted node.
-        expect(n.restartTimer).to.equal(null);
+        assert.strictEqual(n.restartTimer, null);
     });
 });
 
 describe('bot-node — stable-window restartCount reset (issue #442 retest, V17.4.2)', function () {
-    this.timeout(5000);
 
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -218,7 +213,7 @@ describe('bot-node — stable-window restartCount reset (issue #442 retest, V17.
         helper.unload();
     });
 
-    it('a fresh error inside the stable window keeps the backoff escalating', function (done) {
+    it('a fresh error inside the stable window keeps the backoff escalating', function (t, done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
@@ -236,8 +231,8 @@ describe('bot-node — stable-window restartCount reset (issue #442 retest, V17.
                 //   1. cancel the stableTimer (so the previous "success" doesn't reset count)
                 //   2. NOT reset restartCount — the next backoff continues from where we were
                 n.scheduleRestart('another error');
-                expect(n.restartStableTimer).to.equal(null);
-                expect(n.restartCount).to.equal(4); // 3 -> 4, not 0 -> 1
+                assert.strictEqual(n.restartStableTimer, null);
+                assert.strictEqual(n.restartCount, 4); // 3 -> 4, not 0 -> 1
                 // delay for count=3 going to 4 is 3000 * 2^3 = 24000 ms.
                 // (We don't assert delay directly here — covered separately below.)
 
@@ -251,7 +246,7 @@ describe('bot-node — stable-window restartCount reset (issue #442 retest, V17.
         });
     });
 
-    it('an error AFTER the stable window has fired resets to the minimum backoff', function (done) {
+    it('an error AFTER the stable window has fired resets to the minimum backoff', function (t, done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
@@ -263,7 +258,7 @@ describe('bot-node — stable-window restartCount reset (issue #442 retest, V17.
 
                 // New error after the stable window: clean slate.
                 n.scheduleRestart('much later');
-                expect(n.restartCount).to.equal(1);
+                assert.strictEqual(n.restartCount, 1);
 
                 clearTimeout(n.restartTimer);
                 n.restartTimer = null;
@@ -281,20 +276,19 @@ describe('bot-node — stable-window restartCount reset (issue #442 retest, V17.
         });
         const n = helper.getNode('b1');
         n.restartStableTimer = setTimeout(function () {}, 60000);
-        expect(n.restartStableTimer).to.not.equal(null);
+        assert.notStrictEqual(n.restartStableTimer, null);
         await helper.unload();
-        expect(n.restartStableTimer).to.equal(null);
+        assert.strictEqual(n.restartStableTimer, null);
     });
 });
 
 describe('bot-node — fatal-error log suppression while restart is queued (issue #411 retest)', function () {
-    this.timeout(5000);
 
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -302,7 +296,7 @@ describe('bot-node — fatal-error log suppression while restart is queued (issu
         helper.unload();
     });
 
-    it('emits one warn for the first error of a burst, then suppresses while the restart is queued', function (done) {
+    it('emits one warn for the first error of a burst, then suppresses while the restart is queued', function (t, done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
@@ -332,8 +326,8 @@ describe('bot-node — fatal-error log suppression while restart is queued (issu
                 const botErrorLines = warnLines.filter(function (line) {
                     return line.indexOf('Bot error:') === 0;
                 });
-                expect(botErrorLines).to.have.length(1);
-                expect(botErrorLines[0]).to.include('ETIMEDOUT 1');
+                assert.strictEqual((botErrorLines).length, 1);
+                assert.ok((botErrorLines[0]).includes('ETIMEDOUT 1'));
 
                 clearTimeout(n.restartTimer);
                 n.restartTimer = null;
@@ -346,13 +340,12 @@ describe('bot-node — fatal-error log suppression while restart is queued (issu
 });
 
 describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.0 migration)', function () {
-    this.timeout(5000);
 
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -360,13 +353,13 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
         helper.unload();
     });
 
-    it('config node exposes buildDispatcherOptions and instantiateBot helpers', function (done) {
+    it('config node exposes buildDispatcherOptions and instantiateBot helpers', function (t, done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
-                expect(n.buildDispatcherOptions).to.be.a('function');
-                expect(n.instantiateBot).to.be.a('function');
+                assert.strictEqual(typeof n.buildDispatcherOptions, 'function');
+                assert.strictEqual(typeof n.instantiateBot, 'function');
                 done();
             } catch (err) {
                 done(err);
@@ -374,15 +367,15 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
         });
     });
 
-    it('buildDispatcherOptions returns plain agent opts for the non-SOCKS path', function (done) {
+    it('buildDispatcherOptions returns plain agent opts for the non-SOCKS path', function (t, done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
                 const opts = n.buildDispatcherOptions();
-                expect(opts.socks).to.equal(undefined);
-                expect(opts.agent).to.be.an('object');
-                expect(opts.agent.keepAliveTimeout).to.be.a('number');
+                assert.strictEqual(opts.socks, undefined);
+                assert.strictEqual(typeof opts.agent, 'object');
+                assert.strictEqual(typeof opts.agent.keepAliveTimeout, 'number');
                 done();
             } catch (err) {
                 done(err);
@@ -390,13 +383,13 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
         });
     });
 
-    it('buildDispatcherOptions sets the family override when addressFamily is 4 or 6', function (done) {
+    it('buildDispatcherOptions sets the family override when addressFamily is 4 or 6', function (t, done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly', addressfamily: 4 }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
                 const opts = n.buildDispatcherOptions();
-                expect(opts.agent.connect).to.deep.equal({ family: 4 });
+                assert.deepStrictEqual(opts.agent.connect, { family: 4 });
                 done();
             } catch (err) {
                 done(err);
@@ -404,7 +397,7 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
         });
     });
 
-    it('buildDispatcherOptions emits SOCKS shape when usesocks is set, coercing port to a number (#472)', function (done) {
+    it('buildDispatcherOptions emits SOCKS shape when usesocks is set, coercing port to a number (#472)', function (t, done) {
         const flow = [
             {
                 id: 'b1',
@@ -426,14 +419,14 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
             try {
                 const n = helper.getNode('b1');
                 const opts = n.buildDispatcherOptions();
-                expect(opts.socks).to.deep.equal({
+                assert.deepStrictEqual(opts.socks, {
                     type: 5,
                     host: '127.0.0.1',
                     port: 1080,
                     userId: 'u',
                     password: 'p',
                 });
-                expect(opts.socks.port).to.be.a('number');
+                assert.strictEqual(typeof opts.socks.port, 'number');
                 done();
             } catch (err) {
                 done(err);
@@ -441,19 +434,19 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
         });
     });
 
-    it('instantiateBot wires a per-instance dispatcher via request.fetchOptions (#465/#466)', function (done) {
+    it('instantiateBot wires a per-instance dispatcher via request.fetchOptions (#465/#466)', function (t, done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
                 const bot = n.instantiateBot('123:fake', { baseApiUrl: 'https://api.telegram.org' });
-                expect(bot, 'bot should be constructed (library loaded in before hook)').to.exist;
+                assert.ok(bot, 'bot should be constructed (library loaded in before hook)' !== undefined && bot, 'bot should be constructed (library loaded in before hook)' !== null);
                 // The per-bot dispatcher is stored on the node and threaded into
                 // the bot's request.fetchOptions.dispatcher (the v1.1.1 hook).
-                expect(n.dispatcher).to.exist;
-                expect(bot.options.request.fetchOptions.dispatcher).to.equal(n.dispatcher);
+                assert.ok(n.dispatcher !== undefined && n.dispatcher !== null);
+                assert.strictEqual(bot.options.request.fetchOptions.dispatcher, n.dispatcher);
                 // And it is NOT installed under the old process-global symbol.
-                expect(global[Symbol.for('undici.globalDispatcher.1')]).to.not.equal(n.dispatcher);
+                assert.notStrictEqual(global[Symbol.for('undici.globalDispatcher.1')], n.dispatcher);
                 done();
             } catch (err) {
                 done(err);
@@ -463,7 +456,7 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
         });
     });
 
-    it('lifts the EventEmitter maxListeners cap on the bot instance (#471)', function (done) {
+    it('lifts the EventEmitter maxListeners cap on the bot instance (#471)', function (t, done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
@@ -471,7 +464,7 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
                 const bot = n.instantiateBot('123:fake', {});
                 // Default EventEmitter cap is 10; a flow with 11+ receiver/command/
                 // event nodes on one bot would otherwise trip MaxListenersExceededWarning.
-                expect(bot.getMaxListeners()).to.equal(0); // 0 = unlimited
+                assert.strictEqual(bot.getMaxListeners(), 0); // 0 = unlimited
                 done();
             } catch (err) {
                 done(err);
@@ -481,14 +474,14 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
         });
     });
 
-    it('destroyDispatcher closes the per-instance dispatcher and clears the reference', function (done) {
+    it('destroyDispatcher closes the per-instance dispatcher and clears the reference', function (t, done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
                 n.instantiateBot('123:fake', {});
                 const dispatcher = n.dispatcher;
-                expect(dispatcher).to.exist;
+                assert.ok(dispatcher !== undefined && dispatcher !== null);
                 // Replace close with a resolving fake so the assertion doesn't
                 // depend on undici's real pool-drain timing (the connection-less
                 // Agent is GC'd). We only verify destroyDispatcher's contract.
@@ -499,8 +492,8 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
                 };
                 n.destroyDispatcher().then(function () {
                     try {
-                        expect(closed).to.equal(true);
-                        expect(n.dispatcher).to.equal(null);
+                        assert.strictEqual(closed, true);
+                        assert.strictEqual(n.dispatcher, null);
                         done();
                     } catch (err) {
                         done(err);
@@ -514,13 +507,12 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
 });
 
 describe('bot-node — abortBot stops polling cleanly (#440, updated for v1.0.0)', function () {
-    this.timeout(5000);
 
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -552,7 +544,7 @@ describe('bot-node — abortBot stops polling cleanly (#440, updated for v1.0.0)
         return { bot: fake, calls };
     }
 
-    it('calls stopPolling({cancel: true}) and resolves the done callback', function (done) {
+    it('calls stopPolling({cancel: true}) and resolves the done callback', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
@@ -560,8 +552,8 @@ describe('bot-node — abortBot stops polling cleanly (#440, updated for v1.0.0)
                 n.telegramBot = bot;
                 n.abortBot('test', function () {
                     try {
-                        expect(calls.stopPolling).to.deep.equal([{ cancel: true }]);
-                        expect(n.telegramBot).to.equal(null);
+                        assert.deepStrictEqual(calls.stopPolling, [{ cancel: true }]);
+                        assert.strictEqual(n.telegramBot, null);
                         done();
                     } catch (err) {
                         done(err);
@@ -573,7 +565,7 @@ describe('bot-node — abortBot stops polling cleanly (#440, updated for v1.0.0)
         });
     });
 
-    it('still completes the done callback if stopPolling rejects', function (done) {
+    it('still completes the done callback if stopPolling rejects', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
@@ -581,8 +573,8 @@ describe('bot-node — abortBot stops polling cleanly (#440, updated for v1.0.0)
                 n.telegramBot = bot;
                 n.abortBot('test', function () {
                     try {
-                        expect(calls.stopPolling).to.deep.equal([{ cancel: true }]);
-                        expect(n.telegramBot).to.equal(null);
+                        assert.deepStrictEqual(calls.stopPolling, [{ cancel: true }]);
+                        assert.strictEqual(n.telegramBot, null);
                         done();
                     } catch (err) {
                         done(err);
@@ -596,13 +588,12 @@ describe('bot-node — abortBot stops polling cleanly (#440, updated for v1.0.0)
 });
 
 describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', function () {
-    this.timeout(5000);
 
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -614,12 +605,12 @@ describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', func
         return [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
     }
 
-    it('initialises conflict409Times as an empty array and exposes record409Conflict', function (done) {
+    it('initialises conflict409Times as an empty array and exposes record409Conflict', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
-                expect(n.conflict409Times).to.deep.equal([]);
-                expect(n.record409Conflict).to.be.a('function');
+                assert.deepStrictEqual(n.conflict409Times, []);
+                assert.strictEqual(typeof n.record409Conflict, 'function');
                 done();
             } catch (err) {
                 done(err);
@@ -627,14 +618,14 @@ describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', func
         });
     });
 
-    it('does not trip below the threshold', function (done) {
+    it('does not trip below the threshold', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
                 for (let i = 0; i < 9; i++) {
-                    expect(n.record409Conflict()).to.equal(false);
+                    assert.strictEqual(n.record409Conflict(), false);
                 }
-                expect(n.conflict409Times.length).to.equal(9);
+                assert.strictEqual(n.conflict409Times.length, 9);
                 done();
             } catch (err) {
                 done(err);
@@ -642,7 +633,7 @@ describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', func
         });
     });
 
-    it('trips on the 10th 409 in the window and resets the array', function (done) {
+    it('trips on the 10th 409 in the window and resets the array', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
@@ -650,9 +641,9 @@ describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', func
                     n.record409Conflict();
                 }
                 // 10th call trips.
-                expect(n.record409Conflict()).to.equal(true);
+                assert.strictEqual(n.record409Conflict(), true);
                 // Array reset so the operator gets exactly one error log, not one per overflow.
-                expect(n.conflict409Times).to.deep.equal([]);
+                assert.deepStrictEqual(n.conflict409Times, []);
                 done();
             } catch (err) {
                 done(err);
@@ -660,7 +651,7 @@ describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', func
         });
     });
 
-    it('prunes timestamps older than the 30 s window', function (done) {
+    it('prunes timestamps older than the 30 s window', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
@@ -670,8 +661,8 @@ describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', func
                     n.conflict409Times.push(ancient);
                 }
                 // A fresh call must prune the old ones and not trip on its own.
-                expect(n.record409Conflict()).to.equal(false);
-                expect(n.conflict409Times.length).to.equal(1);
+                assert.strictEqual(n.record409Conflict(), false);
+                assert.strictEqual(n.conflict409Times.length, 1);
                 done();
             } catch (err) {
                 done(err);
@@ -679,7 +670,7 @@ describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', func
         });
     });
 
-    it('only trips when the 10 calls fall *inside* the window', function (done) {
+    it('only trips when the 10 calls fall *inside* the window', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
@@ -687,9 +678,9 @@ describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', func
                 const ancient = Date.now() - 35000;
                 for (let i = 0; i < 5; i++) n.conflict409Times.push(ancient);
                 for (let i = 0; i < 4; i++) n.record409Conflict();
-                expect(n.conflict409Times.length).to.equal(4); // ancients pruned
-                expect(n.record409Conflict()).to.equal(false);
-                expect(n.conflict409Times.length).to.equal(5);
+                assert.strictEqual(n.conflict409Times.length, 4); // ancients pruned
+                assert.strictEqual(n.record409Conflict(), false);
+                assert.strictEqual(n.conflict409Times.length, 5);
                 done();
             } catch (err) {
                 done(err);
@@ -699,13 +690,12 @@ describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', func
 });
 
 describe('bot-node — polling-restart single-flight guard (issue #442)', function () {
-    this.timeout(5000);
 
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -713,13 +703,13 @@ describe('bot-node — polling-restart single-flight guard (issue #442)', functi
         helper.unload();
     });
 
-    it('exposes pollingRestartTimer as a tracked timer slot', function (done) {
+    it('exposes pollingRestartTimer as a tracked timer slot', function (t, done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
                 // Initial state: no pending polling restart.
-                expect(n.pollingRestartTimer === null || n.pollingRestartTimer === undefined).to.equal(true);
+                assert.strictEqual(n.pollingRestartTimer === null || n.pollingRestartTimer === undefined, true);
                 done();
             } catch (err) {
                 done(err);
@@ -729,13 +719,12 @@ describe('bot-node — polling-restart single-flight guard (issue #442)', functi
 });
 
 describe('bot-node — polling-burst circuit breaker (issue #442 retest 2026-05-29)', function () {
-    this.timeout(5000);
 
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -747,12 +736,12 @@ describe('bot-node — polling-burst circuit breaker (issue #442 retest 2026-05-
         return [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
     }
 
-    it('initialises pollingErrorTimes as an empty array and exposes recordPollingError', function (done) {
+    it('initialises pollingErrorTimes as an empty array and exposes recordPollingError', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
-                expect(n.pollingErrorTimes).to.deep.equal([]);
-                expect(n.recordPollingError).to.be.a('function');
+                assert.deepStrictEqual(n.pollingErrorTimes, []);
+                assert.strictEqual(typeof n.recordPollingError, 'function');
                 done();
             } catch (err) {
                 done(err);
@@ -760,14 +749,14 @@ describe('bot-node — polling-burst circuit breaker (issue #442 retest 2026-05-
         });
     });
 
-    it('does not trip below the threshold', function (done) {
+    it('does not trip below the threshold', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
                 for (let i = 0; i < 4; i++) {
-                    expect(n.recordPollingError()).to.equal(false);
+                    assert.strictEqual(n.recordPollingError(), false);
                 }
-                expect(n.pollingErrorTimes.length).to.equal(4);
+                assert.strictEqual(n.pollingErrorTimes.length, 4);
                 done();
             } catch (err) {
                 done(err);
@@ -775,7 +764,7 @@ describe('bot-node — polling-burst circuit breaker (issue #442 retest 2026-05-
         });
     });
 
-    it('trips on the 5th polling error in the window and resets the array', function (done) {
+    it('trips on the 5th polling error in the window and resets the array', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
@@ -783,9 +772,9 @@ describe('bot-node — polling-burst circuit breaker (issue #442 retest 2026-05-
                     n.recordPollingError();
                 }
                 // 5th call trips.
-                expect(n.recordPollingError()).to.equal(true);
+                assert.strictEqual(n.recordPollingError(), true);
                 // Reset so the breaker doesn't fire again while the rebuild is in flight.
-                expect(n.pollingErrorTimes).to.deep.equal([]);
+                assert.deepStrictEqual(n.pollingErrorTimes, []);
                 done();
             } catch (err) {
                 done(err);
@@ -793,7 +782,7 @@ describe('bot-node — polling-burst circuit breaker (issue #442 retest 2026-05-
         });
     });
 
-    it('prunes timestamps older than the 60 s window', function (done) {
+    it('prunes timestamps older than the 60 s window', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
@@ -803,8 +792,8 @@ describe('bot-node — polling-burst circuit breaker (issue #442 retest 2026-05-
                     n.pollingErrorTimes.push(ancient);
                 }
                 // A fresh call must prune the old ones and not trip on its own.
-                expect(n.recordPollingError()).to.equal(false);
-                expect(n.pollingErrorTimes.length).to.equal(1);
+                assert.strictEqual(n.recordPollingError(), false);
+                assert.strictEqual(n.pollingErrorTimes.length, 1);
                 done();
             } catch (err) {
                 done(err);
@@ -812,7 +801,7 @@ describe('bot-node — polling-burst circuit breaker (issue #442 retest 2026-05-
         });
     });
 
-    it('only trips when the 5 calls fall *inside* the window', function (done) {
+    it('only trips when the 5 calls fall *inside* the window', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const n = helper.getNode('b1');
@@ -820,13 +809,13 @@ describe('bot-node — polling-burst circuit breaker (issue #442 retest 2026-05-
                 const ancient = Date.now() - 70000;
                 for (let i = 0; i < 3; i++) n.pollingErrorTimes.push(ancient);
                 for (let i = 0; i < 1; i++) n.recordPollingError();
-                expect(n.pollingErrorTimes.length).to.equal(1); // ancients pruned
+                assert.strictEqual(n.pollingErrorTimes.length, 1); // ancients pruned
                 // 3 more fresh calls — 4 in-window total. Still no trip.
                 for (let i = 0; i < 3; i++) {
-                    expect(n.recordPollingError()).to.equal(false);
+                    assert.strictEqual(n.recordPollingError(), false);
                 }
                 // 5th fresh call inside the window trips.
-                expect(n.recordPollingError()).to.equal(true);
+                assert.strictEqual(n.recordPollingError(), true);
                 done();
             } catch (err) {
                 done(err);

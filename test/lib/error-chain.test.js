@@ -1,11 +1,12 @@
-const { expect } = require('chai');
+const { describe, it } = require('node:test');
+const assert = require('node:assert');
 const { formatErrorChain } = require('../../telegrambot/lib/error-chain');
 
 // formatErrorChain — leaf-message extraction for Bot error: log lines (#442 retest)
 
 describe('error-chain — formatErrorChain', function () {
     it('returns the message for a plain Error', function () {
-        expect(formatErrorChain(new Error('boom'))).to.equal('boom');
+        assert.strictEqual(formatErrorChain(new Error('boom')), 'boom');
     });
 
     it('follows error.cause and returns the leaf message', function () {
@@ -14,7 +15,7 @@ describe('error-chain — formatErrorChain', function () {
         mid.cause = leaf;
         const top = new Error('AggregateError');
         top.cause = mid;
-        expect(formatErrorChain(top)).to.equal('connect ETIMEDOUT 149.154.166.110:443');
+        assert.strictEqual(formatErrorChain(top), 'connect ETIMEDOUT 149.154.166.110:443');
     });
 
     it('expands AggregateError.errors and joins multiple leaf messages', function () {
@@ -30,9 +31,9 @@ describe('error-chain — formatErrorChain', function () {
         fatal.cause = wrapped;
         // Expected output covers both leaves; uses semicolon separator.
         const out = formatErrorChain(fatal);
-        expect(out).to.include('149.154.166.110:443');
-        expect(out).to.include('2001:b28:f23d:f001::a:443');
-        expect(out).to.include('; ');
+        assert.ok((out).includes('149.154.166.110:443'));
+        assert.ok((out).includes('2001:b28:f23d:f001::a:443'));
+        assert.ok((out).includes('; '));
     });
 
     it('drops the FatalError/RequestError wrapper labels in favour of the leaves', function () {
@@ -50,10 +51,10 @@ describe('error-chain — formatErrorChain', function () {
         fatal.cause = req;
         const out = formatErrorChain(fatal);
         // Should contain the actionable leaf, not the wrapper labels.
-        expect(out).to.equal('connect ETIMEDOUT 149.154.166.110:443');
-        expect(out).to.not.include('AggregateError');
-        expect(out).to.not.include('RequestError');
-        expect(out).to.not.include('SLIGHTLYBETTEREFATAL');
+        assert.strictEqual(out, 'connect ETIMEDOUT 149.154.166.110:443');
+        assert.ok(!(out).includes('AggregateError'));
+        assert.ok(!(out).includes('RequestError'));
+        assert.ok(!(out).includes('SLIGHTLYBETTEREFATAL'));
     });
 
     it('deduplicates identical leaf messages', function () {
@@ -61,7 +62,7 @@ describe('error-chain — formatErrorChain', function () {
         const leaf2 = new Error('socket hang up');
         const agg = new Error('AggregateError');
         agg.errors = [leaf1, leaf2];
-        expect(formatErrorChain(agg)).to.equal('socket hang up');
+        assert.strictEqual(formatErrorChain(agg), 'socket hang up');
     });
 
     it('handles a cycle without infinite-looping', function () {
@@ -71,7 +72,7 @@ describe('error-chain — formatErrorChain', function () {
         b.cause = a; // cycle
         // Should terminate and produce a usable string (depth limit + seen set guard it).
         const out = formatErrorChain(a);
-        expect(out.length).to.be.greaterThan(0);
+        assert.ok(out.length > 0);
     });
 
     it('caps depth at 10 even if a malformed cause chain is very long', function () {
@@ -85,15 +86,15 @@ describe('error-chain — formatErrorChain', function () {
         const out = formatErrorChain(cur);
         // We stop at depth 10; the leaf at the bottom isn't reachable but a
         // mid-chain message is the surviving "leaf" of our truncated walk.
-        expect(out.length).to.be.greaterThan(0);
-        expect(out).to.not.include('leaf-final'); // depth limit kicked in
+        assert.ok(out.length > 0);
+        assert.ok(!(out).includes('leaf-final')); // depth limit kicked in
     });
 
     it('falls back to a sensible string for empty / odd input', function () {
-        expect(formatErrorChain(null)).to.equal('');
-        expect(formatErrorChain(undefined)).to.equal('');
-        expect(formatErrorChain({})).to.equal(''); // no message, no String(.) value
+        assert.strictEqual(formatErrorChain(null), '');
+        assert.strictEqual(formatErrorChain(undefined), '');
+        assert.strictEqual(formatErrorChain({}), ''); // no message, no String(.) value
         // A plain error-shaped object (no Error prototype) still works.
-        expect(formatErrorChain({ message: 'manual' })).to.equal('manual');
+        assert.strictEqual(formatErrorChain({ message: 'manual' }), 'manual');
     });
 });

@@ -1,12 +1,12 @@
+const { describe, it, before, after, afterEach } = require('node:test');
+const assert = require('node:assert');
 const helper = require('node-red-node-test-helper');
-const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
 const { startMock } = require('../fixtures/telegram-mock.js');
 
 helper.init(require.resolve('node-red'));
 
 describe('integration: control "setwebhook" command (issue #410)', function () {
-    this.timeout(10000);
 
     let mock;
 
@@ -39,7 +39,7 @@ describe('integration: control "setwebhook" command (issue #410)', function () {
         ];
     }
 
-    it('forwards the new URL to bot.setWebHook against the mocked API', function (done) {
+    it('forwards the new URL to bot.setWebHook against the mocked API', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             const c = helper.getNode('c1');
             const out = helper.getNode('out');
@@ -47,10 +47,10 @@ describe('integration: control "setwebhook" command (issue #410)', function () {
             out.on('input', function (msg) {
                 try {
                     const calls = mock.callsTo('setWebHook');
-                    expect(calls).to.have.length(1);
+                    assert.strictEqual((calls).length, 1);
                     const url = (calls[0].body && calls[0].body.url) || (calls[0].query && calls[0].query.url) || '';
-                    expect(String(url)).to.include('new-ngrok-tunnel');
-                    expect(msg.payload.result).to.equal(true);
+                    assert.ok((String(url)).includes('new-ngrok-tunnel'));
+                    assert.strictEqual(msg.payload.result, true);
                     done();
                 } catch (err) {
                     done(err);
@@ -61,15 +61,15 @@ describe('integration: control "setwebhook" command (issue #410)', function () {
         });
     });
 
-    it('with an empty url, calls bot.deleteWebHook instead', function (done) {
+    it('with an empty url, calls bot.deleteWebHook instead', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             const c = helper.getNode('c1');
             const out = helper.getNode('out');
 
             out.on('input', function () {
                 try {
-                    expect(mock.callsTo('setWebHook')).to.have.length(0);
-                    expect(mock.callsTo('deleteWebHook')).to.have.length(1);
+                    assert.strictEqual((mock.callsTo('setWebHook')).length, 0);
+                    assert.strictEqual((mock.callsTo('deleteWebHook')).length, 1);
                     done();
                 } catch (err) {
                     done(err);
@@ -80,7 +80,7 @@ describe('integration: control "setwebhook" command (issue #410)', function () {
         });
     });
 
-    it('surfaces a setWebHook error as msg.error on the same output', function (done) {
+    it('surfaces a setWebHook error as msg.error on the same output', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             const c = helper.getNode('c1');
             const out = helper.getNode('out');
@@ -89,7 +89,7 @@ describe('integration: control "setwebhook" command (issue #410)', function () {
 
             out.on('input', function (msg) {
                 try {
-                    expect(msg.error).to.match(/Bad Request: bad webhook url/);
+                    assert.match(msg.error, /Bad Request: bad webhook url/);
                     done();
                 } catch (err) {
                     done(err);

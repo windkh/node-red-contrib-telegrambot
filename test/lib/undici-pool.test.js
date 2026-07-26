@@ -1,4 +1,5 @@
-const { expect } = require('chai');
+const { describe, it } = require('node:test');
+const assert = require('node:assert');
 const { Agent } = require('undici');
 const { buildDispatcher, closeDispatcher } = require('../../telegrambot/lib/undici-pool');
 
@@ -7,8 +8,8 @@ describe('undici-pool', function () {
         it('returns a plain undici Agent when no SOCKS opts are supplied', async function () {
             const d = buildDispatcher({});
             try {
-                expect(d).to.be.instanceOf(Agent);
-                expect(d.dispatch).to.be.a('function');
+                assert.ok(d instanceof Agent);
+                assert.strictEqual(typeof d.dispatch, 'function');
             } finally {
                 await d.close().catch(() => {});
             }
@@ -21,8 +22,8 @@ describe('undici-pool', function () {
             const plain = buildDispatcher({});
             const socks = buildDispatcher({ socks: { type: 5, host: '127.0.0.1', port: 1080 } });
             try {
-                expect(socks).to.not.equal(plain);
-                expect(socks.dispatch).to.be.a('function');
+                assert.notStrictEqual(socks, plain);
+                assert.strictEqual(typeof socks.dispatch, 'function');
                 // Both are constructed Agent instances. Differentiating them
                 // via a behavioural test would require a live SOCKS proxy,
                 // which is out of scope for unit tests.
@@ -35,7 +36,7 @@ describe('undici-pool', function () {
         it('passes agentOptions through to the Agent constructor', async function () {
             const d = buildDispatcher({ agent: { connect: { timeout: 5000 } } });
             try {
-                expect(d).to.be.instanceOf(Agent);
+                assert.ok(d instanceof Agent);
             } finally {
                 await d.close().catch(() => {});
             }
@@ -46,9 +47,9 @@ describe('undici-pool', function () {
             const d2 = buildDispatcher(null);
             const d3 = buildDispatcher({});
             try {
-                expect(d1).to.be.instanceOf(Agent);
-                expect(d2).to.be.instanceOf(Agent);
-                expect(d3).to.be.instanceOf(Agent);
+                assert.ok(d1 instanceof Agent);
+                assert.ok(d2 instanceof Agent);
+                assert.ok(d3 instanceof Agent);
             } finally {
                 await Promise.allSettled([d1.close(), d2.close(), d3.close()]);
             }
@@ -58,7 +59,7 @@ describe('undici-pool', function () {
             const a = buildDispatcher({});
             const b = buildDispatcher({});
             try {
-                expect(a).to.not.equal(b);
+                assert.notStrictEqual(a, b);
             } finally {
                 await a.close().catch(() => {});
                 await b.close().catch(() => {});
@@ -79,19 +80,19 @@ describe('undici-pool', function () {
                 },
             };
             await closeDispatcher(fake);
-            expect(closed).to.equal(true);
+            assert.strictEqual(closed, true);
         });
 
         it('is a no-op (resolves) for null / undefined', async function () {
             await closeDispatcher(null);
             await closeDispatcher(undefined);
             // reaching here without throwing is the assertion
-            expect(true).to.equal(true);
+            assert.strictEqual(true, true);
         });
 
         it('tolerates a dispatcher without a close method', async function () {
             await closeDispatcher({});
-            expect(true).to.equal(true);
+            assert.strictEqual(true, true);
         });
     });
 
@@ -118,7 +119,7 @@ describe('undici-pool', function () {
             } finally {
                 await closeDispatcher(dispatcher).catch(() => {});
             }
-            expect(reached).to.equal(true);
+            assert.strictEqual(reached, true);
         });
     });
 });

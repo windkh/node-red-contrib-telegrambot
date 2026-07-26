@@ -1,15 +1,16 @@
+const { describe, it, before, after, afterEach } = require('node:test');
+const assert = require('node:assert');
 const helper = require('node-red-node-test-helper');
-const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
 
 helper.init(require.resolve('node-red'));
 
 describe('telegram receiver (in-node)', function () {
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -26,16 +27,16 @@ describe('telegram receiver (in-node)', function () {
         ];
     }
 
-    it('registers under "telegram receiver" and resolves its config link', function (done) {
+    it('registers under "telegram receiver" and resolves its config link', function (t, done) {
         helper.load(telegrambotModule, flowWithReceiver(), { b1: { token: 'fake' } }, function () {
             try {
                 const r = helper.getNode('r1');
-                expect(r).to.exist;
-                expect(r.type).to.equal('telegram receiver');
-                expect(r.config).to.exist;
-                expect(r.config.botname).to.equal('b');
+                assert.ok(r !== undefined && r !== null);
+                assert.strictEqual(r.type, 'telegram receiver');
+                assert.ok(r.config !== undefined && r.config !== null);
+                assert.strictEqual(r.config.botname, 'b');
                 // attachedListeners is initialised by the node, even if start() didn't fire any.
-                expect(r.attachedListeners).to.be.an('array');
+                assert.ok(Array.isArray(r.attachedListeners));
                 done();
             } catch (err) {
                 done(err);
@@ -43,13 +44,13 @@ describe('telegram receiver (in-node)', function () {
         });
     });
 
-    it('exposes start / stop / processMessage / on-close behaviour', function (done) {
+    it('exposes start / stop / processMessage / on-close behaviour', function (t, done) {
         helper.load(telegrambotModule, flowWithReceiver(), { b1: { token: 'fake' } }, function () {
             try {
                 const r = helper.getNode('r1');
-                expect(r.start).to.be.a('function');
-                expect(r.stop).to.be.a('function');
-                expect(r.processMessage).to.be.a('function');
+                assert.strictEqual(typeof r.start, 'function');
+                assert.strictEqual(typeof r.stop, 'function');
+                assert.strictEqual(typeof r.processMessage, 'function');
                 done();
             } catch (err) {
                 done(err);
@@ -57,19 +58,23 @@ describe('telegram receiver (in-node)', function () {
         });
     });
 
-    it('processMessage forwards an authorised text message to output 1', function (done) {
+    it('processMessage forwards an authorised text message to output 1', function (t, done) {
         helper.load(telegrambotModule, flowWithReceiver(), { b1: { token: 'fake' } }, function () {
             try {
                 const r = helper.getNode('r1');
                 const out = helper.getNode('out');
                 const unauth = helper.getNode('unauth');
 
+                // An authorised message must NOT reach the unauthorised output (output 2).
+                unauth.on('input', function () {
+                    done(new Error('authorised message must not reach the unauthorised output'));
+                });
+
                 out.on('input', function (msg) {
                     try {
-                        expect(msg.payload.type).to.equal('message');
-                        expect(msg.payload.content).to.equal('hi there');
-                        expect(msg.payload.chatId).to.equal(123);
-                        expect(unauth.input).to.not.have.been;
+                        assert.strictEqual(msg.payload.type, 'message');
+                        assert.strictEqual(msg.payload.content, 'hi there');
+                        assert.strictEqual(msg.payload.chatId, 123);
                         done();
                     } catch (err) {
                         done(err);
@@ -90,7 +95,7 @@ describe('telegram receiver (in-node)', function () {
         });
     });
 
-    it('processMessage routes an unauthorised user to output 2', function (done) {
+    it('processMessage routes an unauthorised user to output 2', function (t, done) {
         const flow = flowWithReceiver();
         // restrict to a different username so 'alice' is unauthorised
         flow[0].usernames = 'bob';
@@ -105,7 +110,7 @@ describe('telegram receiver (in-node)', function () {
                 });
                 unauth.on('input', function (msg) {
                     try {
-                        expect(msg.payload.content).to.equal('hi from alice');
+                        assert.strictEqual(msg.payload.content, 'hi from alice');
                         done();
                     } catch (err) {
                         done(err);
@@ -125,7 +130,7 @@ describe('telegram receiver (in-node)', function () {
         });
     });
 
-    it('processMessage skips known commands when filterCommands is enabled', function (done) {
+    it('processMessage skips known commands when filterCommands is enabled', function (t, done) {
         const flow = flowWithReceiver({ filterCommands: true });
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
             try {
@@ -151,7 +156,7 @@ describe('telegram receiver (in-node)', function () {
                 // give Node-RED an event-loop tick to be sure it didn't fire
                 setTimeout(function () {
                     try {
-                        expect(fired).to.equal(false);
+                        assert.strictEqual(fired, false);
                         done();
                     } catch (err) {
                         done(err);

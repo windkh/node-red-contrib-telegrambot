@@ -1,4 +1,5 @@
-const { expect } = require('chai');
+const { describe, it } = require('node:test');
+const assert = require('node:assert');
 const { migrateLegacyOptions } = require('../../telegrambot/lib/legacy-options');
 
 describe('legacy-options — migrateLegacyOptions', function () {
@@ -7,10 +8,10 @@ describe('legacy-options — migrateLegacyOptions', function () {
             const warns = [];
             const opts = { reply_to_message_id: 123 };
             migrateLegacyOptions(opts, (m) => warns.push(m));
-            expect(opts.reply_to_message_id).to.equal(undefined);
-            expect(opts.reply_parameters).to.deep.equal({ message_id: 123 });
-            expect(warns).to.have.length(1);
-            expect(warns[0]).to.match(/reply_to_message_id/);
+            assert.strictEqual(opts.reply_to_message_id, undefined);
+            assert.deepStrictEqual(opts.reply_parameters, { message_id: 123 });
+            assert.strictEqual((warns).length, 1);
+            assert.match(warns[0], /reply_to_message_id/);
         });
 
         it('preserves an existing reply_parameters object', function () {
@@ -19,7 +20,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 reply_parameters: { quote: 'hello' },
             };
             migrateLegacyOptions(opts, () => {});
-            expect(opts.reply_parameters).to.deep.equal({ message_id: 123, quote: 'hello' });
+            assert.deepStrictEqual(opts.reply_parameters, { message_id: 123, quote: 'hello' });
         });
 
         it("does not overwrite reply_parameters.message_id when caller already set it", function () {
@@ -28,8 +29,8 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 reply_parameters: { message_id: 999 },
             };
             migrateLegacyOptions(opts, () => {});
-            expect(opts.reply_parameters.message_id).to.equal(999);
-            expect(opts.reply_to_message_id).to.equal(undefined);
+            assert.strictEqual(opts.reply_parameters.message_id, 999);
+            assert.strictEqual(opts.reply_to_message_id, undefined);
         });
     });
 
@@ -38,17 +39,17 @@ describe('legacy-options — migrateLegacyOptions', function () {
             const warns = [];
             const opts = { thumb: 'file_id_123' };
             migrateLegacyOptions(opts, (m) => warns.push(m));
-            expect(opts.thumb).to.equal(undefined);
-            expect(opts.thumbnail).to.equal('file_id_123');
-            expect(warns).to.have.length(1);
-            expect(warns[0]).to.match(/thumb/);
+            assert.strictEqual(opts.thumb, undefined);
+            assert.strictEqual(opts.thumbnail, 'file_id_123');
+            assert.strictEqual((warns).length, 1);
+            assert.match(warns[0], /thumb/);
         });
 
         it('does not overwrite an existing thumbnail', function () {
             const opts = { thumb: 'old', thumbnail: 'new' };
             migrateLegacyOptions(opts, () => {});
-            expect(opts.thumbnail).to.equal('new');
-            expect(opts.thumb).to.equal(undefined);
+            assert.strictEqual(opts.thumbnail, 'new');
+            assert.strictEqual(opts.thumb, undefined);
         });
     });
 
@@ -57,22 +58,22 @@ describe('legacy-options — migrateLegacyOptions', function () {
             const warns = [];
             const opts = { disable_web_page_preview: true };
             migrateLegacyOptions(opts, (m) => warns.push(m));
-            expect(opts.disable_web_page_preview).to.equal(undefined);
-            expect(opts.link_preview_options).to.deep.equal({ is_disabled: true });
-            expect(warns).to.have.length(1);
-            expect(warns[0]).to.match(/disable_web_page_preview/);
+            assert.strictEqual(opts.disable_web_page_preview, undefined);
+            assert.deepStrictEqual(opts.link_preview_options, { is_disabled: true });
+            assert.strictEqual((warns).length, 1);
+            assert.match(warns[0], /disable_web_page_preview/);
         });
 
         it('coerces non-boolean truthy values', function () {
             const opts = { disable_web_page_preview: 1 };
             migrateLegacyOptions(opts, () => {});
-            expect(opts.link_preview_options).to.deep.equal({ is_disabled: true });
+            assert.deepStrictEqual(opts.link_preview_options, { is_disabled: true });
         });
 
         it('rewrites the false form too', function () {
             const opts = { disable_web_page_preview: false };
             migrateLegacyOptions(opts, () => {});
-            expect(opts.link_preview_options).to.deep.equal({ is_disabled: false });
+            assert.deepStrictEqual(opts.link_preview_options, { is_disabled: false });
         });
 
         it('does not overwrite an existing link_preview_options object', function () {
@@ -81,11 +82,11 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 link_preview_options: { is_disabled: false, url: 'https://example.com' },
             };
             migrateLegacyOptions(opts, () => {});
-            expect(opts.link_preview_options).to.deep.equal({
+            assert.deepStrictEqual(opts.link_preview_options, {
                 is_disabled: false,
                 url: 'https://example.com',
             });
-            expect(opts.disable_web_page_preview).to.equal(undefined);
+            assert.strictEqual(opts.disable_web_page_preview, undefined);
         });
     });
 
@@ -96,12 +97,12 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 reply_markup: { keyboard: [['Yes'], ['No', 'Cancel']] },
             };
             migrateLegacyOptions(opts, (m) => warns.push(m));
-            expect(opts.reply_markup.keyboard).to.deep.equal([
+            assert.deepStrictEqual(opts.reply_markup.keyboard, [
                 [{ text: 'Yes' }],
                 [{ text: 'No' }, { text: 'Cancel' }],
             ]);
-            expect(warns).to.have.length(1);
-            expect(warns[0]).to.match(/keyboard/);
+            assert.strictEqual((warns).length, 1);
+            assert.match(warns[0], /keyboard/);
         });
 
         it('leaves already-correct { text } cells alone', function () {
@@ -110,9 +111,9 @@ describe('legacy-options — migrateLegacyOptions', function () {
             };
             const warns = [];
             migrateLegacyOptions(opts, (m) => warns.push(m));
-            expect(opts.reply_markup.keyboard).to.deep.equal([[{ text: 'Yes' }, { text: 'No' }]]);
+            assert.deepStrictEqual(opts.reply_markup.keyboard, [[{ text: 'Yes' }, { text: 'No' }]]);
             // No keyboard warn — nothing was rewritten.
-            expect(warns.filter((m) => /keyboard/.test(m))).to.have.length(0);
+            assert.strictEqual((warns.filter((m) => /keyboard/.test(m))).length, 0);
         });
 
         it('handles mixed rows (some strings, some objects)', function () {
@@ -120,7 +121,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 reply_markup: { keyboard: [['Yes', { text: 'Maybe' }, 'No']] },
             };
             migrateLegacyOptions(opts, () => {});
-            expect(opts.reply_markup.keyboard).to.deep.equal([
+            assert.deepStrictEqual(opts.reply_markup.keyboard, [
                 [{ text: 'Yes' }, { text: 'Maybe' }, { text: 'No' }],
             ]);
         });
@@ -132,17 +133,16 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 },
             };
             migrateLegacyOptions(opts, () => {});
-            expect(opts.reply_markup.inline_keyboard).to.deep.equal([
+            assert.deepStrictEqual(opts.reply_markup.inline_keyboard, [
                 [{ text: 'Open', url: 'https://example.com' }],
             ]);
         });
 
         it('tolerates missing reply_markup or missing keyboard', function () {
-            expect(() => migrateLegacyOptions({}, () => {})).to.not.throw();
-            expect(() => migrateLegacyOptions({ reply_markup: {} }, () => {})).to.not.throw();
-            expect(() =>
-                migrateLegacyOptions({ reply_markup: { keyboard: null } }, () => {})
-            ).to.not.throw();
+            assert.doesNotThrow(() => migrateLegacyOptions({}, () => {}));
+            assert.doesNotThrow(() => migrateLegacyOptions({ reply_markup: {} }, () => {}));
+            assert.doesNotThrow(() =>
+                migrateLegacyOptions({ reply_markup: { keyboard: null } }, () => {}));
         });
     });
 
@@ -154,13 +154,13 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 reply_parameters: { message_id: 5 },
             };
             migrateLegacyOptions(opts, (m) => warns.push(m));
-            expect(opts.allow_sending_without_reply).to.equal(undefined);
-            expect(opts.reply_parameters).to.deep.equal({
+            assert.strictEqual(opts.allow_sending_without_reply, undefined);
+            assert.deepStrictEqual(opts.reply_parameters, {
                 message_id: 5,
                 allow_sending_without_reply: true,
             });
-            expect(warns).to.have.length(1);
-            expect(warns[0]).to.match(/allow_sending_without_reply/);
+            assert.strictEqual((warns).length, 1);
+            assert.match(warns[0], /allow_sending_without_reply/);
         });
 
         it('folds into a reply_parameters created by the reply_to_message_id shim', function () {
@@ -171,7 +171,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 allow_sending_without_reply: true,
             };
             migrateLegacyOptions(opts, () => {});
-            expect(opts.reply_parameters).to.deep.equal({
+            assert.deepStrictEqual(opts.reply_parameters, {
                 message_id: 5,
                 allow_sending_without_reply: true,
             });
@@ -181,9 +181,9 @@ describe('legacy-options — migrateLegacyOptions', function () {
             const warns = [];
             const opts = { allow_sending_without_reply: true };
             migrateLegacyOptions(opts, (m) => warns.push(m));
-            expect(opts.allow_sending_without_reply).to.equal(undefined);
-            expect(opts.reply_parameters).to.equal(undefined);
-            expect(warns).to.have.length(1);
+            assert.strictEqual(opts.allow_sending_without_reply, undefined);
+            assert.strictEqual(opts.reply_parameters, undefined);
+            assert.strictEqual((warns).length, 1);
         });
     });
 
@@ -199,13 +199,13 @@ describe('legacy-options — migrateLegacyOptions', function () {
             };
             migrateLegacyOptions(opts, (m) => warns.push(m));
 
-            expect(opts).to.deep.equal({
+            assert.deepStrictEqual(opts, {
                 thumbnail: 'thumb-id',
                 link_preview_options: { is_disabled: true },
                 reply_parameters: { message_id: 42, allow_sending_without_reply: true },
                 reply_markup: { keyboard: [[{ text: 'Yes' }], [{ text: 'No' }]] },
             });
-            expect(warns).to.have.length(5);
+            assert.strictEqual((warns).length, 5);
         });
 
         it('is idempotent — running twice does not re-warn or re-transform', function () {
@@ -216,13 +216,13 @@ describe('legacy-options — migrateLegacyOptions', function () {
             const warns1Count = warns.length;
 
             migrateLegacyOptions(opts, (m) => warns.push(m));
-            expect(opts).to.deep.equal(after1);
-            expect(warns.length).to.equal(warns1Count);
+            assert.deepStrictEqual(opts, after1);
+            assert.strictEqual(warns.length, warns1Count);
         });
 
         it('returns the same object reference', function () {
             const opts = {};
-            expect(migrateLegacyOptions(opts, () => {})).to.equal(opts);
+            assert.strictEqual(migrateLegacyOptions(opts, () => {}), opts);
         });
 
         it('is a no-op when no deprecated fields are present', function () {
@@ -234,22 +234,22 @@ describe('legacy-options — migrateLegacyOptions', function () {
             };
             const before = JSON.parse(JSON.stringify(opts));
             migrateLegacyOptions(opts, (m) => warns.push(m));
-            expect(opts).to.deep.equal(before);
-            expect(warns).to.deep.equal([]);
+            assert.deepStrictEqual(opts, before);
+            assert.deepStrictEqual(warns, []);
         });
 
         it('tolerates null / undefined / non-object input', function () {
-            expect(() => migrateLegacyOptions(null, () => {})).to.not.throw();
-            expect(() => migrateLegacyOptions(undefined, () => {})).to.not.throw();
-            expect(() => migrateLegacyOptions('string', () => {})).to.not.throw();
-            expect(migrateLegacyOptions(null, () => {})).to.equal(null);
-            expect(migrateLegacyOptions(undefined, () => {})).to.equal(undefined);
+            assert.doesNotThrow(() => migrateLegacyOptions(null, () => {}));
+            assert.doesNotThrow(() => migrateLegacyOptions(undefined, () => {}));
+            assert.doesNotThrow(() => migrateLegacyOptions('string', () => {}));
+            assert.strictEqual(migrateLegacyOptions(null, () => {}), null);
+            assert.strictEqual(migrateLegacyOptions(undefined, () => {}), undefined);
         });
 
         it('tolerates a missing warnFn', function () {
             const opts = { reply_to_message_id: 1 };
-            expect(() => migrateLegacyOptions(opts)).to.not.throw();
-            expect(opts.reply_parameters).to.deep.equal({ message_id: 1 });
+            assert.doesNotThrow(() => migrateLegacyOptions(opts));
+            assert.deepStrictEqual(opts.reply_parameters, { message_id: 1 });
         });
     });
 });

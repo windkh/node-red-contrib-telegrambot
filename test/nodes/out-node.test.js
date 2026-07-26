@@ -1,5 +1,6 @@
+const { describe, it, before, after, afterEach } = require('node:test');
+const assert = require('node:assert');
 const helper = require('node-red-node-test-helper');
-const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
 
 helper.init(require.resolve('node-red'));
@@ -36,11 +37,11 @@ function makeBotStub(record) {
 }
 
 describe('telegram sender (out-node)', function () {
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -56,13 +57,13 @@ describe('telegram sender (out-node)', function () {
         ];
     }
 
-    it('registers under "telegram sender"', function (done) {
+    it('registers under "telegram sender"', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
-                expect(s).to.exist;
-                expect(s.type).to.equal('telegram sender');
-                expect(s.queueManager).to.exist;
+                assert.ok(s !== undefined && s !== null);
+                assert.strictEqual(s.type, 'telegram sender');
+                assert.ok(s.queueManager !== undefined && s.queueManager !== null);
                 done();
             } catch (err) {
                 done(err);
@@ -70,7 +71,7 @@ describe('telegram sender (out-node)', function () {
         });
     });
 
-    it('warns and short-circuits when msg.payload is empty', function (done) {
+    it('warns and short-circuits when msg.payload is empty', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -81,7 +82,7 @@ describe('telegram sender (out-node)', function () {
                 s.receive({});
                 setTimeout(function () {
                     try {
-                        expect(warned).to.equal('msg.payload is empty');
+                        assert.strictEqual(warned, 'msg.payload is empty');
                         done();
                     } catch (err) {
                         done(err);
@@ -93,7 +94,7 @@ describe('telegram sender (out-node)', function () {
         });
     });
 
-    it('dispatches a "message" send through the bot stub and emits on its output', function (done) {
+    it('dispatches a "message" send through the bot stub and emits on its output', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -107,11 +108,11 @@ describe('telegram sender (out-node)', function () {
                 out.on('input', function (msg) {
                     try {
                         // processResult writes the api result back to msg.payload.content
-                        expect(msg.payload.sentMessageId).to.equal(999);
-                        expect(record).to.have.length(1);
-                        expect(record[0].method).to.equal('sendMessage');
-                        expect(record[0].args[0]).to.equal(123); // chatId
-                        expect(record[0].args[1]).to.equal('hello world');
+                        assert.strictEqual(msg.payload.sentMessageId, 999);
+                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record[0].method, 'sendMessage');
+                        assert.strictEqual(record[0].args[0], 123); // chatId
+                        assert.strictEqual(record[0].args[1], 'hello world');
                         done();
                     } catch (err) {
                         done(err);
@@ -125,7 +126,7 @@ describe('telegram sender (out-node)', function () {
         });
     });
 
-    it('chunks a >4000-char text message into sequential sendMessage calls', function (done) {
+    it('chunks a >4000-char text message into sequential sendMessage calls', function (t, done) {
         // Regression: the V17.2.x do-while dispatched all chunks in parallel.
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
@@ -140,10 +141,10 @@ describe('telegram sender (out-node)', function () {
                 out.on('input', function () {
                     try {
                         // 9001 chars in 4000-char chunks => 3 sends (4000 + 4000 + 1001).
-                        expect(record).to.have.length(3);
+                        assert.strictEqual((record).length, 3);
                         record.forEach(function (call) {
-                            expect(call.method).to.equal('sendMessage');
-                            expect(call.args[1].length).to.be.lessThanOrEqual(4000);
+                            assert.strictEqual(call.method, 'sendMessage');
+                            assert.ok(call.args[1].length <= 4000);
                         });
                         // And only ONE pass through processResult — i.e., exactly one
                         // node.send emitted (out.on('input', ...) fired once).
@@ -160,7 +161,7 @@ describe('telegram sender (out-node)', function () {
         });
     });
 
-    it('dispatches a "photo" send through the right bot method', function (done) {
+    it('dispatches a "photo" send through the right bot method', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -173,9 +174,9 @@ describe('telegram sender (out-node)', function () {
 
                 out.on('input', function () {
                     try {
-                        expect(record).to.have.length(1);
-                        expect(record[0].method).to.equal('sendPhoto');
-                        expect(record[0].args[1]).to.equal('photo-file-id');
+                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record[0].method, 'sendPhoto');
+                        assert.strictEqual(record[0].args[1], 'photo-file-id');
                         done();
                     } catch (err) {
                         done(err);
@@ -189,7 +190,7 @@ describe('telegram sender (out-node)', function () {
         });
     });
 
-    it('fans an array-of-chatIds payload out across cloned messages', function (done) {
+    it('fans an array-of-chatIds payload out across cloned messages', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -206,11 +207,11 @@ describe('telegram sender (out-node)', function () {
                     if (outputs === 3) {
                         try {
                             // Three independent sendMessage calls, one per chatId.
-                            expect(record).to.have.length(3);
+                            assert.strictEqual((record).length, 3);
                             const chatIds = record.map(function (c) {
                                 return c.args[0];
                             });
-                            expect(chatIds.sort()).to.deep.equal([1, 2, 3]);
+                            assert.deepStrictEqual(chatIds.sort(), [1, 2, 3]);
                             done();
                         } catch (err) {
                             done(err);
@@ -227,11 +228,11 @@ describe('telegram sender (out-node)', function () {
 });
 
 describe('telegram sender (out-node) — legacy-options shim (#448)', function () {
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -247,13 +248,13 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
         ];
     }
 
-    it('exposes deprecationWarnsSeen as an empty Set and migrateOptions as a function', function (done) {
+    it('exposes deprecationWarnsSeen as an empty Set and migrateOptions as a function', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
-                expect(s.deprecationWarnsSeen).to.be.instanceOf(Set);
-                expect(s.deprecationWarnsSeen.size).to.equal(0);
-                expect(s.migrateOptions).to.be.a('function');
+                assert.ok(s.deprecationWarnsSeen instanceof Set);
+                assert.strictEqual(s.deprecationWarnsSeen.size, 0);
+                assert.strictEqual(typeof s.migrateOptions, 'function');
                 done();
             } catch (err) {
                 done(err);
@@ -261,7 +262,7 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
         });
     });
 
-    it('rewrites reply_to_message_id on the send path and warns exactly once per node', function (done) {
+    it('rewrites reply_to_message_id on the send path and warns exactly once per node', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -281,19 +282,19 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
                     outputs++;
                     if (outputs === 2) {
                         try {
-                            expect(record).to.have.length(2);
+                            assert.strictEqual((record).length, 2);
                             // Both sendMessage calls received the rewritten options.
                             record.forEach(function (call) {
-                                expect(call.method).to.equal('sendMessage');
+                                assert.strictEqual(call.method, 'sendMessage');
                                 const sentOptions = call.args[2];
-                                expect(sentOptions.reply_to_message_id).to.equal(undefined);
-                                expect(sentOptions.reply_parameters).to.deep.equal({ message_id: 42 });
+                                assert.strictEqual(sentOptions.reply_to_message_id, undefined);
+                                assert.deepStrictEqual(sentOptions.reply_parameters, { message_id: 42 });
                             });
                             // Despite TWO sends with the deprecated field, exactly ONE warn.
                             const replyWarns = warns.filter(function (w) {
                                 return /reply_to_message_id/.test(w);
                             });
-                            expect(replyWarns).to.have.length(1);
+                            assert.strictEqual((replyWarns).length, 1);
                             done();
                         } catch (err) {
                             done(err);
@@ -323,7 +324,7 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
         });
     });
 
-    it('warns separately for each distinct deprecated field', function (done) {
+    it('warns separately for each distinct deprecated field', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -344,8 +345,8 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
                     if (outputs === 2) {
                         try {
                             // Two distinct deprecated forms across two sends => two warns.
-                            expect(warns.filter((w) => /reply_to_message_id/.test(w))).to.have.length(1);
-                            expect(warns.filter((w) => /disable_web_page_preview/.test(w))).to.have.length(1);
+                            assert.strictEqual((warns.filter((w) => /reply_to_message_id/.test(w))).length, 1);
+                            assert.strictEqual((warns.filter((w) => /disable_web_page_preview/.test(w))).length, 1);
                             done();
                         } catch (err) {
                             done(err);
@@ -375,7 +376,7 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
         });
     });
 
-    it('produces zero deprecation warns when no deprecated fields are present', function (done) {
+    it('produces zero deprecation warns when no deprecated fields are present', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -392,7 +393,7 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
 
                 out.on('input', function () {
                     try {
-                        expect(warns.filter((w) => /DEPRECATED:/.test(w))).to.have.length(0);
+                        assert.strictEqual((warns.filter((w) => /DEPRECATED:/.test(w))).length, 0);
                         done();
                     } catch (err) {
                         done(err);
@@ -413,7 +414,7 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
         });
     });
 
-    it('applies the shim to msg.payload.forward.options on the forwardMessage branch', function (done) {
+    it('applies the shim to msg.payload.forward.options on the forwardMessage branch', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -430,12 +431,12 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
 
                 out.on('input', function () {
                     try {
-                        expect(record).to.have.length(1);
-                        expect(record[0].method).to.equal('forwardMessage');
+                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record[0].method, 'forwardMessage');
                         const fwdOptions = record[0].args[3];
-                        expect(fwdOptions.disable_web_page_preview).to.equal(undefined);
-                        expect(fwdOptions.link_preview_options).to.deep.equal({ is_disabled: true });
-                        expect(warns.filter((w) => /disable_web_page_preview/.test(w))).to.have.length(1);
+                        assert.strictEqual(fwdOptions.disable_web_page_preview, undefined);
+                        assert.deepStrictEqual(fwdOptions.link_preview_options, { is_disabled: true });
+                        assert.strictEqual((warns.filter((w) => /disable_web_page_preview/.test(w))).length, 1);
                         done();
                     } catch (err) {
                         done(err);
@@ -457,11 +458,11 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
 });
 
 describe('telegram sender (out-node) — queue advance on empty-content drop (#450)', function () {
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -477,7 +478,7 @@ describe('telegram sender (out-node) — queue advance on empty-content drop (#4
         ];
     }
 
-    it('advances the per-chatId queue when msg.payload.content is missing', function (done) {
+    it('advances the per-chatId queue when msg.payload.content is missing', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -493,10 +494,10 @@ describe('telegram sender (out-node) — queue advance on empty-content drop (#4
                     try {
                         // The SECOND (non-empty) message reaches the bot stub —
                         // proving the queue advanced past the empty-content head.
-                        expect(record).to.have.length(1);
-                        expect(record[0].method).to.equal('sendMessage');
-                        expect(msg.payload.sentMessageId).to.equal(999);
-                        expect(s.queueManager.processing.get(123)).to.equal(false);
+                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record[0].method, 'sendMessage');
+                        assert.strictEqual(msg.payload.sentMessageId, 999);
+                        assert.strictEqual(s.queueManager.processing.get(123), false);
                         done();
                     } catch (err) {
                         done(err);
@@ -517,7 +518,7 @@ describe('telegram sender (out-node) — queue advance on empty-content drop (#4
         });
     });
 
-    it('per-chatId isolation preserved when both queues see an empty drop', function (done) {
+    it('per-chatId isolation preserved when both queues see an empty drop', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -535,9 +536,9 @@ describe('telegram sender (out-node) — queue advance on empty-content drop (#4
                     if (outputs === 2) {
                         try {
                             // Both content-bearing sends got through.
-                            expect(record).to.have.length(2);
-                            expect(s.queueManager.processing.get(123)).to.equal(false);
-                            expect(s.queueManager.processing.get(456)).to.equal(false);
+                            assert.strictEqual((record).length, 2);
+                            assert.strictEqual(s.queueManager.processing.get(123), false);
+                            assert.strictEqual(s.queueManager.processing.get(456), false);
                             done();
                         } catch (err) {
                             done(err);
@@ -562,7 +563,7 @@ describe('telegram sender (out-node) — editMessageMedia pass-through (lib v1.1
     const path = require('path');
     let tmpFile;
 
-    before(function (done) {
+    before(function (t, done) {
         // Real temp file on disk. As of lib v1.1.1 the node no longer pre-wraps
         // local paths with attach:// — the library uploads a bare local path
         // natively (detecting it via fs.existsSync) — so these tests assert the
@@ -572,7 +573,7 @@ describe('telegram sender (out-node) — editMessageMedia pass-through (lib v1.1
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         try {
             fs.unlinkSync(tmpFile);
         } catch (e) {
@@ -593,7 +594,7 @@ describe('telegram sender (out-node) — editMessageMedia pass-through (lib v1.1
         ];
     }
 
-    it('passes a bare local file path through unchanged (lib v1.1.1 uploads it as multipart)', function (done) {
+    it('passes a bare local file path through unchanged (lib v1.1.1 uploads it as multipart)', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -606,20 +607,20 @@ describe('telegram sender (out-node) — editMessageMedia pass-through (lib v1.1
 
                 out.on('input', function () {
                     try {
-                        expect(record).to.have.length(1);
-                        expect(record[0].method).to.equal('editMessageMedia');
+                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record[0].method, 'editMessageMedia');
                         // First positional arg is the InputMedia object. The node no
                         // longer pre-wraps the path: it is passed through verbatim and
                         // the library uploads the local file natively (see the real-lib
                         // test below that asserts the multipart attach:// form).
                         const media = record[0].args[0];
-                        expect(media.media).to.equal(tmpFile);
-                        expect(media.type).to.equal('photo');
-                        expect(media.caption).to.equal('modified image');
+                        assert.strictEqual(media.media, tmpFile);
+                        assert.strictEqual(media.type, 'photo');
+                        assert.strictEqual(media.caption, 'modified image');
                         // Second positional arg is `form` carrying chat/message ids.
                         const form = record[0].args[1];
-                        expect(form.chat_id).to.equal(138708568);
-                        expect(form.message_id).to.equal(34);
+                        assert.strictEqual(form.chat_id, 138708568);
+                        assert.strictEqual(form.message_id, 34);
                         done();
                     } catch (err) {
                         done(err);
@@ -644,7 +645,7 @@ describe('telegram sender (out-node) — editMessageMedia pass-through (lib v1.1
         });
     });
 
-    it('leaves an attach:// path unchanged (idempotent on already-wrapped input)', function (done) {
+    it('leaves an attach:// path unchanged (idempotent on already-wrapped input)', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -657,7 +658,7 @@ describe('telegram sender (out-node) — editMessageMedia pass-through (lib v1.1
 
                 out.on('input', function () {
                     try {
-                        expect(record[0].args[0].media).to.equal('attach://' + tmpFile);
+                        assert.strictEqual(record[0].args[0].media, 'attach://' + tmpFile);
                         done();
                     } catch (err) {
                         done(err);
@@ -678,7 +679,7 @@ describe('telegram sender (out-node) — editMessageMedia pass-through (lib v1.1
         });
     });
 
-    it('leaves an https:// URL unchanged (no wrap; remote URL goes through as-is)', function (done) {
+    it('leaves an https:// URL unchanged (no wrap; remote URL goes through as-is)', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -691,7 +692,7 @@ describe('telegram sender (out-node) — editMessageMedia pass-through (lib v1.1
 
                 out.on('input', function () {
                     try {
-                        expect(record[0].args[0].media).to.equal('https://example.com/image.png');
+                        assert.strictEqual(record[0].args[0].media, 'https://example.com/image.png');
                         done();
                     } catch (err) {
                         done(err);
@@ -712,7 +713,7 @@ describe('telegram sender (out-node) — editMessageMedia pass-through (lib v1.1
         });
     });
 
-    it('leaves a Telegram file_id unchanged (no fs path match, no wrap)', function (done) {
+    it('leaves a Telegram file_id unchanged (no fs path match, no wrap)', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -725,7 +726,7 @@ describe('telegram sender (out-node) — editMessageMedia pass-through (lib v1.1
 
                 out.on('input', function () {
                     try {
-                        expect(record[0].args[0].media).to.equal('AgACAgIAAxkBA-fake-file-id');
+                        assert.strictEqual(record[0].args[0].media, 'AgACAgIAAxkBA-fake-file-id');
                         done();
                     } catch (err) {
                         done(err);
@@ -802,11 +803,11 @@ describe('editMessageMedia — real library uploads a local file as multipart (l
         const { bot, captured } = captureRequest();
         await bot.editMessageMedia({ type: 'photo', media: tmpFile, caption: 'x' }, { chat_id: 1, message_id: 2 });
 
-        expect(captured.method).to.equal('editMessageMedia');
+        assert.strictEqual(captured.method, 'editMessageMedia');
         const media = JSON.parse(captured.opts.form.media);
-        expect(media.media).to.equal('attach://0_media');
-        expect(media.type).to.equal('photo');
-        expect(captured.opts.formData).to.have.property('0_media');
+        assert.strictEqual(media.media, 'attach://0_media');
+        assert.strictEqual(media.type, 'photo');
+        assert.ok(Object.prototype.hasOwnProperty.call(captured.opts.formData, '0_media'));
     });
 
     it('resolves the legacy attach://<local-path> form to the same multipart upload', async function () {
@@ -814,8 +815,8 @@ describe('editMessageMedia — real library uploads a local file as multipart (l
         await bot.editMessageMedia({ type: 'photo', media: 'attach://' + tmpFile }, { chat_id: 1, message_id: 2 });
 
         const media = JSON.parse(captured.opts.form.media);
-        expect(media.media).to.equal('attach://0_media');
-        expect(captured.opts.formData).to.have.property('0_media');
+        assert.strictEqual(media.media, 'attach://0_media');
+        assert.ok(Object.prototype.hasOwnProperty.call(captured.opts.formData, '0_media'));
     });
 
     it('passes a remote URL through without attaching a file', async function () {
@@ -823,17 +824,18 @@ describe('editMessageMedia — real library uploads a local file as multipart (l
         await bot.editMessageMedia({ type: 'photo', media: 'https://example.com/i.png' }, { chat_id: 1, message_id: 2 });
 
         const media = JSON.parse(captured.opts.form.media);
-        expect(media.media).to.equal('https://example.com/i.png');
-        expect(captured.opts.formData).to.not.have.property('0_media');
+        assert.strictEqual(media.media, 'https://example.com/i.png');
+        // Remote URL is passed through — NO file part attached.
+        assert.ok(!Object.prototype.hasOwnProperty.call(captured.opts.formData, '0_media'));
     });
 });
 
 describe('telegram sender (out-node) — queue advance on non-retry processError (#450 round 2)', function () {
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -867,7 +869,7 @@ describe('telegram sender (out-node) — queue advance on non-retry processError
         return stub;
     }
 
-    it('non-retryable error (Markdown parse failure) advances the queue so subsequent messages run', function (done) {
+    it('non-retryable error (Markdown parse failure) advances the queue so subsequent messages run', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -906,10 +908,10 @@ describe('telegram sender (out-node) — queue advance on non-retry processError
                     // Give the second send a tick to reach the bot stub.
                     setTimeout(function () {
                         try {
-                            expect(record).to.have.length(2);
-                            expect(record[0].args[1]).to.include('underscore');
-                            expect(record[1].args[1]).to.include('plain text');
-                            expect(s.queueManager.processing.get(123)).to.equal(false);
+                            assert.strictEqual((record).length, 2);
+                            assert.ok((record[0].args[1]).includes('underscore'));
+                            assert.ok((record[1].args[1]).includes('plain text'));
+                            assert.strictEqual(s.queueManager.processing.get(123), false);
                             done();
                         } catch (err) {
                             done(err);
@@ -924,11 +926,11 @@ describe('telegram sender (out-node) — queue advance on non-retry processError
 });
 
 describe('telegram sender (out-node) — restrictChatMember V17 ergonomics (examples/supergroupadmin.json)', function () {
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -944,7 +946,7 @@ describe('telegram sender (out-node) — restrictChatMember V17 ergonomics (exam
         ];
     }
 
-    it('lifts flat permission fields into the positional permissions arg', function (done) {
+    it('lifts flat permission fields into the positional permissions arg', function (t, done) {
         // The shape supergroupadmin.json ships — options is the flat permissions
         // object, not nested under options.permissions.
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
@@ -959,13 +961,13 @@ describe('telegram sender (out-node) — restrictChatMember V17 ergonomics (exam
 
                 out.on('input', function () {
                     try {
-                        expect(record).to.have.length(1);
-                        expect(record[0].method).to.equal('restrictChatMember');
+                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record[0].method, 'restrictChatMember');
                         const args = record[0].args;
                         // v1.0.0 signature: (chatId, userId, permissions, form)
-                        expect(args[0]).to.equal(456); // chatId
-                        expect(args[1]).to.equal(42); // userId (content)
-                        expect(args[2]).to.deep.equal({
+                        assert.strictEqual(args[0], 456); // chatId
+                        assert.strictEqual(args[1], 42); // userId (content)
+                        assert.deepStrictEqual(args[2], {
                             can_send_messages: false,
                             can_send_media_messages: false,
                             can_send_polls: false,
@@ -976,7 +978,7 @@ describe('telegram sender (out-node) — restrictChatMember V17 ergonomics (exam
                             can_pin_messages: false,
                         });
                         // No unknown fields → form is empty.
-                        expect(args[3]).to.deep.equal({});
+                        assert.deepStrictEqual(args[3], {});
                         done();
                     } catch (err) {
                         done(err);
@@ -1006,7 +1008,7 @@ describe('telegram sender (out-node) — restrictChatMember V17 ergonomics (exam
         });
     });
 
-    it('still accepts the nested options.permissions form', function (done) {
+    it('still accepts the nested options.permissions form', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -1020,8 +1022,8 @@ describe('telegram sender (out-node) — restrictChatMember V17 ergonomics (exam
                 out.on('input', function () {
                     try {
                         const args = record[0].args;
-                        expect(args[2]).to.deep.equal({ can_send_messages: true });
-                        expect(args[3]).to.deep.equal({}); // permissions key was lifted
+                        assert.deepStrictEqual(args[2], { can_send_messages: true });
+                        assert.deepStrictEqual(args[3], {}); // permissions key was lifted
                         done();
                     } catch (err) {
                         done(err);
@@ -1042,7 +1044,7 @@ describe('telegram sender (out-node) — restrictChatMember V17 ergonomics (exam
         });
     });
 
-    it('leaves non-permission fields on the form arg (until_date, use_independent_chat_permissions)', function (done) {
+    it('leaves non-permission fields on the form arg (until_date, use_independent_chat_permissions)', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -1057,9 +1059,9 @@ describe('telegram sender (out-node) — restrictChatMember V17 ergonomics (exam
                     try {
                         const args = record[0].args;
                         // Permission lifted into args[2].
-                        expect(args[2]).to.deep.equal({ can_send_messages: false });
+                        assert.deepStrictEqual(args[2], { can_send_messages: false });
                         // Non-permission stays in form (args[3]).
-                        expect(args[3]).to.deep.equal({
+                        assert.deepStrictEqual(args[3], {
                             until_date: 1234567890,
                             use_independent_chat_permissions: true,
                         });
@@ -1089,11 +1091,11 @@ describe('telegram sender (out-node) — restrictChatMember V17 ergonomics (exam
 });
 
 describe('telegram sender (out-node) — queue advance on remaining no-dispatch branches (#450 audit)', function () {
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -1114,7 +1116,7 @@ describe('telegram sender (out-node) — queue advance on remaining no-dispatch 
     // send. If queue advance is wired up correctly, the second reaches the
     // bot stub. Pre-fix, the second silently parks behind the wedged head.
 
-    it('mediaGroup with non-array content advances the queue', function (done) {
+    it('mediaGroup with non-array content advances the queue', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -1128,8 +1130,8 @@ describe('telegram sender (out-node) — queue advance on remaining no-dispatch 
 
                 out.on('input', function (msg) {
                     try {
-                        expect(msg.payload.sentMessageId).to.equal(999);
-                        expect(s.queueManager.processing.get(789)).to.equal(false);
+                        assert.strictEqual(msg.payload.sentMessageId, 999);
+                        assert.strictEqual(s.queueManager.processing.get(789), false);
                         done();
                     } catch (err) {
                         done(err);
@@ -1144,7 +1146,7 @@ describe('telegram sender (out-node) — queue advance on remaining no-dispatch 
         });
     });
 
-    it('unknown msg.payload.type (no such bot method) advances the queue', function (done) {
+    it('unknown msg.payload.type (no such bot method) advances the queue', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -1158,8 +1160,8 @@ describe('telegram sender (out-node) — queue advance on remaining no-dispatch 
 
                 out.on('input', function (msg) {
                     try {
-                        expect(msg.payload.sentMessageId).to.equal(999);
-                        expect(s.queueManager.processing.get(789)).to.equal(false);
+                        assert.strictEqual(msg.payload.sentMessageId, 999);
+                        assert.strictEqual(s.queueManager.processing.get(789), false);
                         done();
                     } catch (err) {
                         done(err);
@@ -1174,7 +1176,7 @@ describe('telegram sender (out-node) — queue advance on remaining no-dispatch 
         });
     });
 
-    it('missing msg.payload.type advances the queue', function (done) {
+    it('missing msg.payload.type advances the queue', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -1188,8 +1190,8 @@ describe('telegram sender (out-node) — queue advance on remaining no-dispatch 
 
                 out.on('input', function (msg) {
                     try {
-                        expect(msg.payload.sentMessageId).to.equal(999);
-                        expect(s.queueManager.processing.get(789)).to.equal(false);
+                        assert.strictEqual(msg.payload.sentMessageId, 999);
+                        assert.strictEqual(s.queueManager.processing.get(789), false);
                         done();
                     } catch (err) {
                         done(err);
@@ -1206,11 +1208,11 @@ describe('telegram sender (out-node) — queue advance on remaining no-dispatch 
 });
 
 describe('telegram sender (out-node) — callApi raw-API escape hatch', function () {
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -1252,7 +1254,7 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
         return stub;
     }
 
-    it('invokes the named method with the given args and forwards the result', function (done) {
+    it('invokes the named method with the given args and forwards the result', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -1265,11 +1267,11 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
 
                 out.on('input', function (msg) {
                     try {
-                        expect(record).to.have.lengthOf(1);
-                        expect(record[0].method).to.equal('setMyCommands');
-                        expect(record[0].args).to.deep.equal([[{ command: 'help', description: 'Help' }], {}]);
-                        expect(msg.payload.content).to.deep.equal({ ok: true });
-                        expect(s.queueManager.processing.get(123)).to.equal(false);
+                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record[0].method, 'setMyCommands');
+                        assert.deepStrictEqual(record[0].args, [[{ command: 'help', description: 'Help' }], {}]);
+                        assert.deepStrictEqual(msg.payload.content, { ok: true });
+                        assert.strictEqual(s.queueManager.processing.get(123), false);
                         done();
                     } catch (err) {
                         done(err);
@@ -1290,7 +1292,7 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
         });
     });
 
-    it('works without a chatId (bot-level call) and forwards the result', function (done) {
+    it('works without a chatId (bot-level call) and forwards the result', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -1303,8 +1305,8 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
 
                 out.on('input', function (msg) {
                     try {
-                        expect(record[0].method).to.equal('getMe');
-                        expect(msg.payload.content).to.deep.equal({ id: 1, is_bot: true });
+                        assert.strictEqual(record[0].method, 'getMe');
+                        assert.deepStrictEqual(msg.payload.content, { id: 1, is_bot: true });
                         done();
                     } catch (err) {
                         done(err);
@@ -1318,7 +1320,7 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
         });
     });
 
-    it('refuses a blocklisted lifecycle method and advances the queue', function (done) {
+    it('refuses a blocklisted lifecycle method and advances the queue', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -1332,9 +1334,9 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
 
                 out.on('input', function (msg) {
                     try {
-                        expect(record.some((r) => r.method === 'stopPolling')).to.equal(false);
-                        expect(msg.payload.sentMessageId).to.equal(999);
-                        expect(s.queueManager.processing.get(55)).to.equal(false);
+                        assert.strictEqual(record.some((r) => r.method === 'stopPolling'), false);
+                        assert.strictEqual(msg.payload.sentMessageId, 999);
+                        assert.strictEqual(s.queueManager.processing.get(55), false);
                         done();
                     } catch (err) {
                         done(err);
@@ -1349,7 +1351,7 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
         });
     });
 
-    it('refuses an underscore-prefixed internal method and advances the queue', function (done) {
+    it('refuses an underscore-prefixed internal method and advances the queue', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -1368,8 +1370,8 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
 
                 out.on('input', function (msg) {
                     try {
-                        expect(record.some((r) => r.method === '_request')).to.equal(false);
-                        expect(msg.payload.sentMessageId).to.equal(999);
+                        assert.strictEqual(record.some((r) => r.method === '_request'), false);
+                        assert.strictEqual(msg.payload.sentMessageId, 999);
                         done();
                     } catch (err) {
                         done(err);
@@ -1384,7 +1386,7 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
         });
     });
 
-    it('warns and advances the queue for a non-existent method', function (done) {
+    it('warns and advances the queue for a non-existent method', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -1398,8 +1400,8 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
 
                 out.on('input', function (msg) {
                     try {
-                        expect(msg.payload.sentMessageId).to.equal(999);
-                        expect(s.queueManager.processing.get(55)).to.equal(false);
+                        assert.strictEqual(msg.payload.sentMessageId, 999);
+                        assert.strictEqual(s.queueManager.processing.get(55), false);
                         done();
                     } catch (err) {
                         done(err);
@@ -1414,7 +1416,7 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
         });
     });
 
-    it('warns and advances the queue when args is not an array', function (done) {
+    it('warns and advances the queue when args is not an array', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -1428,8 +1430,8 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
 
                 out.on('input', function (msg) {
                     try {
-                        expect(record.some((r) => r.method === 'setMyCommands')).to.equal(false);
-                        expect(msg.payload.sentMessageId).to.equal(999);
+                        assert.strictEqual(record.some((r) => r.method === 'setMyCommands'), false);
+                        assert.strictEqual(msg.payload.sentMessageId, 999);
                         done();
                     } catch (err) {
                         done(err);
@@ -1444,7 +1446,7 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
         });
     });
 
-    it('routes a synchronous throw into processError and advances the queue', function (done) {
+    it('routes a synchronous throw into processError and advances the queue', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const s = helper.getNode('s1');
@@ -1459,9 +1461,9 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
 
                 out.on('input', function (msg) {
                     try {
-                        expect(record.some((r) => r.method === 'boomSync')).to.equal(true);
-                        expect(msg.payload.sentMessageId).to.equal(999);
-                        expect(s.queueManager.processing.get(55)).to.equal(false);
+                        assert.strictEqual(record.some((r) => r.method === 'boomSync'), true);
+                        assert.strictEqual(msg.payload.sentMessageId, 999);
+                        assert.strictEqual(s.queueManager.processing.get(55), false);
                         done();
                     } catch (err) {
                         done(err);

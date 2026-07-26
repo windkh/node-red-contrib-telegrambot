@@ -1,4 +1,5 @@
-const { expect } = require('chai');
+const { describe, it, beforeEach } = require('node:test');
+const assert = require('node:assert');
 const QueueManager = require('../../telegrambot/lib/queue-manager');
 
 describe('lib/queue-manager', function () {
@@ -9,7 +10,7 @@ describe('lib/queue-manager', function () {
     });
 
     describe('ordering', function () {
-        it('runs single-chat handlers in submission order', function (done) {
+        it('runs single-chat handlers in submission order', function (t, done) {
             const order = [];
             qm.enqueue(1, function () {
                 order.push('a');
@@ -26,12 +27,12 @@ describe('lib/queue-manager', function () {
             // All handlers in this test are synchronous; once the last has
             // called processNext, the queue is drained.
             setImmediate(function () {
-                expect(order).to.deep.equal(['a', 'b', 'c']);
+                assert.deepStrictEqual(order, ['a', 'b', 'c']);
                 done();
             });
         });
 
-        it('serializes handlers per chat — a slow head does not let the tail jump ahead', function (done) {
+        it('serializes handlers per chat — a slow head does not let the tail jump ahead', function (t, done) {
             const order = [];
             qm.enqueue(1, function () {
                 // simulate async work — release after a tick
@@ -46,7 +47,7 @@ describe('lib/queue-manager', function () {
             });
             // Give the macrotask time to run both
             setTimeout(function () {
-                expect(order).to.deep.equal(['slow-a', 'b']);
+                assert.deepStrictEqual(order, ['slow-a', 'b']);
                 done();
             }, 20);
         });
@@ -65,12 +66,12 @@ describe('lib/queue-manager', function () {
                 seen.push('chat-2');
                 qm.processNext(2);
             });
-            expect(seen).to.deep.equal(['chat-1', 'chat-2']);
+            assert.deepStrictEqual(seen, ['chat-1', 'chat-2']);
         });
     });
 
     describe('synchronous-throw resilience', function () {
-        it('drains the head and continues to the next message if a handler throws sync', function (done) {
+        it('drains the head and continues to the next message if a handler throws sync', function (t, done) {
             const order = [];
             try {
                 qm.enqueue(1, function () {
@@ -78,7 +79,7 @@ describe('lib/queue-manager', function () {
                 });
             } catch (err) {
                 // queue-manager re-throws so the caller sees the error
-                expect(err.message).to.equal('boom');
+                assert.strictEqual(err.message, 'boom');
             }
             qm.enqueue(1, function () {
                 order.push('after-boom');
@@ -86,7 +87,7 @@ describe('lib/queue-manager', function () {
             });
             // The recovery advance is via setImmediate, so wait one tick.
             setImmediate(function () {
-                expect(order).to.deep.equal(['after-boom']);
+                assert.deepStrictEqual(order, ['after-boom']);
                 done();
             });
         });
@@ -99,7 +100,7 @@ describe('lib/queue-manager', function () {
     });
 
     describe('retry via repeatProcessMessage', function () {
-        it('re-runs the current head after the requested delay', function (done) {
+        it('re-runs the current head after the requested delay', function (t, done) {
             let calls = 0;
             qm.enqueue(1, function () {
                 calls++;
@@ -112,7 +113,7 @@ describe('lib/queue-manager', function () {
                 }
             });
             setTimeout(function () {
-                expect(calls).to.equal(2);
+                assert.strictEqual(calls, 2);
                 done();
             }, 150);
         });
@@ -123,8 +124,8 @@ describe('lib/queue-manager', function () {
             qm.enqueue(1, function () {});
             qm.enqueue(2, function () {});
             qm.clear();
-            expect(qm.queues.size).to.equal(0);
-            expect(qm.processing.size).to.equal(0);
+            assert.strictEqual(qm.queues.size, 0);
+            assert.strictEqual(qm.processing.size, 0);
         });
     });
 });

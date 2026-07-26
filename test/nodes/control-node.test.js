@@ -1,15 +1,16 @@
+const { describe, it, before, after, afterEach } = require('node:test');
+const assert = require('node:assert');
 const helper = require('node-red-node-test-helper');
-const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
 
 helper.init(require.resolve('node-red'));
 
 describe('telegram control', function () {
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -26,12 +27,12 @@ describe('telegram control', function () {
         ];
     }
 
-    it('registers under "telegram control"', function (done) {
+    it('registers under "telegram control"', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const c = helper.getNode('c1');
-                expect(c).to.exist;
-                expect(c.type).to.equal('telegram control');
+                assert.ok(c !== undefined && c !== null);
+                assert.strictEqual(c.type, 'telegram control');
                 done();
             } catch (err) {
                 done(err);
@@ -39,7 +40,7 @@ describe('telegram control', function () {
         });
     });
 
-    it('warns when msg.payload is empty', function (done) {
+    it('warns when msg.payload is empty', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const c = helper.getNode('c1');
@@ -50,7 +51,7 @@ describe('telegram control', function () {
                 c.receive({});
                 setTimeout(function () {
                     try {
-                        expect(warned).to.equal('msg.payload is empty');
+                        assert.strictEqual(warned, 'msg.payload is empty');
                         done();
                     } catch (err) {
                         done(err);
@@ -62,7 +63,7 @@ describe('telegram control', function () {
         });
     });
 
-    it('routes a "command"-payload through to sendToAllCommandNodes via config', function (done) {
+    it('routes a "command"-payload through to sendToAllCommandNodes via config', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const c = helper.getNode('c1');
@@ -78,11 +79,11 @@ describe('telegram control', function () {
 
                 out.on('input', function () {
                     try {
-                        expect(received).to.exist;
-                        expect(received.text).to.equal('/inject');
+                        assert.ok(received !== undefined && received !== null);
+                        assert.strictEqual(received.text, '/inject');
                         // Defaults filled in by the control branch when from / chat are absent.
-                        expect(received.from).to.deep.equal({ id: 0, username: 'unknown' });
-                        expect(received.chat).to.deep.equal({ id: 0 });
+                        assert.deepStrictEqual(received.from, { id: 0, username: 'unknown' });
+                        assert.deepStrictEqual(received.chat, { id: 0 });
                         done();
                     } catch (err) {
                         done(err);
@@ -96,11 +97,11 @@ describe('telegram control', function () {
         });
     });
 
-    it('restartTimer slot is initially absent and only set on a delayed restart', function (done) {
+    it('restartTimer slot is initially absent and only set on a delayed restart', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const c = helper.getNode('c1');
-                expect(c.restartTimer).to.be.undefined; // not yet set
+                assert.strictEqual(c.restartTimer, undefined); // not yet set
                 done();
             } catch (err) {
                 done(err);

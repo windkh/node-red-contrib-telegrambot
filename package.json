@@ -20,11 +20,16 @@
         "uuid": "^14.0.0"
     },
     "scripts": {
-        "lint": "eslint telegrambot --ext .js --format unix",
+        "lint": "eslint telegrambot",
         "postlint": "echo ✅ lint valid",
-        "test": "mocha",
-        "test:watch": "mocha --watch --reporter min",
-        "test:coverage": "c8 --reporter=text --reporter=lcov --exclude=test --exclude=examples --exclude=doc npm test"
+        "test": "node --test --test-force-exit --test-timeout=30000 --test-concurrency=1 test/lib test/nodes test/integration",
+        "test:watch": "node --test --watch --test-concurrency=1 test/lib test/nodes test/integration",
+        "test:coverage": "c8 --reporter=text --reporter=lcov --exclude=test --exclude=examples --exclude=doc npm test",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "coverage": "c8 npm test",
+        "coverage:check": "c8 --check-coverage npm test"
     },
     "husky": {
         "hooks": {
@@ -53,15 +58,14 @@
     "license": "MIT",
     "devDependencies": {
         "c8": "^9.1.0",
-        "chai": "^4.4.1",
-        "eslint": "^8.20.0",
+        "eslint": "^9.0.0",
         "eslint-config-prettier": "^8.5.0",
-        "eslint-plugin-prettier": "^4.2.1",
         "husky": "^8.0.1",
-        "mocha": "^10.4.0",
         "node-red": "^5.0.1",
         "node-red-node-test-helper": "^0.3.4",
         "prettier": "^2.7.1",
-        "proxyquire": "^2.1.3"
+        "proxyquire": "^2.1.3",
+        "@eslint/js": "^9.0.0",
+        "globals": "^15.0.0"
     }
 }

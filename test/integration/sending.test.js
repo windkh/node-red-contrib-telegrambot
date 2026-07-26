@@ -1,12 +1,12 @@
+const { describe, it, before, after, afterEach } = require('node:test');
+const assert = require('node:assert');
 const helper = require('node-red-node-test-helper');
-const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
 const { startMock } = require('../fixtures/telegram-mock.js');
 
 helper.init(require.resolve('node-red'));
 
 describe('integration: outbound send transport against a mocked Telegram API', function () {
-    this.timeout(10000);
 
     let mock;
 
@@ -44,7 +44,7 @@ describe('integration: outbound send transport against a mocked Telegram API', f
         ];
     }
 
-    it('POSTs to /bot<TOKEN>/sendMessage when a text "message" is enqueued', function (done) {
+    it('POSTs to /bot<TOKEN>/sendMessage when a text "message" is enqueued', function (t, done) {
         helper.load(telegrambotModule, senderOnlyFlow(), { b1: { token: 'fake' } }, function () {
             const s = helper.getNode('s1');
             const out = helper.getNode('out');
@@ -52,11 +52,11 @@ describe('integration: outbound send transport against a mocked Telegram API', f
             out.on('input', function (msg) {
                 try {
                     const calls = mock.callsTo('sendMessage');
-                    expect(calls).to.have.length(1);
-                    expect(calls[0].body.chat_id).to.equal('999');
-                    expect(calls[0].body.text).to.equal('hello over HTTP');
+                    assert.strictEqual((calls).length, 1);
+                    assert.strictEqual(calls[0].body.chat_id, '999');
+                    assert.strictEqual(calls[0].body.text, 'hello over HTTP');
                     // processResult writes the api result onto msg.payload
-                    expect(msg.payload.sentMessageId).to.equal(1000); // mock's first id
+                    assert.strictEqual(msg.payload.sentMessageId, 1000); // mock's first id
                     done();
                 } catch (err) {
                     done(err);
@@ -67,7 +67,7 @@ describe('integration: outbound send transport against a mocked Telegram API', f
         });
     });
 
-    it('chunks a >4000-char message into N sequential POSTs and emits exactly once', function (done) {
+    it('chunks a >4000-char message into N sequential POSTs and emits exactly once', function (t, done) {
         helper.load(telegrambotModule, senderOnlyFlow(), { b1: { token: 'fake' } }, function () {
             const s = helper.getNode('s1');
             const out = helper.getNode('out');
@@ -84,13 +84,13 @@ describe('integration: outbound send transport against a mocked Telegram API', f
             setTimeout(function () {
                 try {
                     const calls = mock.callsTo('sendMessage');
-                    expect(calls).to.have.length(3);
+                    assert.strictEqual((calls).length, 3);
                     calls.forEach(function (c) {
-                        expect(c.body.text.length).to.be.lessThanOrEqual(4000);
+                        assert.ok(c.body.text.length <= 4000);
                     });
                     // The chunk-sequencing fix in V17.3.0 guarantees exactly one emit per
                     // original message regardless of chunk count.
-                    expect(emits).to.equal(1);
+                    assert.strictEqual(emits, 1);
                     done();
                 } catch (err) {
                     done(err);
@@ -99,7 +99,7 @@ describe('integration: outbound send transport against a mocked Telegram API', f
         });
     });
 
-    it('retries on HTTP 429 with the API-supplied retry_after delay', function (done) {
+    it('retries on HTTP 429 with the API-supplied retry_after delay', function (t, done) {
         helper.load(telegrambotModule, senderOnlyFlow(), { b1: { token: 'fake' } }, function () {
             const s = helper.getNode('s1');
             const out = helper.getNode('out');
@@ -114,8 +114,8 @@ describe('integration: outbound send transport against a mocked Telegram API', f
                 try {
                     const calls = mock.callsTo('sendMessage');
                     // Exactly one retry → two total POSTs.
-                    expect(calls).to.have.length(2);
-                    expect(msg.payload.sentMessageId).to.exist;
+                    assert.strictEqual((calls).length, 2);
+                    assert.ok(msg.payload.sentMessageId !== undefined && msg.payload.sentMessageId !== null);
                     done();
                 } catch (err) {
                     done(err);
@@ -126,7 +126,7 @@ describe('integration: outbound send transport against a mocked Telegram API', f
         });
     });
 
-    it('falls back to plain mode when Markdown parse fails on the first chunk', function (done) {
+    it('falls back to plain mode when Markdown parse fails on the first chunk', function (t, done) {
         helper.load(telegrambotModule, senderOnlyFlow(), { b1: { token: 'fake' } }, function () {
             const s = helper.getNode('s1');
             const out = helper.getNode('out');
@@ -140,10 +140,10 @@ describe('integration: outbound send transport against a mocked Telegram API', f
             out.on('input', function () {
                 try {
                     const calls = mock.callsTo('sendMessage');
-                    expect(calls).to.have.length(2);
+                    assert.strictEqual((calls).length, 2);
                     // First attempt carried parse_mode; the fallback attempt did not.
-                    expect(calls[0].body.parse_mode).to.equal('Markdown');
-                    expect(calls[1].body.parse_mode).to.be.undefined;
+                    assert.strictEqual(calls[0].body.parse_mode, 'Markdown');
+                    assert.strictEqual(calls[1].body.parse_mode, undefined);
                     done();
                 } catch (err) {
                     done(err);
@@ -156,13 +156,13 @@ describe('integration: outbound send transport against a mocked Telegram API', f
         });
     });
 
-    it('routes "forward" payloads through forwardMessage', function (done) {
+    it('routes "forward" payloads through forwardMessage', function (t, done) {
         helper.load(telegrambotModule, senderOnlyFlow(), { b1: { token: 'fake' } }, function () {
             const s = helper.getNode('s1');
             const out = helper.getNode('out');
             out.on('input', function () {
                 try {
-                    expect(mock.callsTo('forwardMessage')).to.have.length(1);
+                    assert.strictEqual((mock.callsTo('forwardMessage')).length, 1);
                     done();
                 } catch (err) {
                     done(err);
@@ -178,7 +178,7 @@ describe('integration: outbound send transport against a mocked Telegram API', f
         });
     });
 
-    it('serialises sends to the same chat through the per-chat queue', function (done) {
+    it('serialises sends to the same chat through the per-chat queue', function (t, done) {
         helper.load(telegrambotModule, senderOnlyFlow(), { b1: { token: 'fake' } }, function () {
             const s = helper.getNode('s1');
             const out = helper.getNode('out');
@@ -189,8 +189,8 @@ describe('integration: outbound send transport against a mocked Telegram API', f
                 if (arrivals === 3) {
                     try {
                         const calls = mock.callsTo('sendMessage');
-                        expect(calls).to.have.length(3);
-                        expect(calls.map(function (c) { return c.body.text; })).to.deep.equal(['one', 'two', 'three']);
+                        assert.strictEqual((calls).length, 3);
+                        assert.deepStrictEqual(calls.map(function (c) { return c.body.text; }), ['one', 'two', 'three']);
                         done();
                     } catch (err) {
                         done(err);

@@ -1,15 +1,16 @@
+const { describe, it, before, after, afterEach } = require('node:test');
+const assert = require('node:assert');
 const helper = require('node-red-node-test-helper');
-const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
 
 helper.init(require.resolve('node-red'));
 
 describe('telegram reply', function () {
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -25,12 +26,12 @@ describe('telegram reply', function () {
         ];
     }
 
-    it('registers under "telegram reply"', function (done) {
+    it('registers under "telegram reply"', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const r = helper.getNode('r1');
-                expect(r).to.exist;
-                expect(r.type).to.equal('telegram reply');
+                assert.ok(r !== undefined && r !== null);
+                assert.strictEqual(r.type, 'telegram reply');
                 done();
             } catch (err) {
                 done(err);
@@ -38,12 +39,12 @@ describe('telegram reply', function () {
         });
     });
 
-    it('initialises pendingReplyListenerIds as an empty Set (V17.3.0 listener tracking)', function (done) {
+    it('initialises pendingReplyListenerIds as an empty Set (V17.3.0 listener tracking)', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const r = helper.getNode('r1');
-                expect(r.pendingReplyListenerIds).to.be.an.instanceOf(Set);
-                expect(r.pendingReplyListenerIds.size).to.equal(0);
+                assert.ok(r.pendingReplyListenerIds instanceof Set);
+                assert.strictEqual(r.pendingReplyListenerIds.size, 0);
                 done();
             } catch (err) {
                 done(err);
@@ -51,7 +52,7 @@ describe('telegram reply', function () {
         });
     });
 
-    it('warns and short-circuits when msg.payload is empty', function (done) {
+    it('warns and short-circuits when msg.payload is empty', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const r = helper.getNode('r1');
@@ -62,7 +63,7 @@ describe('telegram reply', function () {
                 r.receive({});
                 setTimeout(function () {
                     try {
-                        expect(warned).to.equal('msg.payload is empty');
+                        assert.strictEqual(warned, 'msg.payload is empty');
                         done();
                     } catch (err) {
                         done(err);
@@ -74,7 +75,7 @@ describe('telegram reply', function () {
         });
     });
 
-    it('warns when msg.payload.chatId is missing', function (done) {
+    it('warns when msg.payload.chatId is missing', function (t, done) {
         helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
             try {
                 const r = helper.getNode('r1');
@@ -88,7 +89,7 @@ describe('telegram reply', function () {
                         // The bot isn't yet initialised in this test ('send only' mode
                         // never created one), so we may get either warning depending
                         // on which check fires first — both are valid for "incomplete".
-                        expect(['msg.payload.chatId is empty', 'bot not initialized.']).to.include(warned);
+                        assert.ok((['msg.payload.chatId is empty', 'bot not initialized.']).includes(warned));
                         done();
                     } catch (err) {
                         done(err);

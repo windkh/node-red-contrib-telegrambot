@@ -1,15 +1,16 @@
+const { describe, it, before, after, afterEach } = require('node:test');
+const assert = require('node:assert');
 const helper = require('node-red-node-test-helper');
-const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
 
 helper.init(require.resolve('node-red'));
 
 describe('telegram command', function () {
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -36,12 +37,12 @@ describe('telegram command', function () {
         ];
     }
 
-    it('registers under "telegram command"', function (done) {
+    it('registers under "telegram command"', function (t, done) {
         helper.load(telegrambotModule, flowWithCommand(), { b1: { token: 'fake' } }, function () {
             try {
                 const c = helper.getNode('c1');
-                expect(c).to.exist;
-                expect(c.type).to.equal('telegram command');
+                assert.ok(c !== undefined && c !== null);
+                assert.strictEqual(c.type, 'telegram command');
                 done();
             } catch (err) {
                 done(err);
@@ -49,7 +50,7 @@ describe('telegram command', function () {
         });
     });
 
-    it('emits on output 1 when the matching /command is received', function (done) {
+    it('emits on output 1 when the matching /command is received', function (t, done) {
         helper.load(telegrambotModule, flowWithCommand(), { b1: { token: 'fake' } }, function () {
             try {
                 const c = helper.getNode('c1');
@@ -57,9 +58,9 @@ describe('telegram command', function () {
 
                 out.on('input', function (msg) {
                     try {
-                        expect(msg.payload.type).to.equal('message');
+                        assert.strictEqual(msg.payload.type, 'message');
                         // command stripped from the text
-                        expect(msg.payload.content.trim()).to.equal('arg1 arg2');
+                        assert.strictEqual(msg.payload.content.trim(), 'arg1 arg2');
                         done();
                     } catch (err) {
                         done(err);
@@ -79,7 +80,7 @@ describe('telegram command', function () {
         });
     });
 
-    it('does not fire when a non-matching /other command arrives', function (done) {
+    it('does not fire when a non-matching /other command arrives', function (t, done) {
         helper.load(telegrambotModule, flowWithCommand(), { b1: { token: 'fake' } }, function () {
             try {
                 const c = helper.getNode('c1');
@@ -97,7 +98,7 @@ describe('telegram command', function () {
                 });
                 setTimeout(function () {
                     try {
-                        expect(fired).to.equal(false);
+                        assert.strictEqual(fired, false);
                         done();
                     } catch (err) {
                         done(err);
@@ -109,7 +110,7 @@ describe('telegram command', function () {
         });
     });
 
-    it('routes a follow-up message to output 2 when hasresponse is set', function (done) {
+    it('routes a follow-up message to output 2 when hasresponse is set', function (t, done) {
         helper.load(telegrambotModule, flowWithCommand({ hasresponse: true }), { b1: { token: 'fake' } }, function () {
             try {
                 const c = helper.getNode('c1');
@@ -123,8 +124,8 @@ describe('telegram command', function () {
 
                 resp.on('input', function (msg) {
                     try {
-                        expect(receivedCommand).to.equal(true);
-                        expect(msg.payload.content).to.equal('here is my answer');
+                        assert.strictEqual(receivedCommand, true);
+                        assert.strictEqual(msg.payload.content, 'here is my answer');
                         done();
                     } catch (err) {
                         done(err);
@@ -147,7 +148,7 @@ describe('telegram command', function () {
         });
     });
 
-    it('does not crash on a channel-post-style message with no botMsg.from', function (done) {
+    it('does not crash on a channel-post-style message with no botMsg.from', function (t, done) {
         // Regression: before V17.3.1 this dereferenced botMsg.from.username.
         helper.load(telegrambotModule, flowWithCommand(), { b1: { token: 'fake' } }, function () {
             try {

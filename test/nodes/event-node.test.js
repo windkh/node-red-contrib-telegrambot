@@ -1,15 +1,16 @@
+const { describe, it, before, after, afterEach } = require('node:test');
+const assert = require('node:assert');
 const helper = require('node-red-node-test-helper');
-const { expect } = require('chai');
 const telegrambotModule = require('../../telegrambot/99-telegrambot.js');
 
 helper.init(require.resolve('node-red'));
 
 describe('telegram event', function () {
-    before(function (done) {
+    before(function (t, done) {
         helper.startServer(done);
     });
 
-    after(function (done) {
+    after(function (t, done) {
         helper.stopServer(done);
     });
 
@@ -25,13 +26,13 @@ describe('telegram event', function () {
         ];
     }
 
-    it('registers under "telegram event" and reads its event config', function (done) {
+    it('registers under "telegram event" and reads its event config', function (t, done) {
         helper.load(telegrambotModule, flowWithEvent('callback_query'), { b1: { token: 'fake' } }, function () {
             try {
                 const e = helper.getNode('e1');
-                expect(e).to.exist;
-                expect(e.type).to.equal('telegram event');
-                expect(e.event).to.equal('callback_query');
+                assert.ok(e !== undefined && e !== null);
+                assert.strictEqual(e.type, 'telegram event');
+                assert.strictEqual(e.event, 'callback_query');
                 done();
             } catch (err) {
                 done(err);
@@ -39,15 +40,15 @@ describe('telegram event', function () {
         });
     });
 
-    it('emits on the configured event type when processMessage is invoked', function (done) {
+    it('emits on the configured event type when processMessage is invoked', function (t, done) {
         helper.load(telegrambotModule, flowWithEvent('callback_query'), { b1: { token: 'fake' } }, function () {
             try {
                 const e = helper.getNode('e1');
                 const out = helper.getNode('out');
                 out.on('input', function (msg) {
                     try {
-                        expect(msg.payload.type).to.equal('callback_query');
-                        expect(msg.payload.content).to.equal('choice-A');
+                        assert.strictEqual(msg.payload.type, 'callback_query');
+                        assert.strictEqual(msg.payload.content, 'choice-A');
                         done();
                     } catch (err) {
                         done(err);
@@ -66,15 +67,15 @@ describe('telegram event', function () {
         });
     });
 
-    it('passes a non-callback event through without crashing on anonymous payloads', function (done) {
+    it('passes a non-callback event through without crashing on anonymous payloads', function (t, done) {
         helper.load(telegrambotModule, flowWithEvent('poll'), { b1: { token: 'fake' } }, function () {
             try {
                 const e = helper.getNode('e1');
                 const out = helper.getNode('out');
                 out.on('input', function (msg) {
                     try {
-                        expect(msg.payload.type).to.equal('poll');
-                        expect(msg.payload.id).to.equal('p-1');
+                        assert.strictEqual(msg.payload.type, 'poll');
+                        assert.strictEqual(msg.payload.id, 'p-1');
                         done();
                     } catch (err) {
                         done(err);

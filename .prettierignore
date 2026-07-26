@@ -1,0 +1,17 @@
+node_modules
+package-lock.json
+# Exported Node-RED flows — kept as-is, not reformatted
+examples
+# Binary assets
+images
+# Hand-maintained docs / synced standard files (intentional formatting;
+# reformatting would churn them and conflict with nrstd sync)
+doc
+*.md
+
+# Local tooling config
+.claude
+
+# Coverage artifacts (c8 / nyc)
+coverage
+.nyc_output

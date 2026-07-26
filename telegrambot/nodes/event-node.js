@@ -79,7 +79,11 @@ module.exports = function (RED) {
         this.processError = function (exception, msg) {
             // safeStringify tolerates circular references; raw JSON.stringify would throw
             // here and surface as an unhandled rejection out of the bot library's catch.
-            let errorMessage = 'Caught exception in event node:\r\n' + exception + '\r\nwhen processing message: \r\n' + safeStringify(msg);
+            let errorMessage =
+                'Caught exception in event node:\r\n' +
+                exception +
+                '\r\nwhen processing message: \r\n' +
+                safeStringify(msg);
             node.error(errorMessage, msg);
 
             node.status({

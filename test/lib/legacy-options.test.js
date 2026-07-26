@@ -10,7 +10,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
             migrateLegacyOptions(opts, (m) => warns.push(m));
             assert.strictEqual(opts.reply_to_message_id, undefined);
             assert.deepStrictEqual(opts.reply_parameters, { message_id: 123 });
-            assert.strictEqual((warns).length, 1);
+            assert.strictEqual(warns.length, 1);
             assert.match(warns[0], /reply_to_message_id/);
         });
 
@@ -23,7 +23,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
             assert.deepStrictEqual(opts.reply_parameters, { message_id: 123, quote: 'hello' });
         });
 
-        it("does not overwrite reply_parameters.message_id when caller already set it", function () {
+        it('does not overwrite reply_parameters.message_id when caller already set it', function () {
             const opts = {
                 reply_to_message_id: 123,
                 reply_parameters: { message_id: 999 },
@@ -41,7 +41,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
             migrateLegacyOptions(opts, (m) => warns.push(m));
             assert.strictEqual(opts.thumb, undefined);
             assert.strictEqual(opts.thumbnail, 'file_id_123');
-            assert.strictEqual((warns).length, 1);
+            assert.strictEqual(warns.length, 1);
             assert.match(warns[0], /thumb/);
         });
 
@@ -60,7 +60,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
             migrateLegacyOptions(opts, (m) => warns.push(m));
             assert.strictEqual(opts.disable_web_page_preview, undefined);
             assert.deepStrictEqual(opts.link_preview_options, { is_disabled: true });
-            assert.strictEqual((warns).length, 1);
+            assert.strictEqual(warns.length, 1);
             assert.match(warns[0], /disable_web_page_preview/);
         });
 
@@ -101,7 +101,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 [{ text: 'Yes' }],
                 [{ text: 'No' }, { text: 'Cancel' }],
             ]);
-            assert.strictEqual((warns).length, 1);
+            assert.strictEqual(warns.length, 1);
             assert.match(warns[0], /keyboard/);
         });
 
@@ -113,7 +113,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
             migrateLegacyOptions(opts, (m) => warns.push(m));
             assert.deepStrictEqual(opts.reply_markup.keyboard, [[{ text: 'Yes' }, { text: 'No' }]]);
             // No keyboard warn — nothing was rewritten.
-            assert.strictEqual((warns.filter((m) => /keyboard/.test(m))).length, 0);
+            assert.strictEqual(warns.filter((m) => /keyboard/.test(m)).length, 0);
         });
 
         it('handles mixed rows (some strings, some objects)', function () {
@@ -121,9 +121,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 reply_markup: { keyboard: [['Yes', { text: 'Maybe' }, 'No']] },
             };
             migrateLegacyOptions(opts, () => {});
-            assert.deepStrictEqual(opts.reply_markup.keyboard, [
-                [{ text: 'Yes' }, { text: 'Maybe' }, { text: 'No' }],
-            ]);
+            assert.deepStrictEqual(opts.reply_markup.keyboard, [[{ text: 'Yes' }, { text: 'Maybe' }, { text: 'No' }]]);
         });
 
         it('does not touch inline_keyboard (always object-shaped historically)', function () {
@@ -133,16 +131,13 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 },
             };
             migrateLegacyOptions(opts, () => {});
-            assert.deepStrictEqual(opts.reply_markup.inline_keyboard, [
-                [{ text: 'Open', url: 'https://example.com' }],
-            ]);
+            assert.deepStrictEqual(opts.reply_markup.inline_keyboard, [[{ text: 'Open', url: 'https://example.com' }]]);
         });
 
         it('tolerates missing reply_markup or missing keyboard', function () {
             assert.doesNotThrow(() => migrateLegacyOptions({}, () => {}));
             assert.doesNotThrow(() => migrateLegacyOptions({ reply_markup: {} }, () => {}));
-            assert.doesNotThrow(() =>
-                migrateLegacyOptions({ reply_markup: { keyboard: null } }, () => {}));
+            assert.doesNotThrow(() => migrateLegacyOptions({ reply_markup: { keyboard: null } }, () => {}));
         });
     });
 
@@ -159,7 +154,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 message_id: 5,
                 allow_sending_without_reply: true,
             });
-            assert.strictEqual((warns).length, 1);
+            assert.strictEqual(warns.length, 1);
             assert.match(warns[0], /allow_sending_without_reply/);
         });
 
@@ -183,7 +178,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
             migrateLegacyOptions(opts, (m) => warns.push(m));
             assert.strictEqual(opts.allow_sending_without_reply, undefined);
             assert.strictEqual(opts.reply_parameters, undefined);
-            assert.strictEqual((warns).length, 1);
+            assert.strictEqual(warns.length, 1);
         });
     });
 
@@ -205,7 +200,7 @@ describe('legacy-options — migrateLegacyOptions', function () {
                 reply_parameters: { message_id: 42, allow_sending_without_reply: true },
                 reply_markup: { keyboard: [[{ text: 'Yes' }], [{ text: 'No' }]] },
             });
-            assert.strictEqual((warns).length, 5);
+            assert.strictEqual(warns.length, 5);
         });
 
         it('is idempotent — running twice does not re-warn or re-transform', function () {
@@ -222,7 +217,10 @@ describe('legacy-options — migrateLegacyOptions', function () {
 
         it('returns the same object reference', function () {
             const opts = {};
-            assert.strictEqual(migrateLegacyOptions(opts, () => {}), opts);
+            assert.strictEqual(
+                migrateLegacyOptions(opts, () => {}),
+                opts
+            );
         });
 
         it('is a no-op when no deprecated fields are present', function () {
@@ -242,8 +240,14 @@ describe('legacy-options — migrateLegacyOptions', function () {
             assert.doesNotThrow(() => migrateLegacyOptions(null, () => {}));
             assert.doesNotThrow(() => migrateLegacyOptions(undefined, () => {}));
             assert.doesNotThrow(() => migrateLegacyOptions('string', () => {}));
-            assert.strictEqual(migrateLegacyOptions(null, () => {}), null);
-            assert.strictEqual(migrateLegacyOptions(undefined, () => {}), undefined);
+            assert.strictEqual(
+                migrateLegacyOptions(null, () => {}),
+                null
+            );
+            assert.strictEqual(
+                migrateLegacyOptions(undefined, () => {}),
+                undefined
+            );
         });
 
         it('tolerates a missing warnFn', function () {

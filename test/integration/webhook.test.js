@@ -33,7 +33,6 @@ function waitFor(predicate, maxMs) {
 }
 
 describe('integration: webhook transport against a mocked Telegram API', function () {
-
     let mock;
     let webhookPort;
 
@@ -87,12 +86,12 @@ describe('integration: webhook transport against a mocked Telegram API', functio
             return mock.callsTo('setWebHook').length > 0;
         }, 5000);
         const calls = mock.callsTo('setWebHook');
-        assert.strictEqual((calls).length, 1);
+        assert.strictEqual(calls.length, 1);
         // The body's `url` field is either parsed from form-urlencoded or json; both
         // should mention the configured host. We accept either via body or query because
         // node-telegram-bot-api has flipped this across versions.
         const url = (calls[0].body && calls[0].body.url) || (calls[0].query && calls[0].query.url) || '';
-        assert.ok((String(url)).includes('example.invalid'));
+        assert.ok(String(url).includes('example.invalid'));
     });
 
     // NOTE: a "deleteWebHook fires on close" assertion is intentionally omitted here.

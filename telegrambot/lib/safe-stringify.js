@@ -6,7 +6,12 @@ function safeStringify(obj, indent = 4) {
     let cache = [];
     const retVal = JSON.stringify(
         obj,
-        (key, value) => (typeof value === 'object' && value !== null ? (cache.includes(value) ? '[Circular]' : cache.push(value) && value) : value),
+        (key, value) =>
+            typeof value === 'object' && value !== null
+                ? cache.includes(value)
+                    ? '[Circular]'
+                    : cache.push(value) && value
+                : value,
         indent
     );
     return retVal;

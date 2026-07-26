@@ -19,6 +19,18 @@
         "serialize-javascript": "^7.0.5",
         "uuid": "^14.0.0"
     },
+    "c8": {
+        "check-coverage": true,
+        "exclude": [
+            "test",
+            "examples",
+            "doc"
+        ],
+        "lines": 70,
+        "statements": 70,
+        "branches": 68,
+        "functions": 80
+    },
     "scripts": {
         "lint": "eslint telegrambot",
         "postlint": "echo ✅ lint valid",

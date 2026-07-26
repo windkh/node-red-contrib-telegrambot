@@ -89,7 +89,7 @@ describe('telegram reply', function () {
                         // The bot isn't yet initialised in this test ('send only' mode
                         // never created one), so we may get either warning depending
                         // on which check fires first — both are valid for "incomplete".
-                        assert.ok((['msg.payload.chatId is empty', 'bot not initialized.']).includes(warned));
+                        assert.ok(['msg.payload.chatId is empty', 'bot not initialized.'].includes(warned));
                         done();
                     } catch (err) {
                         done(err);

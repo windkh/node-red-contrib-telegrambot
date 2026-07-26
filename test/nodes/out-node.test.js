@@ -109,7 +109,7 @@ describe('telegram sender (out-node)', function () {
                     try {
                         // processResult writes the api result back to msg.payload.content
                         assert.strictEqual(msg.payload.sentMessageId, 999);
-                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record.length, 1);
                         assert.strictEqual(record[0].method, 'sendMessage');
                         assert.strictEqual(record[0].args[0], 123); // chatId
                         assert.strictEqual(record[0].args[1], 'hello world');
@@ -141,7 +141,7 @@ describe('telegram sender (out-node)', function () {
                 out.on('input', function () {
                     try {
                         // 9001 chars in 4000-char chunks => 3 sends (4000 + 4000 + 1001).
-                        assert.strictEqual((record).length, 3);
+                        assert.strictEqual(record.length, 3);
                         record.forEach(function (call) {
                             assert.strictEqual(call.method, 'sendMessage');
                             assert.ok(call.args[1].length <= 4000);
@@ -174,7 +174,7 @@ describe('telegram sender (out-node)', function () {
 
                 out.on('input', function () {
                     try {
-                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record.length, 1);
                         assert.strictEqual(record[0].method, 'sendPhoto');
                         assert.strictEqual(record[0].args[1], 'photo-file-id');
                         done();
@@ -207,7 +207,7 @@ describe('telegram sender (out-node)', function () {
                     if (outputs === 3) {
                         try {
                             // Three independent sendMessage calls, one per chatId.
-                            assert.strictEqual((record).length, 3);
+                            assert.strictEqual(record.length, 3);
                             const chatIds = record.map(function (c) {
                                 return c.args[0];
                             });
@@ -282,7 +282,7 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
                     outputs++;
                     if (outputs === 2) {
                         try {
-                            assert.strictEqual((record).length, 2);
+                            assert.strictEqual(record.length, 2);
                             // Both sendMessage calls received the rewritten options.
                             record.forEach(function (call) {
                                 assert.strictEqual(call.method, 'sendMessage');
@@ -294,7 +294,7 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
                             const replyWarns = warns.filter(function (w) {
                                 return /reply_to_message_id/.test(w);
                             });
-                            assert.strictEqual((replyWarns).length, 1);
+                            assert.strictEqual(replyWarns.length, 1);
                             done();
                         } catch (err) {
                             done(err);
@@ -345,8 +345,8 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
                     if (outputs === 2) {
                         try {
                             // Two distinct deprecated forms across two sends => two warns.
-                            assert.strictEqual((warns.filter((w) => /reply_to_message_id/.test(w))).length, 1);
-                            assert.strictEqual((warns.filter((w) => /disable_web_page_preview/.test(w))).length, 1);
+                            assert.strictEqual(warns.filter((w) => /reply_to_message_id/.test(w)).length, 1);
+                            assert.strictEqual(warns.filter((w) => /disable_web_page_preview/.test(w)).length, 1);
                             done();
                         } catch (err) {
                             done(err);
@@ -393,7 +393,7 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
 
                 out.on('input', function () {
                     try {
-                        assert.strictEqual((warns.filter((w) => /DEPRECATED:/.test(w))).length, 0);
+                        assert.strictEqual(warns.filter((w) => /DEPRECATED:/.test(w)).length, 0);
                         done();
                     } catch (err) {
                         done(err);
@@ -431,12 +431,12 @@ describe('telegram sender (out-node) — legacy-options shim (#448)', function (
 
                 out.on('input', function () {
                     try {
-                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record.length, 1);
                         assert.strictEqual(record[0].method, 'forwardMessage');
                         const fwdOptions = record[0].args[3];
                         assert.strictEqual(fwdOptions.disable_web_page_preview, undefined);
                         assert.deepStrictEqual(fwdOptions.link_preview_options, { is_disabled: true });
-                        assert.strictEqual((warns.filter((w) => /disable_web_page_preview/.test(w))).length, 1);
+                        assert.strictEqual(warns.filter((w) => /disable_web_page_preview/.test(w)).length, 1);
                         done();
                     } catch (err) {
                         done(err);
@@ -494,7 +494,7 @@ describe('telegram sender (out-node) — queue advance on empty-content drop (#4
                     try {
                         // The SECOND (non-empty) message reaches the bot stub —
                         // proving the queue advanced past the empty-content head.
-                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record.length, 1);
                         assert.strictEqual(record[0].method, 'sendMessage');
                         assert.strictEqual(msg.payload.sentMessageId, 999);
                         assert.strictEqual(s.queueManager.processing.get(123), false);
@@ -536,7 +536,7 @@ describe('telegram sender (out-node) — queue advance on empty-content drop (#4
                     if (outputs === 2) {
                         try {
                             // Both content-bearing sends got through.
-                            assert.strictEqual((record).length, 2);
+                            assert.strictEqual(record.length, 2);
                             assert.strictEqual(s.queueManager.processing.get(123), false);
                             assert.strictEqual(s.queueManager.processing.get(456), false);
                             done();
@@ -607,7 +607,7 @@ describe('telegram sender (out-node) — editMessageMedia pass-through (lib v1.1
 
                 out.on('input', function () {
                     try {
-                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record.length, 1);
                         assert.strictEqual(record[0].method, 'editMessageMedia');
                         // First positional arg is the InputMedia object. The node no
                         // longer pre-wraps the path: it is passed through verbatim and
@@ -821,7 +821,10 @@ describe('editMessageMedia — real library uploads a local file as multipart (l
 
     it('passes a remote URL through without attaching a file', async function () {
         const { bot, captured } = captureRequest();
-        await bot.editMessageMedia({ type: 'photo', media: 'https://example.com/i.png' }, { chat_id: 1, message_id: 2 });
+        await bot.editMessageMedia(
+            { type: 'photo', media: 'https://example.com/i.png' },
+            { chat_id: 1, message_id: 2 }
+        );
 
         const media = JSON.parse(captured.opts.form.media);
         assert.strictEqual(media.media, 'https://example.com/i.png');
@@ -861,7 +864,11 @@ describe('telegram sender (out-node) — queue advance on non-retry processError
             record.push({ method: 'sendMessage', args: Array.from(arguments) });
             if (calls === 1) {
                 // First call: simulate the Markdown parse error.
-                return Promise.reject(new Error("ETELEGRAM: 400 Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 7"));
+                return Promise.reject(
+                    new Error(
+                        "ETELEGRAM: 400 Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 7"
+                    )
+                );
             }
             // Subsequent calls succeed.
             return Promise.resolve({ message_id: 999 });
@@ -908,9 +915,9 @@ describe('telegram sender (out-node) — queue advance on non-retry processError
                     // Give the second send a tick to reach the bot stub.
                     setTimeout(function () {
                         try {
-                            assert.strictEqual((record).length, 2);
-                            assert.ok((record[0].args[1]).includes('underscore'));
-                            assert.ok((record[1].args[1]).includes('plain text'));
+                            assert.strictEqual(record.length, 2);
+                            assert.ok(record[0].args[1].includes('underscore'));
+                            assert.ok(record[1].args[1].includes('plain text'));
                             assert.strictEqual(s.queueManager.processing.get(123), false);
                             done();
                         } catch (err) {
@@ -961,7 +968,7 @@ describe('telegram sender (out-node) — restrictChatMember V17 ergonomics (exam
 
                 out.on('input', function () {
                     try {
-                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record.length, 1);
                         assert.strictEqual(record[0].method, 'restrictChatMember');
                         const args = record[0].args;
                         // v1.0.0 signature: (chatId, userId, permissions, form)
@@ -1267,7 +1274,7 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
 
                 out.on('input', function (msg) {
                     try {
-                        assert.strictEqual((record).length, 1);
+                        assert.strictEqual(record.length, 1);
                         assert.strictEqual(record[0].method, 'setMyCommands');
                         assert.deepStrictEqual(record[0].args, [[{ command: 'help', description: 'Help' }], {}]);
                         assert.deepStrictEqual(msg.payload.content, { ok: true });
@@ -1334,7 +1341,10 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
 
                 out.on('input', function (msg) {
                     try {
-                        assert.strictEqual(record.some((r) => r.method === 'stopPolling'), false);
+                        assert.strictEqual(
+                            record.some((r) => r.method === 'stopPolling'),
+                            false
+                        );
                         assert.strictEqual(msg.payload.sentMessageId, 999);
                         assert.strictEqual(s.queueManager.processing.get(55), false);
                         done();
@@ -1370,7 +1380,10 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
 
                 out.on('input', function (msg) {
                     try {
-                        assert.strictEqual(record.some((r) => r.method === '_request'), false);
+                        assert.strictEqual(
+                            record.some((r) => r.method === '_request'),
+                            false
+                        );
                         assert.strictEqual(msg.payload.sentMessageId, 999);
                         done();
                     } catch (err) {
@@ -1430,7 +1443,10 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
 
                 out.on('input', function (msg) {
                     try {
-                        assert.strictEqual(record.some((r) => r.method === 'setMyCommands'), false);
+                        assert.strictEqual(
+                            record.some((r) => r.method === 'setMyCommands'),
+                            false
+                        );
                         assert.strictEqual(msg.payload.sentMessageId, 999);
                         done();
                     } catch (err) {
@@ -1461,7 +1477,10 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
 
                 out.on('input', function (msg) {
                     try {
-                        assert.strictEqual(record.some((r) => r.method === 'boomSync'), true);
+                        assert.strictEqual(
+                            record.some((r) => r.method === 'boomSync'),
+                            true
+                        );
                         assert.strictEqual(msg.payload.sentMessageId, 999);
                         assert.strictEqual(s.queueManager.processing.get(55), false);
                         done();

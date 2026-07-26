@@ -18,7 +18,6 @@ function waitFor(predicate, maxMs) {
 }
 
 describe('bot-node — auto-restart on fatal error (issue #442 / #440)', function () {
-
     before(function (t, done) {
         helper.startServer(done);
     });
@@ -99,13 +98,19 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
                 // A restart MUST be scheduled — the helper no longer surrenders.
                 assert.notStrictEqual(n.restartTimer, null);
                 // No "gave up" message — that branch is gone.
-                assert.strictEqual(errorMsgs.some(function (m) {
+                assert.strictEqual(
+                    errorMsgs.some(function (m) {
                         return /gave up restarting/.test(m);
-                    }), false);
+                    }),
+                    false
+                );
                 // The warn line still announces the scheduled restart at the cap.
-                assert.strictEqual(warnMsgs.some(function (m) {
+                assert.strictEqual(
+                    warnMsgs.some(function (m) {
                         return /will restart in 60000ms/.test(m);
-                    }), true);
+                    }),
+                    true
+                );
                 clearTimeout(n.restartTimer);
                 n.restartTimer = null;
                 done();
@@ -136,9 +141,9 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
                 // count=5 → delay=60000, first time at the ceiling — node.error fires once.
                 n.restartCount = 5;
                 n.scheduleRestart('at-ceiling');
-                assert.strictEqual((errorMsgs).length, 1);
+                assert.strictEqual(errorMsgs.length, 1);
                 assert.match(errorMsgs[0], /auto-restart hit 60s ceiling/);
-                assert.ok((errorMsgs[0]).includes('at-ceiling'));
+                assert.ok(errorMsgs[0].includes('at-ceiling'));
                 assert.strictEqual(n.restartCeilingAnnounced, true);
                 clearTimeout(n.restartTimer);
                 n.restartTimer = null;
@@ -146,7 +151,7 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
                 // count=6 → still at the ceiling but the flag is set — no further node.errors.
                 n.restartCount = 6;
                 n.scheduleRestart('still-at-ceiling');
-                assert.strictEqual((errorMsgs).length, 1); // unchanged
+                assert.strictEqual(errorMsgs.length, 1); // unchanged
                 clearTimeout(n.restartTimer);
                 n.restartTimer = null;
                 done();
@@ -200,7 +205,6 @@ describe('bot-node — auto-restart on fatal error (issue #442 / #440)', functio
 });
 
 describe('bot-node — stable-window restartCount reset (issue #442 retest, V17.4.2)', function () {
-
     before(function (t, done) {
         helper.startServer(done);
     });
@@ -283,7 +287,6 @@ describe('bot-node — stable-window restartCount reset (issue #442 retest, V17.
 });
 
 describe('bot-node — fatal-error log suppression while restart is queued (issue #411 retest)', function () {
-
     before(function (t, done) {
         helper.startServer(done);
     });
@@ -326,8 +329,8 @@ describe('bot-node — fatal-error log suppression while restart is queued (issu
                 const botErrorLines = warnLines.filter(function (line) {
                     return line.indexOf('Bot error:') === 0;
                 });
-                assert.strictEqual((botErrorLines).length, 1);
-                assert.ok((botErrorLines[0]).includes('ETIMEDOUT 1'));
+                assert.strictEqual(botErrorLines.length, 1);
+                assert.ok(botErrorLines[0].includes('ETIMEDOUT 1'));
 
                 clearTimeout(n.restartTimer);
                 n.restartTimer = null;
@@ -340,7 +343,6 @@ describe('bot-node — fatal-error log suppression while restart is queued (issu
 });
 
 describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.0 migration)', function () {
-
     before(function (t, done) {
         helper.startServer(done);
     });
@@ -440,7 +442,11 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
             try {
                 const n = helper.getNode('b1');
                 const bot = n.instantiateBot('123:fake', { baseApiUrl: 'https://api.telegram.org' });
-                assert.ok(bot, 'bot should be constructed (library loaded in before hook)' !== undefined && bot, 'bot should be constructed (library loaded in before hook)' !== null);
+                assert.ok(
+                    bot,
+                    'bot should be constructed (library loaded in before hook)' !== undefined && bot,
+                    'bot should be constructed (library loaded in before hook)' !== null
+                );
                 // The per-bot dispatcher is stored on the node and threaded into
                 // the bot's request.fetchOptions.dispatcher (the v1.1.1 hook).
                 assert.ok(n.dispatcher !== undefined && n.dispatcher !== null);
@@ -451,7 +457,12 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
             } catch (err) {
                 done(err);
             } finally {
-                helper.getNode('b1') && helper.getNode('b1').destroyDispatcher && helper.getNode('b1').destroyDispatcher().catch(() => {});
+                helper.getNode('b1') &&
+                    helper.getNode('b1').destroyDispatcher &&
+                    helper
+                        .getNode('b1')
+                        .destroyDispatcher()
+                        .catch(() => {});
             }
         });
     });
@@ -469,7 +480,12 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
             } catch (err) {
                 done(err);
             } finally {
-                helper.getNode('b1') && helper.getNode('b1').destroyDispatcher && helper.getNode('b1').destroyDispatcher().catch(() => {});
+                helper.getNode('b1') &&
+                    helper.getNode('b1').destroyDispatcher &&
+                    helper
+                        .getNode('b1')
+                        .destroyDispatcher()
+                        .catch(() => {});
             }
         });
     });
@@ -507,7 +523,6 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
 });
 
 describe('bot-node — abortBot stops polling cleanly (#440, updated for v1.0.0)', function () {
-
     before(function (t, done) {
         helper.startServer(done);
     });
@@ -588,7 +603,6 @@ describe('bot-node — abortBot stops polling cleanly (#440, updated for v1.0.0)
 });
 
 describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', function () {
-
     before(function (t, done) {
         helper.startServer(done);
     });
@@ -690,7 +704,6 @@ describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', func
 });
 
 describe('bot-node — polling-restart single-flight guard (issue #442)', function () {
-
     before(function (t, done) {
         helper.startServer(done);
     });
@@ -719,7 +732,6 @@ describe('bot-node — polling-restart single-flight guard (issue #442)', functi
 });
 
 describe('bot-node — polling-burst circuit breaker (issue #442 retest 2026-05-29)', function () {
-
     before(function (t, done) {
         helper.startServer(done);
     });

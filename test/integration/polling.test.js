@@ -7,7 +7,6 @@ const { startMock } = require('../fixtures/telegram-mock.js');
 helper.init(require.resolve('node-red'));
 
 describe('integration: polling transport against a mocked Telegram API', function () {
-
     let mock;
 
     before(async function () {

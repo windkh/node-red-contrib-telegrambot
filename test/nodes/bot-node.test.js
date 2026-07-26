@@ -198,8 +198,11 @@ describe('telegram bot (config node)', function () {
                     helper.load(telegrambotModule, flow, { b1: { token: 'tok' } }, function () {
                         try {
                             const n = helper.getNode('b1');
-                            assert.strictEqual(n.verbose, tc.expected,
-                                'input ' + JSON.stringify(tc.input) + ' should coerce to ' + tc.expected);
+                            assert.strictEqual(
+                                n.verbose,
+                                tc.expected,
+                                'input ' + JSON.stringify(tc.input) + ' should coerce to ' + tc.expected
+                            );
                             helper.unload().then(resolve, reject);
                         } catch (err) {
                             helper.unload().finally(function () {

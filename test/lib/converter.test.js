@@ -79,11 +79,13 @@ describe('lib/converter — getMessageDetails', function () {
         assert.strictEqual(r.type, 'photo');
         assert.strictEqual(r.content, 'hi');
         assert.strictEqual(r.blob, true);
-        assert.strictEqual((r.photos).length, 2);
+        assert.strictEqual(r.photos.length, 2);
     });
 
     it('photo — passes through caption and media_group_id', function () {
-        const r = converter.getMessageDetails(build({ photo: fx.photoArray(), caption: 'cap', media_group_id: 'mg-1' }));
+        const r = converter.getMessageDetails(
+            build({ photo: fx.photoArray(), caption: 'cap', media_group_id: 'mg-1' })
+        );
         assert.strictEqual(r.caption, 'cap');
         assert.strictEqual(r.mediaGroupId, 'mg-1');
     });
@@ -127,7 +129,9 @@ describe('lib/converter — getMessageDetails', function () {
     });
 
     it('animation', function () {
-        const r = converter.getMessageDetails(build({ animation: { file_id: 'g-1' }, caption: 'gif', media_group_id: 'mg-1' }));
+        const r = converter.getMessageDetails(
+            build({ animation: { file_id: 'g-1' }, caption: 'gif', media_group_id: 'mg-1' })
+        );
         assert.strictEqual(r.type, 'animation');
         assert.strictEqual(r.content, 'g-1');
         assert.strictEqual(r.caption, 'gif');
@@ -211,7 +215,12 @@ describe('lib/converter — getMessageDetails', function () {
     // ---- subtypes added in V17.3.0 -----------------------------------------
 
     it('refunded_payment (V17.3.0)', function () {
-        const pay = { currency: 'EUR', total_amount: 100, telegram_payment_charge_id: 'tg-x', provider_payment_charge_id: 'p-x' };
+        const pay = {
+            currency: 'EUR',
+            total_amount: 100,
+            telegram_payment_charge_id: 'tg-x',
+            provider_payment_charge_id: 'p-x',
+        };
         const r = converter.getMessageDetails(build({ refunded_payment: pay }));
         assert.strictEqual(r.type, 'refunded_payment');
         assert.deepStrictEqual(r.content, pay);
@@ -464,14 +473,19 @@ describe('lib/converter — convertMessage', function () {
         };
         const r = converter.convertMessage('message_reaction', 123, m);
         assert.strictEqual(r.type, 'message_reaction');
-        assert.strictEqual((r.newReaction).length, 1);
+        assert.strictEqual(r.newReaction.length, 1);
     });
 
     it('message_reaction_count', function () {
-        const m = { message_id: 1, date: 1, chat: fx.chat(), reactions: [{ type: { type: 'emoji', emoji: '👍' }, total_count: 5 }] };
+        const m = {
+            message_id: 1,
+            date: 1,
+            chat: fx.chat(),
+            reactions: [{ type: { type: 'emoji', emoji: '👍' }, total_count: 5 }],
+        };
         const r = converter.convertMessage('message_reaction_count', 123, m);
         assert.strictEqual(r.type, 'message_reaction_count');
-        assert.strictEqual((r.reactions).length, 1);
+        assert.strictEqual(r.reactions.length, 1);
     });
 
     it('pre_checkout_query', function () {
@@ -524,7 +538,14 @@ describe('lib/converter — convertMessage', function () {
     });
 
     it('poll', function () {
-        const p = { id: 'p-1', question: 'Q', options: [{ text: 'A', voter_count: 1 }], total_voter_count: 1, is_anonymous: true, type: 'regular' };
+        const p = {
+            id: 'p-1',
+            question: 'Q',
+            options: [{ text: 'A', voter_count: 1 }],
+            total_voter_count: 1,
+            is_anonymous: true,
+            type: 'regular',
+        };
         const r = converter.convertMessage('poll', 123, p);
         assert.strictEqual(r.type, 'poll');
         assert.strictEqual(r.id, 'p-1');
@@ -534,7 +555,14 @@ describe('lib/converter — convertMessage', function () {
     });
 
     it('my_chat_member', function () {
-        const upd = { from: fx.from(), old_chat_member: {}, new_chat_member: {}, invite_link: null, date: 1, chat: fx.chat() };
+        const upd = {
+            from: fx.from(),
+            old_chat_member: {},
+            new_chat_member: {},
+            invite_link: null,
+            date: 1,
+            chat: fx.chat(),
+        };
         const r = converter.convertMessage('my_chat_member', 123, upd);
         assert.strictEqual(r.type, 'my_chat_member');
         assert.deepStrictEqual(r.from, upd.from);

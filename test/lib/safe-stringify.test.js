@@ -5,8 +5,8 @@ const safeStringify = require('../../telegrambot/lib/safe-stringify');
 describe('lib/safe-stringify', function () {
     it('stringifies plain objects normally', function () {
         const out = safeStringify({ a: 1, b: 'two' });
-        assert.ok((out).includes('"a": 1'));
-        assert.ok((out).includes('"b": "two"'));
+        assert.ok(out.includes('"a": 1'));
+        assert.ok(out.includes('"b": "two"'));
     });
 
     it('honours the indent argument', function () {
@@ -26,8 +26,8 @@ describe('lib/safe-stringify', function () {
         const a = { name: 'a' };
         a.self = a;
         const out = safeStringify(a);
-        assert.ok((out).includes('"[Circular]"'));
-        assert.ok((out).includes('"name": "a"'));
+        assert.ok(out.includes('"[Circular]"'));
+        assert.ok(out.includes('"name": "a"'));
     });
 
     it('substitutes "[Circular]" for nested back-references', function () {
@@ -36,8 +36,8 @@ describe('lib/safe-stringify', function () {
         root.kids.push(child);
         const out = safeStringify(root);
         // root is referenced again via child.parent -> placeholder
-        assert.ok((out).includes('"[Circular]"'));
-        assert.ok((out).includes('"kids"'));
+        assert.ok(out.includes('"[Circular]"'));
+        assert.ok(out.includes('"kids"'));
     });
 
     it('returns valid JSON for circular input (string round-trips through JSON.parse)', function () {
@@ -66,7 +66,7 @@ describe('lib/safe-stringify', function () {
         };
         const out = safeStringify(payload);
         // Replacer fires the first time, then [Circular] on the second visit
-        assert.ok((out).includes('"id": 123'));
-        assert.ok((out).includes('"[Circular]"'));
+        assert.ok(out.includes('"id": 123'));
+        assert.ok(out.includes('"[Circular]"'));
     });
 });

@@ -161,7 +161,11 @@ function startMock() {
                     text: body.text,
                 };
             } else if (methodKey === 'setwebhook') {
-                state.webhookInfo = { url: body.url || (parsed.query && parsed.query.url) || '', has_custom_certificate: false, pending_update_count: 0 };
+                state.webhookInfo = {
+                    url: body.url || (parsed.query && parsed.query.url) || '',
+                    has_custom_certificate: false,
+                    pending_update_count: 0,
+                };
                 result = true;
             } else if (methodKey === 'deletewebhook') {
                 state.webhookInfo = { url: '' };
@@ -172,7 +176,12 @@ function startMock() {
                 result = true;
             } else if (methodKey === 'answercallbackquery') {
                 result = true;
-            } else if (methodKey.startsWith('send') || methodKey.startsWith('edit') || methodKey.startsWith('forward') || methodKey.startsWith('copy')) {
+            } else if (
+                methodKey.startsWith('send') ||
+                methodKey.startsWith('edit') ||
+                methodKey.startsWith('forward') ||
+                methodKey.startsWith('copy')
+            ) {
                 result = { message_id: state.nextMessageId++ };
             } else {
                 result = true;
@@ -195,7 +204,7 @@ function startMock() {
                 state: state,
                 calls: state.calls,
                 pushUpdate: function (u) {
-                    if (typeof u.update_id !== 'number') u.update_id = (u.update_id = (state.updates.length || 0) + 1);
+                    if (typeof u.update_id !== 'number') u.update_id = u.update_id = (state.updates.length || 0) + 1;
                     state.updates.push(u);
                 },
                 failNext: function (method, spec) {

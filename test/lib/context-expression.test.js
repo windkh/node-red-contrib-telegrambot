@@ -76,7 +76,7 @@ describe('context-expression — parseStringArgList', function () {
         });
 
         it('allows double-quote inside single-quoted', function () {
-            assert.deepStrictEqual(parseStringArgList('\'a"b\''), ['a"b']);
+            assert.deepStrictEqual(parseStringArgList("'a\"b'"), ['a"b']);
         });
     });
 

@@ -6,7 +6,10 @@ function chat(overrides) {
 }
 
 function from(overrides) {
-    return Object.assign({ id: 4242, is_bot: false, first_name: 'Alice', username: 'alice', language_code: 'en' }, overrides || {});
+    return Object.assign(
+        { id: 4242, is_bot: false, first_name: 'Alice', username: 'alice', language_code: 'en' },
+        overrides || {}
+    );
 }
 
 function baseMessage(overrides) {

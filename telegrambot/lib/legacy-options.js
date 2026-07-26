@@ -107,7 +107,10 @@ function migrateAllowSendingWithoutReply(options) {
     let changed = false;
     if (Object.prototype.hasOwnProperty.call(options, 'allow_sending_without_reply')) {
         const value = options.allow_sending_without_reply;
-        if (isPlainObject(options.reply_parameters) && options.reply_parameters.allow_sending_without_reply === undefined) {
+        if (
+            isPlainObject(options.reply_parameters) &&
+            options.reply_parameters.allow_sending_without_reply === undefined
+        ) {
             options.reply_parameters.allow_sending_without_reply = value;
         }
         delete options.allow_sending_without_reply;
@@ -128,7 +131,9 @@ function migrateLegacyOptions(options, warnFn) {
         // allow_sending_without_reply so the latter can fold into the freshly
         // created reply_parameters object.
         if (migrateReplyToMessageId(options) && warnFn) {
-            warnFn('DEPRECATED: msg.payload.options.reply_to_message_id is no longer supported; use reply_parameters: { message_id }. See MIGRATION.md.');
+            warnFn(
+                'DEPRECATED: msg.payload.options.reply_to_message_id is no longer supported; use reply_parameters: { message_id }. See MIGRATION.md.'
+            );
         }
         if (migrateThumb(options) && warnFn) {
             warnFn('DEPRECATED: msg.payload.options.thumb is no longer supported; use thumbnail. See MIGRATION.md.');
@@ -139,7 +144,9 @@ function migrateLegacyOptions(options, warnFn) {
             );
         }
         if (migrateKeyboardStrings(options) && warnFn) {
-            warnFn('DEPRECATED: reply_markup.keyboard cells must be objects ({ text: ... }), not bare strings. See MIGRATION.md.');
+            warnFn(
+                'DEPRECATED: reply_markup.keyboard cells must be objects ({ text: ... }), not bare strings. See MIGRATION.md.'
+            );
         }
         if (migrateAllowSendingWithoutReply(options) && warnFn) {
             warnFn(

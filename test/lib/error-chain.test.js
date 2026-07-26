@@ -31,9 +31,9 @@ describe('error-chain — formatErrorChain', function () {
         fatal.cause = wrapped;
         // Expected output covers both leaves; uses semicolon separator.
         const out = formatErrorChain(fatal);
-        assert.ok((out).includes('149.154.166.110:443'));
-        assert.ok((out).includes('2001:b28:f23d:f001::a:443'));
-        assert.ok((out).includes('; '));
+        assert.ok(out.includes('149.154.166.110:443'));
+        assert.ok(out.includes('2001:b28:f23d:f001::a:443'));
+        assert.ok(out.includes('; '));
     });
 
     it('drops the FatalError/RequestError wrapper labels in favour of the leaves', function () {
@@ -52,9 +52,9 @@ describe('error-chain — formatErrorChain', function () {
         const out = formatErrorChain(fatal);
         // Should contain the actionable leaf, not the wrapper labels.
         assert.strictEqual(out, 'connect ETIMEDOUT 149.154.166.110:443');
-        assert.ok(!(out).includes('AggregateError'));
-        assert.ok(!(out).includes('RequestError'));
-        assert.ok(!(out).includes('SLIGHTLYBETTEREFATAL'));
+        assert.ok(!out.includes('AggregateError'));
+        assert.ok(!out.includes('RequestError'));
+        assert.ok(!out.includes('SLIGHTLYBETTEREFATAL'));
     });
 
     it('deduplicates identical leaf messages', function () {
@@ -87,7 +87,7 @@ describe('error-chain — formatErrorChain', function () {
         // We stop at depth 10; the leaf at the bottom isn't reachable but a
         // mid-chain message is the surviving "leaf" of our truncated walk.
         assert.ok(out.length > 0);
-        assert.ok(!(out).includes('leaf-final')); // depth limit kicked in
+        assert.ok(!out.includes('leaf-final')); // depth limit kicked in
     });
 
     it('falls back to a sensible string for empty / odd input', function () {

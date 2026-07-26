@@ -103,7 +103,9 @@ module.exports = function (RED) {
                 } else {
                     this.tokenRegistered = false;
                     let conflictingConfigNode = RED.nodes.getNode(configNodeId);
-                    self.error('Aborting: Token of ' + n.botname + ' is already in use by ' + conflictingConfigNode.botname);
+                    self.error(
+                        'Aborting: Token of ' + n.botname + ' is already in use by ' + conflictingConfigNode.botname
+                    );
                     return;
                 }
             }
@@ -726,7 +728,9 @@ module.exports = function (RED) {
                                         }
                                     })
                                     .catch(function (err) {
-                                        self.warn('Failed to call /setMyCommands for language ' + language + ': ' + err);
+                                        self.warn(
+                                            'Failed to call /setMyCommands for language ' + language + ': ' + err
+                                        );
                                     });
                             }
                         }

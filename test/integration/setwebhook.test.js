@@ -7,7 +7,6 @@ const { startMock } = require('../fixtures/telegram-mock.js');
 helper.init(require.resolve('node-red'));
 
 describe('integration: control "setwebhook" command (issue #410)', function () {
-
     let mock;
 
     before(async function () {
@@ -47,9 +46,9 @@ describe('integration: control "setwebhook" command (issue #410)', function () {
             out.on('input', function (msg) {
                 try {
                     const calls = mock.callsTo('setWebHook');
-                    assert.strictEqual((calls).length, 1);
+                    assert.strictEqual(calls.length, 1);
                     const url = (calls[0].body && calls[0].body.url) || (calls[0].query && calls[0].query.url) || '';
-                    assert.ok((String(url)).includes('new-ngrok-tunnel'));
+                    assert.ok(String(url).includes('new-ngrok-tunnel'));
                     assert.strictEqual(msg.payload.result, true);
                     done();
                 } catch (err) {
@@ -68,8 +67,8 @@ describe('integration: control "setwebhook" command (issue #410)', function () {
 
             out.on('input', function () {
                 try {
-                    assert.strictEqual((mock.callsTo('setWebHook')).length, 0);
-                    assert.strictEqual((mock.callsTo('deleteWebHook')).length, 1);
+                    assert.strictEqual(mock.callsTo('setWebHook').length, 0);
+                    assert.strictEqual(mock.callsTo('deleteWebHook').length, 1);
                     done();
                 } catch (err) {
                     done(err);

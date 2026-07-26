@@ -21,7 +21,10 @@ describe('telegram receiver (in-node)', function () {
     function flowWithReceiver(extraReceiverFields) {
         return [
             { id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' },
-            Object.assign({ id: 'r1', type: 'telegram receiver', bot: 'b1', wires: [['out'], ['unauth']] }, extraReceiverFields || {}),
+            Object.assign(
+                { id: 'r1', type: 'telegram receiver', bot: 'b1', wires: [['out'], ['unauth']] },
+                extraReceiverFields || {}
+            ),
             { id: 'out', type: 'helper' },
             { id: 'unauth', type: 'helper' },
         ];

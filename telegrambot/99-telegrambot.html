@@ -1,80 +1,102 @@
 <!-- Created by Karl-Heinz Wind -->
 
-
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
     RED.nodes.registerType('telegram bot', {
         category: 'config',
         defaults: {
-            botname: { value: "", required: true },
-            usernames: { value: "", required: false },
-            chatids: { value: "", required: false },
-            baseapiurl: { value: "", required: false },
+            botname: { value: '', required: true },
+            usernames: { value: '', required: false },
+            chatids: { value: '', required: false },
+            baseapiurl: { value: '', required: false },
             testenvironment: { value: false, required: false },
-            
-            updatemode: { value: "polling", required: true },
-            addressfamily : { value: "", required: false },
+
+            updatemode: { value: 'polling', required: true },
+            addressfamily: { value: '', required: false },
 
             // only for polling mode
-            pollinterval: { value: 300, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
-            
+            pollinterval: {
+                value: 300,
+                required: false,
+                validate: function (v) {
+                    return v === '' || (RED.validators.number(v) && v >= 0 && v <= 2147483);
+                },
+            },
+
             // only for socks4/5 proxy support
             usesocks: { value: false, required: false },
-            sockshost: { value: "", required: false },
-            socksprotocol: { value: "socks5", required: false },
-            socksport: { value: 6667, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
-            socksusername: { value: "anonymous", required: false },
-            sockspassword: { value: "", required: false },
+            sockshost: { value: '', required: false },
+            socksprotocol: { value: 'socks5', required: false },
+            socksport: {
+                value: 6667,
+                required: false,
+                validate: function (v) {
+                    return v === '' || (RED.validators.number(v) && v >= 0 && v <= 2147483);
+                },
+            },
+            socksusername: { value: 'anonymous', required: false },
+            sockspassword: { value: '', required: false },
 
             // only for webhook mode
-            bothost: { value: "", required: false },
-			botpath: { value: "", required: false },
-            localbothost:{ value: "0.0.0.0", required: false },
-            localbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
-            publicbotport: { value: 8443, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && ((v == 80) || (v == 88) || (v == 443) || (v == 8443)))) }},
-            
+            bothost: { value: '', required: false },
+            botpath: { value: '', required: false },
+            localbothost: { value: '0.0.0.0', required: false },
+            localbotport: {
+                value: 8443,
+                required: false,
+                validate: function (v) {
+                    return v === '' || (RED.validators.number(v) && v >= 0 && v <= 2147483);
+                },
+            },
+            publicbotport: {
+                value: 8443,
+                required: false,
+                validate: function (v) {
+                    return v === '' || (RED.validators.number(v) && (v == 80 || v == 88 || v == 443 || v == 8443));
+                },
+            },
+
             // only for webhook and certificate
-            privatekey: { value: "", required: false },
-            certificate: { value: "", required: false },
+            privatekey: { value: '', required: false },
+            certificate: { value: '', required: false },
             useselfsignedcertificate: { value: false, required: false },
             sslterminated: { value: false, required: false },
             verboselogging: { value: false, required: false },
         },
         credentials: {
-            token: { type: "text" }
+            token: { type: 'text' },
         },
         label: function () {
             return this.botname;
         },
-        oneditprepare: function() {
-
+        oneditprepare: function () {
             // polling or webhook
-            var updateOptions = function() {
-                var mode = $("#node-config-input-updatemode").val();
-                if (mode == "webhook") {
-                    $("#webhook").show();
-                    $("#polling").hide();
-                } else if (mode == "polling"){
-                    $("#webhook").hide();
-                    $("#polling").show();
+            var updateOptions = function () {
+                var mode = $('#node-config-input-updatemode').val();
+                if (mode == 'webhook') {
+                    $('#webhook').show();
+                    $('#polling').hide();
+                } else if (mode == 'polling') {
+                    $('#webhook').hide();
+                    $('#polling').show();
                 } else {
                     // none is send only mode, no data is received
-                    $("#webhook").hide();
-                    $("#polling").hide();
+                    $('#webhook').hide();
+                    $('#polling').hide();
                 }
             };
             updateOptions();
-            $("#node-config-input-updatemode").change(updateOptions);
+            $('#node-config-input-updatemode').change(updateOptions);
 
             // IP address family
-            var updateAddressFamily = function() {
-                var mode = $("#node-config-input-addressfamily").val();
+            var updateAddressFamily = function () {
+                var mode = $('#node-config-input-addressfamily').val();
             };
             updateAddressFamily();
-            $("#node-config-input-addressfamily").change(updateAddressFamily);
+            $('#node-config-input-addressfamily').change(updateAddressFamily);
 
             // sslTerminated on / off
-            var sslTerminated = function() {
+            var sslTerminated = function () {
                 var mode = $('#node-config-input-sslterminated').prop('checked');
                 if (mode === false) {
                     $('#node-config-input-privatekey').parent().show();
@@ -88,180 +110,180 @@
             $('#node-config-input-sslterminated').change(sslTerminated);
 
             // socks5 on / off
-            var useSocks5 = function() {
-                var mode = $("#node-config-input-usesocks").prop('checked');
+            var useSocks5 = function () {
+                var mode = $('#node-config-input-usesocks').prop('checked');
                 if (mode === false) {
-                    $("#socks").hide();
+                    $('#socks').hide();
                 } else {
-                    $("#socks").show();
+                    $('#socks').show();
                 }
             };
             useSocks5();
-            $("#node-config-input-usesocks").change(useSocks5);
-        }
+            $('#node-config-input-usesocks').change(useSocks5);
+        },
     });
 </script>
 
 <script type="text/x-red" data-template-name="telegram bot">
-    <div class="form-row" style="min-width: 700px">
-        <div class="form-row">
-            <label for="node-config-input-botname"><i class="fa fa-telegram"></i> Bot-Name</label>
-            <input type="text" id="node-config-input-botname" placeholder="(Name of bot to connect to)">
-        </div>
-        <div class="form-row">
-			<div class="form-row">
-				<label for="node-config-input-token"><i class="fa fa-key"></i> Token</label>
-				<input type="text" id="node-config-input-token" placeholder="(Enter the bot token from botfather here)">
-			</div>
-			<div class="form-tips" style="width: auto"><b>Tip:</b> If you don't have a token yet, you can create a new one here: <a href="https://t.me/BotFather">@BotFather</a>.</div>
-    	</div>
-	    
-        <hr align="middle"/>
-
-        <div class="form-row">
-            <label for="node-config-input-usernames"><i class="fa fa-user"></i> Users</label>
-            <input type="text" id="node-config-input-usernames" placeholder="(Optional list of authorized user names e.g.: hugo,sepp,egon)">
-        </div>
-        <div class="form-row">
-            <label for="node-config-input-chatids"><i class="fa fa-comment"></i> ChatIds</label>
-            <input type="text" id="node-config-input-chatids" placeholder="(Optional list of authorized chat-ids e.g.: -1234567,2345678,-3456789)">
-        </div>
-        <div class="form-row">
-            <label for="node-config-input-baseapiurl"><i class="fa fa-send"></i> Server URL</label>
-            <input type="text" id="node-config-input-baseapiurl" placeholder="(Optional URL for proxying and testing e.g.: https://api.telegram.org)">
-        </div>
-
-        <label for="node-config-input-testenvironment"><i class="fa fa-server"></i> Test Environment</label>
-            <input type="checkbox" id="node-config-input-testenvironment" style="display: inline-block; width: auto; vertical-align: top;">
-        </div>
-        
-        <div class="form-row">
-            <label for="node-config-input-updatemode"><i class="fa fa-link"></i> Update Mode</label>
-            <select id="node-config-input-updatemode">
-                <option value="polling">Polling</option>
-                <option value="webhook">Webhook</option>
-                <option value="none">None</option>
-            </select>
-        </div>
-
-        <div class="form-row">
-            <label for="node-config-input-addressfamily"><i class="fa fa-link"></i> IP Address Family</label>
-            <select id="node-config-input-addressfamily">
-                <option value="4">IPv4</option>
-                <option value="6">IPv6</option>
-                <option value="0">Any</option>
-            </select>
-        </div>
-
-        <hr align="middle"/>
-
-        <div class="form-row hidden" id="polling" style="background: var(--red-ui-tertiary-background)">
-            <label style="width: auto"><i class="fa fa-cogs"></i> Polling Options:</label> 
-            
-            <div class="form-row" style="margin-left: 20px">
-                <div class="form-row">
-                        <label for="node-config-input-pollinterval"><i class="fa fa-clock-o"></i> Poll Interval</label>
-                        <input type="text" id="node-config-input-pollinterval" placeholder="(Optional poll interval in milliseconds. The default is 300.)">
-                </div>
-            </div>
-            <div class="form-tips" style="width: auto"><b>Tip:</b> Polling mode is very robust and easy to set up. Nevertheless it creates more traffic on the network over time.</div>
-        </div>
-
-        <div class="form-row hidden" id="webhook" style="background: var(--red-ui-tertiary-background)">
-            <label style="width: auto"><i class="fa fa-cogs"></i> Webhook Options:</label>
-       
-            <div class="form-row" style="margin-left: 20px">
-                <div class="form-row">
-                    <label for="node-config-input-bothost"><i class="fa fa-desktop"></i> Bot Host</label>
-                    <input type="text" id="node-config-input-bothost" placeholder="(Optional public IP or hostname of your bot when using webhook. e.g.: mybot.domain.com)">
-                </div>
-				<div class="form-row">
-                    <label for="node-config-input-botpath"><i class="fa fa-desktop"></i> Bot Path</label>
-                    <input type="text" id="node-config-input-botpath" placeholder="(Optional path to Bot e.g.: noderedpath -> mybot.domain.com/noderedpath)">
-                </div>
-                <div class="form-row">
-                    <label for="node-config-input-publicbotport"><i class="fa fa-random"></i> Public Bot Port</label>
-                    <input type="text" id="node-config-input-publicbotport" placeholder="(Optional public port for your bot when using webhook. The default is 8443.)">
-                </div>
-                <div class="form-row">
-                    <label for="node-config-input-localbotport"><i class="fa fa-random"></i> Local Bot Port</label>
-                    <input type="text" id="node-config-input-localbotport" placeholder="(Optional local port for your bot when using webhook. The default is 8443.)">
-                </div>
-                <div class="form-row">
-                    <label for="node-config-input-localbothost"><i class="fa fa-desktop"></i> Host</label>
-                    <input type="text" id="node-config-input-localbothost" placeholder="(Optional local host IP your bot is listening. The default is 0.0.0.0)">
-                </div>
-
-                <div class="form-row">
-                    <label for="node-config-input-privatekey"><i class="fa fa-id-card"></i> Private Key</label>
-                    <input type="text" id="node-config-input-privatekey" placeholder="(Optional local path to your private key file. e.g.: C:\temp\\key.pem)">
-                </div>
-                <div class="form-row">
-                    <label for="node-config-input-certificate"><i class="fa fa-id-card-o"></i> Certificate</label>
-                    <input type="text" id="node-config-input-certificate" placeholder="(Optional local path to your certificate file. e.g.: C:\temp\\crt.pem)">
-                </div>
-                <div class="form-row">
-                    <label for="node-config-input-useselfsignedcertificate"><i class="fa fa-pencil"></i> Certificate is self-signed</label>
-                    <input type="checkbox" id="node-config-input-useselfsignedcertificate" style="display: inline-block; width: auto; vertical-align: top;">
-                </div>
-                <div class="form-row">
-                    <label for="node-config-input-sslterminated"><i class="fa fa-pencil"></i> SSL terminated by reverse proxy</label>
-                    <input type="checkbox" id="node-config-input-sslterminated" style="display: inline-block; width: auto; vertical-align: top;">
-                </div>
-
-                <div class="form-tips" style="width: auto"><b>Tip:</b> Webhook mode requires a HTTPS certificate. The certificate can also be a self-signed (=custom) one. If any of the host, key, certificate properties is left blank the bot will default to send only mode. If SSL termination is already handled by reverse proxy, key and certificate is not required. Port must be one of 80, 88, 443, 8443.</div>
-            </div>
-        </div>
-
-        <hr align="middle"/>
-
-        <div class="form-row">
-            <label for="node-config-input-usesocks"><i class="fa fa-lock"></i> SOCKS Proxy</label>
-            <input type="checkbox" id="node-config-input-usesocks" style="display: inline-block; width: auto; vertical-align: top;">
-        </div>
-        <div class="form-row hidden" id="socks" style="background: var(--red-ui-tertiary-background)">
-            <label style="width: auto"><i class="fa fa-cogs"></i> SOCKS Proxy Options:</label>
-          
-            <div class="form-row" style="background: #fff; margin-left: 20px">     
-                <div class="form-row">
-                    <label for="node-config-input-socksprotocol"><i class="fa fa-user-secret"></i> Protocol</label>
-                    <select id="node-config-input-socksprotocol">
-                        <option value="socks4">socks4</option>
-                        <option value="socks5">socks5</option>
-                    </select>
-                </div>   
-                <div class="form-row">
-                    <label for="node-config-input-sockshost"><i class="fa fa-desktop"></i> Host</label>
-                    <input type="text" id="node-config-input-sockshost" placeholder="(Optional IP or hostname of the socks proxy when using polling mode.)">
-                </div>
-                <div class="form-row">
-                    <label for="node-config-input-socksport"><i class="fa fa-random"></i> Port</label>
-                    <input type="text" id="node-config-input-socksport" placeholder="(Optional port of the socks proxy when using polling mode.)">
-                </div>
-                <div class="form-row">
-                    <label for="node-config-input-socksusername"><i class="fa fa-user"></i> Username</label>
-                    <input type="text" id="node-config-input-socksusername" placeholder="(Optional username of the socks proxy when using polling mode.)">
-                </div>
-                <div class="form-row">
-                    <label for="node-config-input-sockspassword"><i class="fa fa-key"></i> Password</label>
-                    <input type="text" id="node-config-input-sockspassword" placeholder="(Optional password of the socks proxy when using polling mode.)">
-                </div>
-            </div>
-
-            <div class="form-tips" style="width: auto"><b>Tip:</b> SOCKS proxy support is optional can can only be used with a valid proxy server, port, username and password.</div>
-        </div>
-
-        <hr align="middle"/>
-
-        <div class="form-row">
-            <label for="node-config-input-verboselogging"><i class="fa fa-search"></i> Verbose Logging</label>
-            <input type="checkbox" id="node-config-input-verboselogging" style="display: inline-block; width: auto; vertical-align: top;">
-        </div>
-        
-        <div class="form-tips" style="width: auto"><b>Tip:</b> When verbose logging is turned on additional log messages will be printed to the node-red console.</div>
-
-        <hr align="middle"/> 
+     <div class="form-row" style="min-width: 700px">
+         <div class="form-row">
+             <label for="node-config-input-botname"><i class="fa fa-telegram"></i> Bot-Name</label>
+             <input type="text" id="node-config-input-botname" placeholder="(Name of bot to connect to)">
+         </div>
+         <div class="form-row">
+    <div class="form-row">
+    	<label for="node-config-input-token"><i class="fa fa-key"></i> Token</label>
+    	<input type="text" id="node-config-input-token" placeholder="(Enter the bot token from botfather here)">
     </div>
+    <div class="form-tips" style="width: auto"><b>Tip:</b> If you don't have a token yet, you can create a new one here: <a href="https://t.me/BotFather">@BotFather</a>.</div>
+     	</div>
+
+         <hr align="middle"/>
+
+         <div class="form-row">
+             <label for="node-config-input-usernames"><i class="fa fa-user"></i> Users</label>
+             <input type="text" id="node-config-input-usernames" placeholder="(Optional list of authorized user names e.g.: hugo,sepp,egon)">
+         </div>
+         <div class="form-row">
+             <label for="node-config-input-chatids"><i class="fa fa-comment"></i> ChatIds</label>
+             <input type="text" id="node-config-input-chatids" placeholder="(Optional list of authorized chat-ids e.g.: -1234567,2345678,-3456789)">
+         </div>
+         <div class="form-row">
+             <label for="node-config-input-baseapiurl"><i class="fa fa-send"></i> Server URL</label>
+             <input type="text" id="node-config-input-baseapiurl" placeholder="(Optional URL for proxying and testing e.g.: https://api.telegram.org)">
+         </div>
+
+         <label for="node-config-input-testenvironment"><i class="fa fa-server"></i> Test Environment</label>
+             <input type="checkbox" id="node-config-input-testenvironment" style="display: inline-block; width: auto; vertical-align: top;">
+         </div>
+
+         <div class="form-row">
+             <label for="node-config-input-updatemode"><i class="fa fa-link"></i> Update Mode</label>
+             <select id="node-config-input-updatemode">
+                 <option value="polling">Polling</option>
+                 <option value="webhook">Webhook</option>
+                 <option value="none">None</option>
+             </select>
+         </div>
+
+         <div class="form-row">
+             <label for="node-config-input-addressfamily"><i class="fa fa-link"></i> IP Address Family</label>
+             <select id="node-config-input-addressfamily">
+                 <option value="4">IPv4</option>
+                 <option value="6">IPv6</option>
+                 <option value="0">Any</option>
+             </select>
+         </div>
+
+         <hr align="middle"/>
+
+         <div class="form-row hidden" id="polling" style="background: var(--red-ui-tertiary-background)">
+             <label style="width: auto"><i class="fa fa-cogs"></i> Polling Options:</label>
+
+             <div class="form-row" style="margin-left: 20px">
+                 <div class="form-row">
+                         <label for="node-config-input-pollinterval"><i class="fa fa-clock-o"></i> Poll Interval</label>
+                         <input type="text" id="node-config-input-pollinterval" placeholder="(Optional poll interval in milliseconds. The default is 300.)">
+                 </div>
+             </div>
+             <div class="form-tips" style="width: auto"><b>Tip:</b> Polling mode is very robust and easy to set up. Nevertheless it creates more traffic on the network over time.</div>
+         </div>
+
+         <div class="form-row hidden" id="webhook" style="background: var(--red-ui-tertiary-background)">
+             <label style="width: auto"><i class="fa fa-cogs"></i> Webhook Options:</label>
+
+             <div class="form-row" style="margin-left: 20px">
+                 <div class="form-row">
+                     <label for="node-config-input-bothost"><i class="fa fa-desktop"></i> Bot Host</label>
+                     <input type="text" id="node-config-input-bothost" placeholder="(Optional public IP or hostname of your bot when using webhook. e.g.: mybot.domain.com)">
+                 </div>
+    	<div class="form-row">
+                     <label for="node-config-input-botpath"><i class="fa fa-desktop"></i> Bot Path</label>
+                     <input type="text" id="node-config-input-botpath" placeholder="(Optional path to Bot e.g.: noderedpath -> mybot.domain.com/noderedpath)">
+                 </div>
+                 <div class="form-row">
+                     <label for="node-config-input-publicbotport"><i class="fa fa-random"></i> Public Bot Port</label>
+                     <input type="text" id="node-config-input-publicbotport" placeholder="(Optional public port for your bot when using webhook. The default is 8443.)">
+                 </div>
+                 <div class="form-row">
+                     <label for="node-config-input-localbotport"><i class="fa fa-random"></i> Local Bot Port</label>
+                     <input type="text" id="node-config-input-localbotport" placeholder="(Optional local port for your bot when using webhook. The default is 8443.)">
+                 </div>
+                 <div class="form-row">
+                     <label for="node-config-input-localbothost"><i class="fa fa-desktop"></i> Host</label>
+                     <input type="text" id="node-config-input-localbothost" placeholder="(Optional local host IP your bot is listening. The default is 0.0.0.0)">
+                 </div>
+
+                 <div class="form-row">
+                     <label for="node-config-input-privatekey"><i class="fa fa-id-card"></i> Private Key</label>
+                     <input type="text" id="node-config-input-privatekey" placeholder="(Optional local path to your private key file. e.g.: C:\temp\\key.pem)">
+                 </div>
+                 <div class="form-row">
+                     <label for="node-config-input-certificate"><i class="fa fa-id-card-o"></i> Certificate</label>
+                     <input type="text" id="node-config-input-certificate" placeholder="(Optional local path to your certificate file. e.g.: C:\temp\\crt.pem)">
+                 </div>
+                 <div class="form-row">
+                     <label for="node-config-input-useselfsignedcertificate"><i class="fa fa-pencil"></i> Certificate is self-signed</label>
+                     <input type="checkbox" id="node-config-input-useselfsignedcertificate" style="display: inline-block; width: auto; vertical-align: top;">
+                 </div>
+                 <div class="form-row">
+                     <label for="node-config-input-sslterminated"><i class="fa fa-pencil"></i> SSL terminated by reverse proxy</label>
+                     <input type="checkbox" id="node-config-input-sslterminated" style="display: inline-block; width: auto; vertical-align: top;">
+                 </div>
+
+                 <div class="form-tips" style="width: auto"><b>Tip:</b> Webhook mode requires a HTTPS certificate. The certificate can also be a self-signed (=custom) one. If any of the host, key, certificate properties is left blank the bot will default to send only mode. If SSL termination is already handled by reverse proxy, key and certificate is not required. Port must be one of 80, 88, 443, 8443.</div>
+             </div>
+         </div>
+
+         <hr align="middle"/>
+
+         <div class="form-row">
+             <label for="node-config-input-usesocks"><i class="fa fa-lock"></i> SOCKS Proxy</label>
+             <input type="checkbox" id="node-config-input-usesocks" style="display: inline-block; width: auto; vertical-align: top;">
+         </div>
+         <div class="form-row hidden" id="socks" style="background: var(--red-ui-tertiary-background)">
+             <label style="width: auto"><i class="fa fa-cogs"></i> SOCKS Proxy Options:</label>
+
+             <div class="form-row" style="background: #fff; margin-left: 20px">
+                 <div class="form-row">
+                     <label for="node-config-input-socksprotocol"><i class="fa fa-user-secret"></i> Protocol</label>
+                     <select id="node-config-input-socksprotocol">
+                         <option value="socks4">socks4</option>
+                         <option value="socks5">socks5</option>
+                     </select>
+                 </div>
+                 <div class="form-row">
+                     <label for="node-config-input-sockshost"><i class="fa fa-desktop"></i> Host</label>
+                     <input type="text" id="node-config-input-sockshost" placeholder="(Optional IP or hostname of the socks proxy when using polling mode.)">
+                 </div>
+                 <div class="form-row">
+                     <label for="node-config-input-socksport"><i class="fa fa-random"></i> Port</label>
+                     <input type="text" id="node-config-input-socksport" placeholder="(Optional port of the socks proxy when using polling mode.)">
+                 </div>
+                 <div class="form-row">
+                     <label for="node-config-input-socksusername"><i class="fa fa-user"></i> Username</label>
+                     <input type="text" id="node-config-input-socksusername" placeholder="(Optional username of the socks proxy when using polling mode.)">
+                 </div>
+                 <div class="form-row">
+                     <label for="node-config-input-sockspassword"><i class="fa fa-key"></i> Password</label>
+                     <input type="text" id="node-config-input-sockspassword" placeholder="(Optional password of the socks proxy when using polling mode.)">
+                 </div>
+             </div>
+
+             <div class="form-tips" style="width: auto"><b>Tip:</b> SOCKS proxy support is optional can can only be used with a valid proxy server, port, username and password.</div>
+         </div>
+
+         <hr align="middle"/>
+
+         <div class="form-row">
+             <label for="node-config-input-verboselogging"><i class="fa fa-search"></i> Verbose Logging</label>
+             <input type="checkbox" id="node-config-input-verboselogging" style="display: inline-block; width: auto; vertical-align: top;">
+         </div>
+
+         <div class="form-tips" style="width: auto"><b>Tip:</b> When verbose logging is turned on additional log messages will be printed to the node-red console.</div>
+
+         <hr align="middle"/>
+     </div>
 </script>
 
 <script type="text/x-red" data-help-name="telegram bot">
@@ -290,37 +312,36 @@
     <p>One common pitfall when creating certificates that don't work is that the value CN you provided to openssl must match the bots domain name: see "bot host" above. </p>
 </script>
 
-
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
     RED.nodes.registerType('telegram receiver', {
         category: 'telegram',
         color: '#3BABDD',
         defaults: {
-            name: { value: "" },
-            bot: { value:"", type: "telegram bot", required: true },
-            saveDataDir: { value: "" },
+            name: { value: '' },
+            bot: { value: '', type: 'telegram bot', required: true },
+            saveDataDir: { value: '' },
             filterCommands: { value: false },
             hasinput: { value: false, required: false },
-            inputs: {value: 0},
+            inputs: { value: 0 },
             handleallupdates: { value: false },
             handleprocessupdates: { value: false },
         },
         inputs: 0,
         outputs: 2,
-        icon: "telegram.png",
-        paletteLabel: "receiver",
+        icon: 'telegram.png',
+        paletteLabel: 'receiver',
         label: function () {
-            return this.name || "Telegram receiver";
+            return this.name || 'Telegram receiver';
         },
-        labelStyle: function() {
-            return this.name?"node_label_italic":"";
+        labelStyle: function () {
+            return this.name ? 'node_label_italic' : '';
         },
-        oneditprepare: function() {
+        oneditprepare: function () {
             var that = this;
             // hasinput on / off
-            var hasinput = function() {
-                var mode = $("#node-input-hasinput").prop('checked');
+            var hasinput = function () {
+                var mode = $('#node-input-hasinput').prop('checked');
                 if (mode === true) {
                     that.inputs = 1;
                 } else {
@@ -328,8 +349,8 @@
                 }
             };
             hasinput();
-            $("#node-input-hasinput").change(hasinput);
-        }
+            $('#node-input-hasinput').change(hasinput);
+        },
     });
 </script>
 
@@ -368,11 +389,11 @@
 <script type="text/x-red" data-help-name="telegram receiver">
     <p>A telegram node that triggers the output when some message is received from the chat.</p>
     <p>The node receives all messages polled from/sent by the telegram server.</p>
-    
-    <h3>Outputs</h3> 
+
+    <h3>Outputs</h3>
     <p>1. Standard Ouput: Message is sent to output 1 if it is from an authorized user.</p>
     <p>2. Unauthorized Output: Message is sent to output 2 if it is from a non-authorized user.</p>
-    
+
     <h3>Details</h3>
     <p><code>msg.payload</code> typically contains the parsed data as follows:</p>
     <ul>
@@ -387,43 +408,42 @@
     <p>Note: If you are using other <code>command nodes</code>, you can set this node to filter those commands so that the message only appears in the configured command node and not in this node</p>
 </script>
 
-
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
     RED.nodes.registerType('telegram command', {
         category: 'telegram',
         color: '#3BABDD',
         defaults: {
-            name: { value: "" },
-            command: { value: ""},
-            description: { value: ""},
-            
-            registercommand: { value: false, required: false },
-            language: { value: "", required: false }, // iso-639-1
-            scope: { value: "default", required: false },
+            name: { value: '' },
+            command: { value: '' },
+            description: { value: '' },
 
-            bot: { value: "", type: "telegram bot", required: true },
-            strict : { value: false },
+            registercommand: { value: false, required: false },
+            language: { value: '', required: false }, // iso-639-1
+            scope: { value: 'default', required: false },
+
+            bot: { value: '', type: 'telegram bot', required: true },
+            strict: { value: false },
             hasresponse: { value: true, required: false },
             useregex: { value: false },
-            removeregexcommand:  { value: false },
-            outputs: {value: 2}
-          },
+            removeregexcommand: { value: false },
+            outputs: { value: 2 },
+        },
         inputs: 0,
         outputs: 2,
-        icon: "telegram_cmd.png",
-        paletteLabel: "command",
+        icon: 'telegram_cmd.png',
+        paletteLabel: 'command',
         label: function () {
-            return this.name || this.command || "Telegram command";
+            return this.name || this.command || 'Telegram command';
         },
-        labelStyle: function() {
-            return this.name?"node_label_italic":"";
+        labelStyle: function () {
+            return this.name ? 'node_label_italic' : '';
         },
-        oneditprepare: function() {
+        oneditprepare: function () {
             var that = this;
             // useresponse on / off
-            var hasresponse = function() {
-                var mode = $("#node-input-hasresponse").prop('checked');
+            var hasresponse = function () {
+                var mode = $('#node-input-hasresponse').prop('checked');
                 if (mode === true) {
                     that.outputs = 2;
                 } else {
@@ -431,33 +451,32 @@
                 }
             };
             hasresponse();
-            $("#node-input-hasresponse").change(hasresponse);
+            $('#node-input-hasresponse').change(hasresponse);
 
             // useregex on / off
-            var useRegex = function() {
-                var mode = $("#node-input-useregex").prop('checked');
+            var useRegex = function () {
+                var mode = $('#node-input-useregex').prop('checked');
                 if (mode === false) {
-                    $("#regex").hide();
+                    $('#regex').hide();
                 } else {
-                    $("#regex").show();
+                    $('#regex').show();
                 }
             };
             useRegex();
-            $("#node-input-useregex").change(useRegex);
+            $('#node-input-useregex').change(useRegex);
 
             // registercommand on / off
-            var registercommand = function() {
-                var mode = $("#node-input-registercommand").prop('checked');
+            var registercommand = function () {
+                var mode = $('#node-input-registercommand').prop('checked');
                 if (mode === false) {
-                    $("#registration").hide();
+                    $('#registration').hide();
                 } else {
-                    $("#registration").show();
+                    $('#registration').show();
                 }
             };
             registercommand();
-            $("#node-input-registercommand").change(registercommand);
-
-        }
+            $('#node-input-registercommand').change(registercommand);
+        },
     });
 </script>
 
@@ -481,7 +500,7 @@
         <label for="node-input-registercommand"><i class="fa fa-bars"></i> Register at telegram server</label>
         <input type="checkbox" id="node-input-registercommand" style="display: inline-block; width: auto; vertical-align: top;">
     </div>
-    
+
     <div class="form-row hidden" id="registration" style="background: var(--red-ui-tertiary-background)">
         <div class="form-row">
             <label for="node-input-description"><i class="fa fa-info"></i> Description</label>
@@ -522,9 +541,9 @@
 
     <div class="form-row hidden" id="regex" style="background: var(--red-ui-tertiary-background)">
         <label style="width: auto"><i class="fa fa-asterisk"></i> RegEx Options:</label>
-      
-        <div class="form-row" style="background: #fff; margin-left: 20px">   
-            
+
+        <div class="form-row" style="background: #fff; margin-left: 20px">
+
             <div class="form-row">
                 <label for="node-input-removeregexcommand"><i class="fa fa-trash"></i> Remove command</label>
                 <input type="checkbox" id="node-input-removeregexcommand" style="display: inline-block; width: auto; vertical-align: top;"> strips the matching command from the message
@@ -533,7 +552,6 @@
     </div>
 
     <hr align="middle"/>
-
 </script>
 
 <script type="text/x-red" data-help-name="telegram command">
@@ -545,28 +563,27 @@
     <p>2. Secondary Ouput: Message is sent to output 2 if it is from an authorized user but does not contain the specified command.</p>
 </script>
 
-
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
     RED.nodes.registerType('telegram event', {
         category: 'telegram',
         color: '#3BABDD',
         defaults: {
-            name: { value: "" },
-            bot: { value: "", type: "telegram bot", required: true },
-            event: { value: "callback_query", required: true },
-            autoanswer: { value: false, required: false }
+            name: { value: '' },
+            bot: { value: '', type: 'telegram bot', required: true },
+            event: { value: 'callback_query', required: true },
+            autoanswer: { value: false, required: false },
         },
         inputs: 0,
         outputs: 1,
-        icon: "telegram.png",
-        paletteLabel: "event",
+        icon: 'telegram.png',
+        paletteLabel: 'event',
         label: function () {
             return this.name || this.event;
         },
-        labelStyle: function() {
-            return this.name?"node_label_italic":"";
-        }
+        labelStyle: function () {
+            return this.name ? 'node_label_italic' : '';
+        },
     });
 </script>
 
@@ -625,28 +642,27 @@
 </script>
 
 <script type="text/x-red" data-help-name="telegram event">
-      <p>A telegram node that triggers the output when a event is received from a chat.</p>
-      
-      <h3>Outputs</h3> 
-      <p>1. Standard Output: The output is triggered when the configured event was received.</p>
+    <p>A telegram node that triggers the output when a event is received from a chat.</p>
 
-      <h3>Details</h3> 
-      <p>The event type can be selected.</p> 
-      <p><code>msg.payload</code> typically contains the parsed data as follows:</p>
-      <ul>
-      <li><code>chatId</code>Unique identifier for this chat.</li>
-      <li><code>messageId</code>Message identifier.</li>
-      <li><code>type</code>event type</li>
-      <li><code>date</code>timestamp</li>
-      <li><code>content</code>the actual UTF-8 text of the message</li>
-      </ul>
-      <p>Other properties may be present depending on the type of message.</p>
-      <code>msg.originalMessage</code> contains the raw data object from the underlying library,
-      and contains many useful properties.</p>
-      <p>The autoanswer checkbox can be set for callback_query.</p> 
-      <p>Then you won't have to send an explicit answer to the bot on your own.</p> 
+    <h3>Outputs</h3>
+    <p>1. Standard Output: The output is triggered when the configured event was received.</p>
+
+    <h3>Details</h3>
+    <p>The event type can be selected.</p>
+    <p><code>msg.payload</code> typically contains the parsed data as follows:</p>
+    <ul>
+    <li><code>chatId</code>Unique identifier for this chat.</li>
+    <li><code>messageId</code>Message identifier.</li>
+    <li><code>type</code>event type</li>
+    <li><code>date</code>timestamp</li>
+    <li><code>content</code>the actual UTF-8 text of the message</li>
+    </ul>
+    <p>Other properties may be present depending on the type of message.</p>
+    <code>msg.originalMessage</code> contains the raw data object from the underlying library,
+    and contains many useful properties.</p>
+    <p>The autoanswer checkbox can be set for callback_query.</p>
+    <p>Then you won't have to send an explicit answer to the bot on your own.</p>
 </script>
-
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
@@ -654,27 +670,27 @@
         category: 'telegram',
         color: '#3BABDD',
         defaults: {
-            name: { value: "" },
-            bot: { value: "", type: "telegram bot", required: true },
+            name: { value: '' },
+            bot: { value: '', type: 'telegram bot', required: true },
             haserroroutput: { value: false, required: false },
-            outputs: {value: 1}
+            outputs: { value: 1 },
         },
         inputs: 1,
         outputs: 1,
-        icon: "telegram.png",
-        align: "right",
-        paletteLabel: "sender",
+        icon: 'telegram.png',
+        align: 'right',
+        paletteLabel: 'sender',
         label: function () {
-            return this.name || "Telegram sender";
+            return this.name || 'Telegram sender';
         },
-        labelStyle: function() {
-            return this.name?"node_label_italic":"";
+        labelStyle: function () {
+            return this.name ? 'node_label_italic' : '';
         },
-        oneditprepare: function() {
+        oneditprepare: function () {
             var that = this;
             // haserroroutput on / off
-            var haserroroutput = function() {
-                var mode = $("#node-input-haserroroutput").prop('checked');
+            var haserroroutput = function () {
+                var mode = $('#node-input-haserroroutput').prop('checked');
                 if (mode === true) {
                     that.outputs = 2;
                 } else {
@@ -682,8 +698,8 @@
                 }
             };
             haserroroutput();
-            $("#node-input-haserroroutput").change(haserroroutput);
-        }
+            $('#node-input-haserroroutput').change(haserroroutput);
+        },
     });
 </script>
 
@@ -710,11 +726,11 @@
 
     <h3>Inputs</h3>
     <p>1. Standard Input: receives a message object containing the chatId. It can be directly connected to the receiver node's output 1.</p>
-    
+
     <h3>Outputs</h3>
     <p>1. On success the first output contains the result.</p>
     <p>2. On error the second output contains the message with an error property <code>msg.error</code>. You must enable the second output as it is disabled by default.</p>
-    <p>If the checkbox is not enabled, then all errors can be handled in an optional global "catch all" node.</p> 
+    <p>If the checkbox is not enabled, then all errors can be handled in an optional global "catch all" node.</p>
     <h3>Details</h3>
     <p>The <code>msg.payload</code> must be an object that contains a complete set of telegram message properties,
      at a minimum these should contain:
@@ -735,10 +751,8 @@
      <code>msg.payload.content</code>. <code>chatId</code> is optional and only orders the
      call in the per-chat queue. Connection/polling lifecycle and event-listener methods are
      blocked for safety. See the README section "Calling the raw Bot API" for examples.</p>
-
 </script>
 <!-- ------------------------------------------------------------------------------------------ -->
-
 
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
@@ -746,20 +760,20 @@
         category: 'telegram',
         color: '#3BABDD',
         defaults: {
-            name: { value: "" },
-            bot: { value: "", type: "telegram bot", required: true }
+            name: { value: '' },
+            bot: { value: '', type: 'telegram bot', required: true },
         },
         inputs: 1,
         outputs: 1,
-        icon: "telegram.png",
-        align: "right",
-        paletteLabel: "reply",
+        icon: 'telegram.png',
+        align: 'right',
+        paletteLabel: 'reply',
         label: function () {
-            return this.name || "Telegram reply";
+            return this.name || 'Telegram reply';
         },
-        labelStyle: function() {
-            return this.name?"node_label_italic":"";
-        }
+        labelStyle: function () {
+            return this.name ? 'node_label_italic' : '';
+        },
     });
 </script>
 
@@ -779,10 +793,10 @@
 
     <h3>Inputs</h3>
     <p>1. Standard Input: calls the onReplyToMessage of the bot.</p>
-    
+
     <h3>Outputs</h3>
     <p>1. Standard Output: contains the result from the onReplyToMessage call.</p>
-    
+
     <h3>Details</h3>
     <p>This can be useful, when the bot for example sent a message and you want to take some action</p>
     <p>when someone responded to this specified message.</p>
@@ -794,50 +808,61 @@
 </script>
 <!-- ------------------------------------------------------------------------------------------ -->
 
-
 <!-- ------------------------------------------------------------------------------------------ -->
 <script type="text/javascript">
     RED.nodes.registerType('telegram control', {
         category: 'telegram',
         color: '#3BABDD',
         defaults: {
-            name: { value: "" },
-            bot: { value: "", type: "telegram bot", required: true },
-            outputs: {value: 1},
+            name: { value: '' },
+            bot: { value: '', type: 'telegram bot', required: true },
+            outputs: { value: 1 },
 
             // only for checkconnection
             checkconnection: { value: false, required: false },
-            hostname: { value: "", required: false },
-			interval: { value: 10, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
-        	timeout: { value: 1, required: false, validate:function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0) && (v <= 2147483))) }},
+            hostname: { value: '', required: false },
+            interval: {
+                value: 10,
+                required: false,
+                validate: function (v) {
+                    return v === '' || (RED.validators.number(v) && v >= 0 && v <= 2147483);
+                },
+            },
+            timeout: {
+                value: 1,
+                required: false,
+                validate: function (v) {
+                    return v === '' || (RED.validators.number(v) && v >= 0 && v <= 2147483);
+                },
+            },
         },
         inputs: 1,
         outputs: 1,
-        icon: "telegram.png",
-        align: "right",
-        paletteLabel: "control",
+        icon: 'telegram.png',
+        align: 'right',
+        paletteLabel: 'control',
         label: function () {
-            return this.name || "Telegram control";
+            return this.name || 'Telegram control';
         },
-        labelStyle: function() {
-            return this.name?"node_label_italic":"";
+        labelStyle: function () {
+            return this.name ? 'node_label_italic' : '';
         },
-        oneditprepare: function() {
+        oneditprepare: function () {
             var that = this;
             // checkconnection on / off
-            var checkconnection = function() {
-                var mode = $("#node-input-checkconnection").prop('checked');
+            var checkconnection = function () {
+                var mode = $('#node-input-checkconnection').prop('checked');
                 if (mode === true) {
-                    $("#checkconnectionoptions").show();
+                    $('#checkconnectionoptions').show();
                     that.outputs = 2;
                 } else {
-                    $("#checkconnectionoptions").hide();
+                    $('#checkconnectionoptions').hide();
                     that.outputs = 1;
                 }
             };
             checkconnection();
-            $("#node-input-checkconnection").change(checkconnection);
-        }
+            $('#node-input-checkconnection').change(checkconnection);
+        },
     });
 </script>
 
@@ -852,7 +877,7 @@
     </div>
 
     <hr align="middle"/>
-   
+
     <div class="form-row">
         <label for="node-input-checkconnection"><i class="fa fa-paper-plane"></i> Check network connection.</label>
         <input type="checkbox" id="node-input-checkconnection" style="display: inline-block; width: auto; vertical-align: top;">
@@ -860,7 +885,7 @@
 
     <div class="form-row hidden" id="checkconnectionoptions" style="background: var(--red-ui-tertiary-background)">
         <label style="width: auto"><i class="fa fa-cogs"></i> Check Connection Options:</label>
-   
+
         <div class="form-row" style="margin-left: 20px">
             <div class="form-row">
                 <label for="node-input-hostname"><i class="fa fa-server"></i> Hostname</label>
@@ -896,4 +921,3 @@
     <p>2. The check connection result.</p>
 </script>
 <!-- ------------------------------------------------------------------------------------------ -->
-

@@ -172,7 +172,12 @@ module.exports = function (RED) {
 
                     // then if this command is meant for this node
 
-                    if (isDirectCommand || (isChatCommand && !isGroupChat) || (isChatCommand && isGroupChat && !strict) || (useRegex && isRegExMatch)) {
+                    if (
+                        isDirectCommand ||
+                        (isChatCommand && !isGroupChat) ||
+                        (isChatCommand && isGroupChat && !strict) ||
+                        (useRegex && isRegExMatch)
+                    ) {
                         let remainingText;
                         if (isDirectCommand) {
                             remainingText = message.replace(command2, '');

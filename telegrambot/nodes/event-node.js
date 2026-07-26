@@ -66,7 +66,7 @@ module.exports = function (RED) {
     // callback_query : content string
     function TelegramEventNode(config) {
         RED.nodes.createNode(this, config);
-        let node = this;
+        const node = this;
         this.bot = config.bot;
         this.event = config.event;
         this.autoAnswerCallback = config.autoanswer;
@@ -79,7 +79,7 @@ module.exports = function (RED) {
         this.processError = function (exception, msg) {
             // safeStringify tolerates circular references; raw JSON.stringify would throw
             // here and surface as an unhandled rejection out of the bot library's catch.
-            let errorMessage =
+            const errorMessage =
                 'Caught exception in event node:\r\n' +
                 exception +
                 '\r\nwhen processing message: \r\n' +
@@ -94,7 +94,7 @@ module.exports = function (RED) {
         };
 
         this.start = function () {
-            let telegramBot = this.config.getTelegramBot();
+            const telegramBot = this.config.getTelegramBot();
             if (telegramBot) {
                 if (telegramBot._polling !== null || telegramBot._webHook !== null) {
                     node.status({
@@ -123,7 +123,7 @@ module.exports = function (RED) {
         };
 
         this.stop = function () {
-            let telegramBot = this.config.getTelegramBot(false);
+            const telegramBot = this.config.getTelegramBot(false);
             if (telegramBot && node.eventHandler) {
                 telegramBot.off(this.event, node.eventHandler);
             }
@@ -137,7 +137,7 @@ module.exports = function (RED) {
         };
 
         this.processMessage = function (botMsg) {
-            let telegramBot = this.config.getTelegramBot();
+            const telegramBot = this.config.getTelegramBot();
 
             node.status({
                 fill: 'green',
@@ -145,21 +145,21 @@ module.exports = function (RED) {
                 text: 'connected',
             });
 
-            let userInfo = converter.getUserInfo(botMsg);
-            let username = userInfo.username;
-            let isAnonymous = userInfo.isAnonymous;
-            let chatid = userInfo.chatid;
-            let userid = userInfo.userid;
+            const userInfo = converter.getUserInfo(botMsg);
+            const username = userInfo.username;
+            const isAnonymous = userInfo.isAnonymous;
+            const chatid = userInfo.chatid;
+            const userid = userInfo.userid;
 
             if (isAnonymous || node.config.isAuthorized(node, chatid, userid, username)) {
                 let msg;
-                let botDetails = {
+                const botDetails = {
                     botname: this.config.botname,
                     testEnvironment: this.config.testEnvironment,
                     baseApiUrl: this.config.telegramBot.options.baseApiUrl,
                 };
 
-                let messageDetails = converter.convertMessage(this.event, chatid, botMsg);
+                const messageDetails = converter.convertMessage(this.event, chatid, botMsg);
                 if (messageDetails) {
                     // sepcial callback query handling.
                     if (this.event === 'callback_query') {

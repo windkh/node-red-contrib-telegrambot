@@ -9,7 +9,7 @@ module.exports = function (RED) {
     // content : message content
     function TelegramReplyNode(config) {
         RED.nodes.createNode(this, config);
-        let node = this;
+        const node = this;
         this.bot = config.bot;
 
         // Tracks outstanding onReplyToMessage listener ids so we can clean them up on close.
@@ -19,7 +19,7 @@ module.exports = function (RED) {
         this.pendingReplyListenerIds = new Set();
 
         this.start = function () {
-            let telegramBot = this.config.getTelegramBot();
+            const telegramBot = this.config.getTelegramBot();
             if (telegramBot) {
                 if (telegramBot._polling !== null || telegramBot._webHook !== null) {
                     node.status({
@@ -84,16 +84,16 @@ module.exports = function (RED) {
             node.status({ fill: 'green', shape: 'ring', text: 'connected' });
 
             if (msg.payload) {
-                let telegramBot = this.config.getTelegramBot();
+                const telegramBot = this.config.getTelegramBot();
                 if (telegramBot) {
                     if (msg.payload.chatId) {
                         if (msg.payload.sentMessageId) {
-                            let chatId = msg.payload.chatId;
-                            let messageId = msg.payload.sentMessageId;
+                            const chatId = msg.payload.chatId;
+                            const messageId = msg.payload.sentMessageId;
 
-                            let listenerId = telegramBot.onReplyToMessage(chatId, messageId, function (botMsg) {
+                            const listenerId = telegramBot.onReplyToMessage(chatId, messageId, function (botMsg) {
                                 node.pendingReplyListenerIds.delete(listenerId);
-                                let messageDetails = converter.getMessageDetails(botMsg);
+                                const messageDetails = converter.getMessageDetails(botMsg);
                                 if (messageDetails) {
                                     msg.payload = messageDetails;
                                     msg.originalMessage = botMsg;
@@ -131,7 +131,7 @@ module.exports = function (RED) {
             }
 
             // Drop any reply listeners that never fired so we don't leak the captured msg/nodeSend/nodeDone.
-            let telegramBot = node.config && node.config.getTelegramBot ? node.config.getTelegramBot(false) : null;
+            const telegramBot = node.config && node.config.getTelegramBot ? node.config.getTelegramBot(false) : null;
             if (telegramBot && typeof telegramBot.removeReplyListener === 'function') {
                 node.pendingReplyListenerIds.forEach(function (id) {
                     telegramBot.removeReplyListener(id);

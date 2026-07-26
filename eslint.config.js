@@ -15,6 +15,11 @@ module.exports = [
         rules: {
             'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
             'no-console': 'off',
+            // Avoid `var`; prefer `const` (or `let` when reassigned).
+            'no-var': 'error',
+            'prefer-const': 'warn',
+            // Keep one statement per line for readability.
+            'max-statements-per-line': ['warn', { max: 1 }],
         },
     },
     prettier,

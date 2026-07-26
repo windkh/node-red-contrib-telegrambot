@@ -125,7 +125,7 @@ function migrateAllowSendingWithoutReply(options) {
 // `node.warn` — which is invoked with a deprecation message for each
 // transformation that fired.
 function migrateLegacyOptions(options, warnFn) {
-    let result = options;
+    const result = options;
     if (isPlainObject(options)) {
         // Order matters: reply_to_message_id must run BEFORE
         // allow_sending_without_reply so the latter can fold into the freshly

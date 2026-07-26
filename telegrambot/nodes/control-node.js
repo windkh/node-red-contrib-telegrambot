@@ -1,5 +1,5 @@
 module.exports = function (RED) {
-    let net = require('net');
+    const net = require('net');
 
     // --------------------------------------------------------------------------------------------
     // The control node can start stop a bot.
@@ -8,16 +8,16 @@ module.exports = function (RED) {
     // delay : optional time in milliseconds for restart.
     function TelegramControlNode(config) {
         RED.nodes.createNode(this, config);
-        let node = this;
+        const node = this;
         this.bot = config.bot;
 
         let checkconnection = config.checkconnection;
         if (checkconnection === undefined) {
             checkconnection = false;
         }
-        let hostname = config.hostname;
-        let interval = (config.interval || 10) * 1000;
-        let connectionTimeout = (config.timeout || 10) * 1000;
+        const hostname = config.hostname;
+        const interval = (config.interval || 10) * 1000;
+        const connectionTimeout = (config.timeout || 10) * 1000;
 
         node.isOnline = undefined; // see checkConnection function.
 
@@ -29,7 +29,7 @@ module.exports = function (RED) {
         node._getUpdatesEndHandler = null;
 
         this.start = function () {
-            let telegramBot = node.config.getTelegramBot();
+            const telegramBot = node.config.getTelegramBot();
             if (telegramBot) {
                 node._getUpdatesStartHandler = function (cycle) {
                     node.status({
@@ -39,7 +39,7 @@ module.exports = function (RED) {
                     });
                 };
                 node._getUpdatesEndHandler = function (cycle, duration, updates) {
-                    let durationMs = Math.round(duration);
+                    const durationMs = Math.round(duration);
 
                     node.status({
                         fill: 'green',
@@ -47,7 +47,7 @@ module.exports = function (RED) {
                         text: 'polling cycle ' + cycle + ': ' + durationMs + 'ms',
                     });
 
-                    let msg = {
+                    const msg = {
                         payload: {
                             cycle: cycle,
                             duration: duration,
@@ -76,7 +76,7 @@ module.exports = function (RED) {
         };
 
         this.stop = function () {
-            let telegramBot = node.config.getTelegramBot(false);
+            const telegramBot = node.config.getTelegramBot(false);
             if (telegramBot) {
                 if (node._getUpdatesStartHandler) {
                     telegramBot.off('getUpdates_start', node._getUpdatesStartHandler);
@@ -100,15 +100,15 @@ module.exports = function (RED) {
             if (hostname !== '') {
                 effectiveUrl = hostname;
             }
-            let url = new URL(effectiveUrl);
-            let host = url.hostname;
-            let port = url.port || 80;
-            let timeout = connectionTimeout;
+            const url = new URL(effectiveUrl);
+            const host = url.hostname;
+            const port = url.port || 80;
+            const timeout = connectionTimeout;
             node.isHostReachable(host, port, timeout).then(
                 function () {
                     if (node.isOnline != true) {
                         node.isOnline = true;
-                        let msg = {
+                        const msg = {
                             payload: {
                                 isOnline: true,
                             },
@@ -119,7 +119,7 @@ module.exports = function (RED) {
                 function (err) {
                     if (node.isOnline != false) {
                         node.isOnline = false;
-                        let msg = {
+                        const msg = {
                             payload: {
                                 isOnline: false,
                                 error: err,
@@ -133,11 +133,11 @@ module.exports = function (RED) {
 
         this.isHostReachable = function (host, port, timeout) {
             return new Promise(function (resolve, reject) {
-                let timer = setTimeout(function () {
+                const timer = setTimeout(function () {
                     reject('timeout');
                     socket.end();
                 }, timeout);
-                let socket = net.createConnection(port, host, function () {
+                const socket = net.createConnection(port, host, function () {
                     clearTimeout(timer);
                     resolve();
                     socket.end();
@@ -191,7 +191,7 @@ module.exports = function (RED) {
             // commands: e.g. injecting "stop" on an already-stopped bot left the node
             // green because config.stop() short-circuits without emitting 'stopped'.
             if (msg.payload) {
-                let command = msg.payload.command;
+                const command = msg.payload.command;
                 switch (command) {
                     case 'stop': {
                         node.config.stop('by control node', function () {
@@ -207,7 +207,7 @@ module.exports = function (RED) {
                     }
                     case 'restart': {
                         node.config.stop('by control node', function () {
-                            let delay = msg.payload.delay;
+                            const delay = msg.payload.delay;
                             if (delay !== undefined && delay > 0) {
                                 node.restartTimer = setTimeout(function () {
                                     node.restartTimer = null;
@@ -224,7 +224,7 @@ module.exports = function (RED) {
                         break;
                     }
                     case 'command': {
-                        let message = msg.payload.message;
+                        const message = msg.payload.message;
                         if (message.from === undefined) {
                             message.from = {
                                 id: 0,
@@ -249,8 +249,8 @@ module.exports = function (RED) {
                         // when the bot is in webhook mode — Telegram rejects setWebHook when polling
                         // is active. The user is responsible for configuring the right updatemode.
                         // Pass msg.payload.url = "" to deleteWebHook instead.
-                        let url = msg.payload.url;
-                        let options = msg.payload.options;
+                        const url = msg.payload.url;
+                        const options = msg.payload.options;
                         node.config.setWebHookDynamically(url, options, function (err, result) {
                             if (err) {
                                 msg.error = err.message || String(err);

@@ -3,7 +3,7 @@
 // string "[Circular]" is emitted in place of the duplicate. This preserves the
 // shape of the object in error logs instead of dropping the key.
 function safeStringify(obj, indent = 4) {
-    let cache = [];
+    const cache = [];
     const retVal = JSON.stringify(
         obj,
         (key, value) =>

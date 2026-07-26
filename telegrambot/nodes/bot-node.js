@@ -69,7 +69,7 @@ module.exports = function (RED) {
 
     // --------------------------------------------------------------------------------------------
 
-    let botsByToken = {};
+    const botsByToken = {};
 
     // --------------------------------------------------------------------------------------------
     // The configuration node
@@ -79,7 +79,7 @@ module.exports = function (RED) {
     function TelegramBotNode(n) {
         RED.nodes.createNode(this, n);
 
-        let self = this;
+        const self = this;
 
         // this is a dummy in case we abort to avoid problems in the nodes that make use of this function.
         // It will be overwritten during initialization!
@@ -93,7 +93,7 @@ module.exports = function (RED) {
         if (this.credentials !== undefined && this.credentials.token !== undefined) {
             this.token = this.credentials.token;
 
-            let configNodeId = botsByToken[this.token];
+            const configNodeId = botsByToken[this.token];
             if (configNodeId === undefined) {
                 botsByToken[self.token] = n.id;
                 this.tokenRegistered = true;
@@ -102,7 +102,7 @@ module.exports = function (RED) {
                     this.tokenRegistered = true;
                 } else {
                     this.tokenRegistered = false;
-                    let conflictingConfigNode = RED.nodes.getNode(configNodeId);
+                    const conflictingConfigNode = RED.nodes.getNode(configNodeId);
                     self.error(
                         'Aborting: Token of ' + n.botname + ' is already in use by ' + conflictingConfigNode.botname
                     );
@@ -232,7 +232,7 @@ module.exports = function (RED) {
             if (this.botHost && (this.sslTerminated || (this.privateKey && this.certificate))) {
                 this.useWebhook = true;
             } else {
-                let missing = [];
+                const missing = [];
                 if (!this.botHost) {
                     missing.push('botHost');
                 }
@@ -257,7 +257,7 @@ module.exports = function (RED) {
         this.createTelegramBotForWebhookMode = function () {
             let newTelegramBot;
 
-            let webHook = {
+            const webHook = {
                 autoOpen: false,
                 port: this.localBotPort,
                 host: this.localBotHost,
@@ -413,7 +413,7 @@ module.exports = function (RED) {
 
             let newTelegramBot;
 
-            let polling = {
+            const polling = {
                 autoStart: true,
                 interval: this.pollInterval,
                 params: {
@@ -667,16 +667,16 @@ module.exports = function (RED) {
 
         // deletes the commands if we will register one.
         this.deleteMyCommands = function () {
-            let botCommandsByLanguage = self.getBotCommands();
+            const botCommandsByLanguage = self.getBotCommands();
             if (Object.keys(botCommandsByLanguage).length > 0) {
-                let telegramBot = self.getTelegramBot();
+                const telegramBot = self.getTelegramBot();
                 if (telegramBot) {
                     // TODO:iterate over languages and delete the ones we do not have commands for.
                     // let languages = Object.keys(botCommandsByLanguage);
 
-                    let scopes = ['default', 'all_private_chats', 'all_group_chats', 'all_chat_administrators'];
+                    const scopes = ['default', 'all_private_chats', 'all_group_chats', 'all_chat_administrators'];
                     for (const scope of scopes) {
-                        let options = {
+                        const options = {
                             scope: { type: scope },
                             language_code: '',
                         };
@@ -698,24 +698,24 @@ module.exports = function (RED) {
 
         // registers the bot commands at the telegram server.
         this.setMyCommands = function () {
-            let botCommandsByLanguage = self.getBotCommands();
+            const botCommandsByLanguage = self.getBotCommands();
             if (Object.keys(botCommandsByLanguage).length > 0) {
-                let scopes = ['default', 'all_private_chats', 'all_group_chats', 'all_chat_administrators'];
+                const scopes = ['default', 'all_private_chats', 'all_group_chats', 'all_chat_administrators'];
 
                 // let languages = Object.keys(botCommandsByLanguage);
 
-                let telegramBot = self.getTelegramBot();
+                const telegramBot = self.getTelegramBot();
                 if (telegramBot) {
                     for (const scope of scopes) {
-                        for (let language in botCommandsByLanguage) {
-                            let botCommandsForLanguage = botCommandsByLanguage[language];
+                        for (const language in botCommandsByLanguage) {
+                            const botCommandsForLanguage = botCommandsByLanguage[language];
 
-                            let botCommands = botCommandsForLanguage.filter(function (botCommand) {
+                            const botCommands = botCommandsForLanguage.filter(function (botCommand) {
                                 return botCommand.scope == scope;
                             });
 
                             if (botCommands && botCommands.length > 0) {
-                                let options = {
+                                const options = {
                                     scope: { type: scope },
                                     language_code: language,
                                 };
@@ -750,7 +750,7 @@ module.exports = function (RED) {
         // meaningful in webhook mode; Telegram rejects setWebHook while polling is
         // active. Empty url => deleteWebHook.
         this.setWebHookDynamically = function (url, options, callback) {
-            let telegramBot = self.getTelegramBot();
+            const telegramBot = self.getTelegramBot();
             if (!telegramBot) {
                 callback(new Error('bot not initialized'));
                 return;
@@ -1040,7 +1040,7 @@ module.exports = function (RED) {
                 botToken = botToken.trim();
 
                 if (botToken.startsWith('{') && botToken.endsWith('}')) {
-                    let expression = botToken.substr(1, botToken.length - 2);
+                    const expression = botToken.substr(1, botToken.length - 2);
                     botToken = evalContextExpression(self, expression);
                 }
             }
@@ -1053,10 +1053,10 @@ module.exports = function (RED) {
             // Truthiness check rather than !== '' so undefined / null (e.g. flow JSON that
             // omits the field entirely) is handled the same as an empty string.
             if (self.config.usernames) {
-                let trimmedUsernames = self.config.usernames.trim();
+                const trimmedUsernames = self.config.usernames.trim();
                 if (trimmedUsernames.startsWith('{') && trimmedUsernames.endsWith('}')) {
-                    let expression = trimmedUsernames.substr(1, trimmedUsernames.length - 2);
-                    let result = evalContextExpression(self, expression);
+                    const expression = trimmedUsernames.substr(1, trimmedUsernames.length - 2);
+                    const result = evalContextExpression(self, expression);
                     if (Array.isArray(result)) {
                         usernames = result;
                     } else if (typeof result === 'string') {
@@ -1077,10 +1077,10 @@ module.exports = function (RED) {
             let chatids = [];
             // Same truthiness reasoning as getUserNames.
             if (self.config.chatids) {
-                let trimmedChatIds = self.config.chatids.trim();
+                const trimmedChatIds = self.config.chatids.trim();
                 if (trimmedChatIds.startsWith('{') && trimmedChatIds.endsWith('}')) {
-                    let expression = trimmedChatIds.substr(1, trimmedChatIds.length - 2);
-                    let result = evalContextExpression(self, expression);
+                    const expression = trimmedChatIds.substr(1, trimmedChatIds.length - 2);
+                    const result = evalContextExpression(self, expression);
                     if (Array.isArray(result)) {
                         chatids = result;
                     } else if (typeof result === 'string') {
@@ -1106,7 +1106,7 @@ module.exports = function (RED) {
         this.isAuthorizedUser = function (node, user) {
             let isAuthorized = false;
 
-            let usernames = self.getUserNames(node);
+            const usernames = self.getUserNames(node);
             if (usernames.length > 0) {
                 if (usernames.indexOf(user) >= 0) {
                     isAuthorized = true;
@@ -1118,10 +1118,10 @@ module.exports = function (RED) {
 
         this.isAuthorizedChat = function (node, chatid) {
             let isAuthorized = false;
-            let chatids = self.getChatIds(node);
+            const chatids = self.getChatIds(node);
             if (chatids.length > 0) {
                 for (let i = 0; i < chatids.length; i++) {
-                    let id = chatids[i];
+                    const id = chatids[i];
                     if (id === chatid) {
                         isAuthorized = true;
                         break;
@@ -1208,21 +1208,21 @@ module.exports = function (RED) {
         };
 
         this.setCommandPending = function (command, username, chatid) {
-            let key = self.createUniqueKey(username, chatid);
+            const key = self.createUniqueKey(username, chatid);
             self.pendingCommands[key] = command;
         };
 
         this.resetCommandPending = function (command, username, chatid) {
-            let key = self.createUniqueKey(username, chatid);
+            const key = self.createUniqueKey(username, chatid);
             delete self.pendingCommands[key];
         };
 
         this.isCommandPending = function (command, username, chatid) {
-            let key = self.createUniqueKey(username, chatid);
+            const key = self.createUniqueKey(username, chatid);
 
             let isPending = false;
             if (self.pendingCommands[key] !== undefined) {
-                let value = self.pendingCommands[key];
+                const value = self.pendingCommands[key];
                 if (value === command) {
                     isPending = true;
                 }
@@ -1231,7 +1231,7 @@ module.exports = function (RED) {
         };
 
         this.registerCommand = function (node, command, description, language, scope, registerCommand) {
-            let commandInfo = {
+            const commandInfo = {
                 command: command,
                 description: description,
                 registerCommand: registerCommand,
@@ -1256,7 +1256,7 @@ module.exports = function (RED) {
         this.isCommandRegistered = function (command) {
             let found = false;
 
-            for (let key in self.commandsByNode) {
+            for (const key in self.commandsByNode) {
                 if (self.commandsByNode[key].command === command) {
                     found = true;
                     break;
@@ -1267,8 +1267,8 @@ module.exports = function (RED) {
         };
 
         this.sendToAllCommandNodes = function (botMsg, done) {
-            for (let nodeId in self.commandsByNode) {
-                let node = RED.nodes.getNode(nodeId);
+            for (const nodeId in self.commandsByNode) {
+                const node = RED.nodes.getNode(nodeId);
                 node.processMessage(botMsg);
             }
 

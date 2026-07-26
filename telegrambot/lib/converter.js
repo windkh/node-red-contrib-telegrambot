@@ -6,7 +6,7 @@ function getPhotoIndexWithHighestResolution(photoArray) {
     if (Array.isArray(photoArray) && photoArray.length > 0) {
         let highestResolution = -1;
         photoArray.forEach(function (photo, index) {
-            let resolution = (photo && photo.width) * (photo && photo.height);
+            const resolution = (photo && photo.width) * (photo && photo.height);
             if (resolution > highestResolution) {
                 highestResolution = resolution;
                 photoIndex = index;

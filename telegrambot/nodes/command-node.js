@@ -13,16 +13,16 @@ module.exports = function (RED) {
     // message : content string
     function TelegramCommandNode(config) {
         RED.nodes.createNode(this, config);
-        let node = this;
-        let command = config.command;
+        const node = this;
+        const command = config.command;
 
-        let registerCommand = config.registercommand;
-        let description = config.description || '';
+        const registerCommand = config.registercommand;
+        const description = config.description || '';
         let language = config.language || '';
-        let scope = config.scope || 'default';
+        const scope = config.scope || 'default';
 
-        let useRegex = config.useregex || false;
-        let removeRegexCommand = config.removeregexcommand || false;
+        const useRegex = config.useregex || false;
+        const removeRegexCommand = config.removeregexcommand || false;
 
         let regEx;
         if (useRegex) {
@@ -35,7 +35,7 @@ module.exports = function (RED) {
             }
         }
 
-        let strict = config.strict;
+        const strict = config.strict;
         let hasresponse = config.hasresponse;
         if (hasresponse === undefined) {
             hasresponse = true;
@@ -53,7 +53,7 @@ module.exports = function (RED) {
         }
 
         this.start = function () {
-            let telegramBot = this.config.getTelegramBot();
+            const telegramBot = this.config.getTelegramBot();
             if (telegramBot) {
                 this.config.registerCommand(node.id, command, description, language, scope, registerCommand);
 
@@ -86,7 +86,7 @@ module.exports = function (RED) {
         };
 
         this.stop = function () {
-            let telegramBot = this.config.getTelegramBot(false);
+            const telegramBot = this.config.getTelegramBot(false);
             if (telegramBot && node.messageHandler) {
                 telegramBot.off('message', node.messageHandler);
             }
@@ -109,34 +109,34 @@ module.exports = function (RED) {
             // Use the shared converter so that anonymous-admin commands and channel-post
             // commands (both of which can arrive without botMsg.from) do not crash on
             // botMsg.from.username / botMsg.from.id.
-            let userInfo = converter.getUserInfo(botMsg);
-            let username = userInfo.username;
-            let chatid = userInfo.chatid;
-            let userid = userInfo.userid;
-            let isAnonymous = userInfo.isAnonymous;
+            const userInfo = converter.getUserInfo(botMsg);
+            const username = userInfo.username;
+            const chatid = userInfo.chatid;
+            const userid = userInfo.userid;
+            const isAnonymous = userInfo.isAnonymous;
             if (isAnonymous || node.config.isAuthorized(node, chatid, userid, username)) {
                 let msg;
                 let messageDetails;
-                let botDetails = {
+                const botDetails = {
                     botname: this.config.botname,
                     testEnvironment: this.config.testEnvironment,
                     baseApiUrl: this.config.telegramBot.options.baseApiUrl,
                 };
 
                 if (botMsg.text) {
-                    let message = botMsg.text;
-                    let tokens = message.split(' ');
+                    const message = botMsg.text;
+                    const tokens = message.split(' ');
 
                     // check if this is a command at all first
-                    let commandToken = tokens[0];
-                    let isCommandMessage = commandToken.startsWith('/');
+                    const commandToken = tokens[0];
+                    const isCommandMessage = commandToken.startsWith('/');
                     // Negative chat IDs cover groups, supergroups AND channels (the latter use a
                     // -100... prefix). All three are handled the same way: when `strict` is set
                     // the command must address this bot explicitly via @botname, otherwise any
                     // /command in the chat would also fire for unrelated bots that share the
                     // same command verb.
-                    let isGroupChat = chatid < 0;
-                    let toBot = '@' + node.botname;
+                    const isGroupChat = chatid < 0;
+                    const toBot = '@' + node.botname;
 
                     // preprocess regex
                     let command1 = command;
@@ -146,7 +146,7 @@ module.exports = function (RED) {
                     let isChatCommand = false;
                     let isDirectCommand = false;
                     if (useRegex) {
-                        let match = regEx.exec(commandToken);
+                        const match = regEx.exec(commandToken);
                         if (match !== null) {
                             isRegExMatch = true;
                             isChatCommand = true;
@@ -208,7 +208,7 @@ module.exports = function (RED) {
                         // Here we check if the received message is probably a resonse to a pending command.
                         if (!isCommandMessage) {
                             if (hasresponse) {
-                                let isPending = node.config.isCommandPending(command1, username, chatid);
+                                const isPending = node.config.isCommandPending(command1, username, chatid);
                                 if (isPending) {
                                     messageDetails = {
                                         chatId: botMsg.chat.id,

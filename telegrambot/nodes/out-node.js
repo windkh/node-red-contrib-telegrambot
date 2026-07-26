@@ -75,7 +75,7 @@ module.exports = function (RED) {
     //             invokes bot[method](...args). Reaches any library method without a dedicated type.
     function TelegramOutNode(config) {
         RED.nodes.createNode(this, config);
-        let node = this;
+        const node = this;
         this.bot = config.bot;
         this.messagesProcessed = 0;
         this.retryDelayError429 = 3; // 3s when too many requests
@@ -100,7 +100,7 @@ module.exports = function (RED) {
             });
         };
 
-        let haserroroutput = config.haserroroutput || false;
+        const haserroroutput = config.haserroroutput || false;
 
         // ------------------------------------------------------------------
         // One queue per chatId to ensure that messages to the same chat are sent in order.
@@ -189,19 +189,19 @@ module.exports = function (RED) {
             let retry = false;
             let retryAfter = 10;
             let retryReason = 'ERROR';
-            let error429 = String(exception).includes('Too Many Requests: retry after');
+            const error429 = String(exception).includes('Too Many Requests: retry after');
             if (error429) {
                 retryReason = 'FLOODING';
                 retryAfter = exception.response.body.parameters.retry_after || node.retryDelayError429;
                 retry = true;
             } else {
-                let errorNotFound = String(exception).includes('ENOTFOUND');
+                const errorNotFound = String(exception).includes('ENOTFOUND');
                 if (errorNotFound) {
                     retryReason = 'ENOTFOUND';
                     retryAfter = node.retryDelayErrorNoConnection;
                     retry = true;
                 } else {
-                    let errorConnectionReset = String(exception).includes('ECONNRESET');
+                    const errorConnectionReset = String(exception).includes('ECONNRESET');
                     if (errorConnectionReset) {
                         retryReason = 'ECONNRESET';
                         retryAfter = node.retryDelayErrorNoConnection;
@@ -211,7 +211,7 @@ module.exports = function (RED) {
             }
 
             if (!retry) {
-                let errorMessage =
+                const errorMessage =
                     'Caught exception in sender node:\r\n' +
                     exception +
                     '\r\nwhen processing message: \r\n' +
@@ -224,7 +224,7 @@ module.exports = function (RED) {
                 });
 
                 if (haserroroutput) {
-                    let sendMessage = RED.util.cloneMessage(msg);
+                    const sendMessage = RED.util.cloneMessage(msg);
                     sendMessage.error = errorMessage;
                     nodeSend([null, sendMessage]);
                 } else {
@@ -247,7 +247,7 @@ module.exports = function (RED) {
                 // give-up path needs explicit advance.
                 node.queueManager.processNext(chatId);
             } else {
-                let errorMessage = retryReason + ': retrying in ' + retryAfter + 's';
+                const errorMessage = retryReason + ': retrying in ' + retryAfter + 's';
                 node.status({
                     fill: 'red',
                     shape: 'ring',
@@ -280,13 +280,13 @@ module.exports = function (RED) {
         };
 
         this.processMessage = function (chatId, msg, nodeSend, nodeDone) {
-            let telegramBot = this.config.getTelegramBot();
+            const telegramBot = this.config.getTelegramBot();
 
             if (msg.payload.forward) {
                 // the message should be forwarded
-                let toChatId = msg.payload.forward.chatId;
+                const toChatId = msg.payload.forward.chatId;
 
-                let messageId = msg.payload.messageId;
+                const messageId = msg.payload.messageId;
                 node.migrateOptions(msg.payload.forward.options);
                 telegramBot
                     .forwardMessage(toChatId, chatId, messageId, msg.payload.forward.options)
@@ -298,9 +298,9 @@ module.exports = function (RED) {
                     });
             } else if (msg.payload.copy) {
                 // the message should be copied
-                let toChatId = msg.payload.copy.chatId;
+                const toChatId = msg.payload.copy.chatId;
 
-                let messageId = msg.payload.messageId;
+                const messageId = msg.payload.messageId;
                 node.migrateOptions(msg.payload.copy.options);
                 telegramBot
                     .copyMessage(toChatId, chatId, messageId, msg.payload.copy.options)
@@ -311,9 +311,9 @@ module.exports = function (RED) {
                         node.processResult(chatId, result, msg, nodeSend, nodeDone);
                     });
             } else if (msg.payload.download) {
-                let fileId = msg.payload.download.fileId;
-                let filePath = msg.payload.download.filePath;
-                let fileName = msg.payload.download.fileName;
+                const fileId = msg.payload.download.fileId;
+                const filePath = msg.payload.download.filePath;
+                const fileName = msg.payload.download.fileName;
 
                 node.downloadFile(fileId, filePath, fileName)
                     .catch(function (ex) {
@@ -323,7 +323,7 @@ module.exports = function (RED) {
                         node.processResult(chatId, result, msg, nodeSend, nodeDone);
                     });
             } else if (msg.payload.getfile) {
-                let fileId = msg.payload.getfile.fileId;
+                const fileId = msg.payload.getfile.fileId;
 
                 telegramBot
                     .getFile(fileId)
@@ -335,7 +335,7 @@ module.exports = function (RED) {
                     });
             } else {
                 if (msg.payload.type) {
-                    let type = msg.payload.type;
+                    const type = msg.payload.type;
                     node.addCaptionToMessageOptions(msg);
 
                     switch (type) {
@@ -411,7 +411,7 @@ module.exports = function (RED) {
                             if (this.hasContent(msg, chatId, nodeDone)) {
                                 if (Array.isArray(msg.payload.content)) {
                                     for (let i = 0; i < msg.payload.content.length; i++) {
-                                        let mediaItem = msg.payload.content[i];
+                                        const mediaItem = msg.payload.content[i];
                                         if (typeof mediaItem.type !== 'string') {
                                             node.warn(
                                                 'msg.payload.content[' +
@@ -705,7 +705,7 @@ module.exports = function (RED) {
                         case 'callback_query':
                         case 'answerCallbackQuery':
                             {
-                                let callbackQueryId = msg.payload.callbackQueryId;
+                                const callbackQueryId = msg.payload.callbackQueryId;
 
                                 let options = msg.payload.options;
                                 if (options === undefined) {
@@ -1034,8 +1034,8 @@ module.exports = function (RED) {
                             // `case`. msg.payload.chatId is optional and only used for queue
                             // ordering. Result and errors flow through the normal
                             // processResult/processError path, which advances the queue.
-                            let method = msg.payload.method;
-                            let args = msg.payload.args === undefined ? [] : msg.payload.args;
+                            const method = msg.payload.method;
+                            const args = msg.payload.args === undefined ? [] : msg.payload.args;
 
                             let invalidReason;
                             if (typeof method !== 'string' || method.length === 0) {
@@ -1115,8 +1115,8 @@ module.exports = function (RED) {
                 reject = b;
             });
 
-            let form = {};
-            let telegramBot = this.config.getTelegramBot();
+            const form = {};
+            const telegramBot = this.config.getTelegramBot();
             const fileStream = telegramBot.getFileStream(fileId, form);
             let settled = false;
             const settleResolve = function (value) {
@@ -1174,7 +1174,7 @@ module.exports = function (RED) {
         // unsupported input type) into a rejected promise so `processError` runs
         // and the queue advances.
         this.editMessageMedia = function (media, form = {}) {
-            let telegramBot = this.config.getTelegramBot();
+            const telegramBot = this.config.getTelegramBot();
             let result;
             try {
                 result = telegramBot.editMessageMedia(media, form);
@@ -1202,7 +1202,7 @@ module.exports = function (RED) {
             };
             node.config.addListener('status', node.onStatusChanged);
 
-            let telegramBot = this.config.getTelegramBot();
+            const telegramBot = this.config.getTelegramBot();
             if (telegramBot) {
                 node.status({
                     fill: 'green',
@@ -1236,17 +1236,17 @@ module.exports = function (RED) {
             node.status({ fill: 'green', shape: 'ring', text: 'connected' });
 
             if (msg.payload) {
-                let telegramBot = this.config.getTelegramBot();
+                const telegramBot = this.config.getTelegramBot();
                 if (telegramBot) {
                     if (!Array.isArray(msg.payload.chatId)) {
                         this.enqueueMessage(msg.payload.chatId, msg, nodeSend, nodeDone);
                     } else {
-                        let chatIds = msg.payload.chatId;
-                        let length = chatIds.length;
+                        const chatIds = msg.payload.chatId;
+                        const length = chatIds.length;
                         for (let i = 0; i < length; i++) {
-                            let chatId = chatIds[i];
+                            const chatId = chatIds[i];
 
-                            let clonedMsg = RED.util.cloneMessage(msg);
+                            const clonedMsg = RED.util.cloneMessage(msg);
                             clonedMsg.payload.chatId = chatId;
                             this.enqueueMessage(chatId, clonedMsg, nodeSend, nodeDone);
                         }

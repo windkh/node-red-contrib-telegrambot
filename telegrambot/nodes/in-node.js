@@ -27,13 +27,13 @@ module.exports = function (RED) {
     // contact : content is full contact object
     function TelegramInNode(config) {
         RED.nodes.createNode(this, config);
-        let node = this;
+        const node = this;
         this.bot = config.bot;
         node.filterCommands = config.filterCommands || false;
 
-        let hasInput = config.hasinput || false;
-        let handleAllUpdates = config.handleallupdates || false;
-        let handleProcessUpdates = config.handleprocessupdates || false;
+        const hasInput = config.hasinput || false;
+        const handleAllUpdates = config.handleallupdates || false;
+        const handleProcessUpdates = config.handleprocessupdates || false;
 
         // Bot uses eventemitter3 under the hood, where bot.off(event) with no handler
         // removes EVERY listener for that event - so a stop() on one receiver node
@@ -66,7 +66,7 @@ module.exports = function (RED) {
         ];
 
         this.start = function () {
-            let telegramBot = this.config.getTelegramBot();
+            const telegramBot = this.config.getTelegramBot();
             if (telegramBot) {
                 // Before starting we check if the download dir really exists.
                 if (config.saveDataDir && !fs.existsSync(config.saveDataDir)) {
@@ -93,18 +93,18 @@ module.exports = function (RED) {
 
                     if (handleProcessUpdates) {
                         const updateHandler = (botMsg) => {
-                            let botDetails = {
+                            const botDetails = {
                                 botname: this.config.botname,
                                 testEnvironment: this.config.testEnvironment,
                                 baseApiUrl: this.config.telegramBot.options.baseApiUrl,
                             };
 
-                            let payload = {
+                            const payload = {
                                 type: 'update',
                                 content: botMsg,
                             };
 
-                            let msg = {
+                            const msg = {
                                 payload: payload,
                                 telegramBot: botDetails,
                             };
@@ -137,7 +137,7 @@ module.exports = function (RED) {
         };
 
         this.stop = function () {
-            let telegramBot = this.config.getTelegramBot(false);
+            const telegramBot = this.config.getTelegramBot(false);
             if (telegramBot) {
                 node.attachedListeners.forEach(function (entry) {
                     telegramBot.off(entry.event, entry.handler);
@@ -159,32 +159,32 @@ module.exports = function (RED) {
                 text: 'connected',
             });
 
-            let userInfo = converter.getUserInfo(botMsg);
-            let username = userInfo.username;
-            let isAnonymous = userInfo.isAnonymous;
-            let chatid = userInfo.chatid;
-            let userid = userInfo.userid;
+            const userInfo = converter.getUserInfo(botMsg);
+            const username = userInfo.username;
+            const isAnonymous = userInfo.isAnonymous;
+            const chatid = userInfo.chatid;
+            const userid = userInfo.userid;
 
-            let messageDetails = converter.convertMessage(type, chatid, botMsg);
+            const messageDetails = converter.convertMessage(type, chatid, botMsg);
             if (messageDetails) {
-                let botDetails = {
+                const botDetails = {
                     botname: this.config.botname,
                     testEnvironment: this.config.testEnvironment,
                     baseApiUrl: this.config.telegramBot.options.baseApiUrl,
                 };
 
-                let msg = {
+                const msg = {
                     payload: messageDetails,
                     originalMessage: botMsg,
                     telegramBot: botDetails,
                 };
 
-                let telegramBot = this.config.getTelegramBot();
+                const telegramBot = this.config.getTelegramBot();
 
                 if (isAnonymous || node.config.isAuthorized(node, chatid, userid, username)) {
                     // downloadable "blob" message?
                     if (messageDetails.blob) {
-                        let fileId = msg.payload.content;
+                        const fileId = msg.payload.content;
                         telegramBot
                             .getFileLink(fileId)
                             .then(function (weblink) {
@@ -257,7 +257,7 @@ module.exports = function (RED) {
             // note that the nodeSend, nodeDone arguments are not used!
             this.on('input', function (msg) {
                 if (msg.payload) {
-                    let telegramBot = this.config.getTelegramBot();
+                    const telegramBot = this.config.getTelegramBot();
                     if (telegramBot) {
                         let updates;
                         // Check if the result comes from a http node otherwise msg.payload is directly used.

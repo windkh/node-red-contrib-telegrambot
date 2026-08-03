@@ -71,13 +71,13 @@
     "devDependencies": {
         "c8": "^12.0.0",
         "eslint": "^10.8.0",
-        "eslint-config-prettier": "^8.5.0",
+        "eslint-config-prettier": "^10.0.0",
         "husky": "^8.0.1",
         "node-red": "^5.0.1",
         "node-red-node-test-helper": "^0.3.4",
         "prettier": "^3.9.6",
         "proxyquire": "^2.1.3",
         "@eslint/js": "^10.0.1",
-        "globals": "^15.0.0"
+        "globals": "^17.0.0"
     }
 }

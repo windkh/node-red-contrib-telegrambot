@@ -1,0 +1,11 @@
+# Normalise line endings in the *working tree*, not just in the index.
+#
+# Prettier's `endOfLine` defaults to "lf" and this standard's .prettierrc.json does not override
+# it, so a file checked out as CRLF fails `npm run format:check` even when the blob stored in git
+# is LF. With core.autocrlf=true -- the Windows default -- that happens to every file a checkout
+# or pull touches, which turns format:check red locally while CI stays green on Linux. Pinning
+# the working tree to LF makes local and CI results identical on every platform.
+* text=auto eol=lf
+
+# Hooks are executed by sh; CRLF would break them outright.
+.husky/* text eol=lf

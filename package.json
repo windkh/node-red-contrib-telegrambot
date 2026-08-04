@@ -72,7 +72,7 @@
         "c8": "^12.0.0",
         "eslint": "^10.8.0",
         "eslint-config-prettier": "^10.1.8",
-        "husky": "^8.0.1",
+        "husky": "^9.1.7",
         "node-red": "^5.0.1",
         "node-red-node-test-helper": "^0.3.4",
         "prettier": "^3.9.6",

@@ -71,7 +71,7 @@
     "devDependencies": {
         "c8": "^12.0.0",
         "eslint": "^10.8.0",
-        "eslint-config-prettier": "^8.5.0",
+        "eslint-config-prettier": "^10.1.8",
         "husky": "^8.0.1",
         "node-red": "^5.0.1",
         "node-red-node-test-helper": "^0.3.4",

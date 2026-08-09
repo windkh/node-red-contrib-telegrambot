@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [19.0.0] - 2026-08-09
+
+### **Breaking: drop Node 20, require Node >= 22.19.** `undici@8` raises its floor to `>=22.19.0` and calls `webidl.util.markAsUncloneable`, which comes from `node:worker_threads` and does not exist on Node 20 — the whole suite dies at require time there with 108 identical `TypeError`s. Node 20 reached EOL 2026-04-30, and `node-red@5` itself already declares `engines: { node: ">=22.9" }`, so the old `>=20.0.0` described a configuration the host runtime rules out. The floor is `>=22.19.0` rather than `>=22.0.0` because Node 22.0 would still fail on the missing primitive. See [ADR 0010](doc/architecture/adr/0010-drop-node-20.md)
+
+### CI matrix `[20.x, 22.x]` → `[22.x, 24.x]`, following the precedent set when Node 18 was dropped (current LTS plus the next). Node 24 is covered for the first time. The publish workflow's build and publish jobs move from Node 20 to Node 22
+
+### No code change. Users on Node 20 get `EBADENGINE` from npm instead of a package that throws on load, and stay on `18.1.1` until they upgrade Node. Anyone running a supported Node-RED 5 already satisfies the new floor
+
 # [18.1.1] - 2026-07-18
 ### Trim the published npm tarball with a `files` whitelist. The package previously shipped the full test suite, CI config, `doc/`, and ~3.5 MB of README screenshots to every install (195 files / 4.0 MB packed). It now ships only what an installed Node-RED package needs — `telegrambot/` (nodes, lib, html, icons), `examples/` (required for Node-RED's import-examples), plus `README`/`LICENSE`/`CHANGELOG`/`MIGRATION` — reducing the tarball to ~72 files / ~125 kB packed. No code change; README image links resolve to the GitHub repo, so npm / flows.nodered.org rendering is unaffected.
 

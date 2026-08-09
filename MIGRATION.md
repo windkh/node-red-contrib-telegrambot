@@ -1,3 +1,33 @@
+# Migrating to V19.0.0
+
+V19.0.0 changes one thing: **it requires Node.js >= 22.19.** There are no code, node, or flow changes —
+if your Node is new enough, the upgrade is invisible.
+
+## Do I have to do anything?
+
+Run `node -v`.
+
+- **v22.19 or newer** — nothing to do. Upgrade normally.
+- **older than v22.19** — upgrade Node first, then this package. npm will otherwise refuse the install
+  with `EBADENGINE`, which is deliberate: on Node 20 the package throws at load time rather than
+  misbehaving quietly.
+
+If you run **Node-RED 5**, you are already on Node >= 22.9 — Node-RED 5 requires it — so you are almost
+certainly fine. The group that has to act is Node-RED 4 on Node 20.
+
+## Why
+
+The HTTP stack (`undici`) moved to v8, which requires Node >= 22.19 and uses a `node:worker_threads`
+primitive that does not exist on Node 20. Node 20 itself reached end of life on 2026-04-30. Staying on
+`undici@7` to preserve Node 20 support would mean declining future security fixes to the HTTP client for
+the sake of a runtime nobody running Node-RED 5 can be on. The full reasoning is in
+[ADR 0010](doc/architecture/adr/0010-drop-node-20.md).
+
+## Rollback
+
+`npm install node-red-contrib-telegrambot@18.1.1` then `node-red-restart`. V18.1.1 keeps the `>=20`
+floor and `undici@7`.
+
 # Migrating to V18.0.0
 
 V18.0.0 swaps the underlying `node-telegram-bot-api` library from v0.66 to v1.0.0. The upstream rewrite drops several legacy field names and a couple of method signatures. This package ships a built-in compatibility shim so **most existing V17 flows keep working unchanged on V18** — but you'll see a one-time deprecation warning per node in the debug pane pointing at this document.

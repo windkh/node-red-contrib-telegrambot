@@ -28,7 +28,9 @@ The only thing required is the `token` that can be retrieved by the `@botfather`
 > node-red-restart
 > ```
 >
-> Requires Node.js >= 20. To roll back to V17: `npm install node-red-contrib-telegrambot@17.4.17`.
+> Requires Node.js >= 22.19 (V19 dropped Node 20 — see [MIGRATION.md](MIGRATION.md)). Node-RED 5 already
+> requires Node >= 22.9, so a supported Node-RED 5 install is on a new enough Node already.
+> To roll back to V18: `npm install node-red-contrib-telegrambot@18.1.1`.
 
 # Thanks for your donation
 If you want to support this free project. Any help is welcome. You can donate by clicking one of the following links:

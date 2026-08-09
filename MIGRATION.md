@@ -17,16 +17,18 @@ certainly fine. The group that has to act is Node-RED 4 on Node 20.
 
 ## Why
 
-The HTTP stack (`undici`) moved to v8, which requires Node >= 22.19 and uses a `node:worker_threads`
-primitive that does not exist on Node 20. Node 20 itself reached end of life on 2026-04-30. Staying on
-`undici@7` to preserve Node 20 support would mean declining future security fixes to the HTTP client for
-the sake of a runtime nobody running Node-RED 5 can be on. The full reasoning is in
-[ADR 0010](doc/architecture/adr/0010-drop-node-20.md).
+Node-RED 5 requires Node >= 22.9 itself, so the old `>=20` promise described a setup that Node-RED 5
+already rules out — while costing us a CI leg and a veto over dependency upgrades to keep it alive. Node 20
+also reached end of life on 2026-04-30 and receives no further security fixes. The floor is 22.19 rather
+than 22.9 so that a future HTTP-stack upgrade does not need a second major release. The full reasoning is
+in [ADR 0010](doc/architecture/adr/0010-drop-node-20.md).
+
+Nothing else changed: same nodes, same options, same `undici@7` HTTP stack.
 
 ## Rollback
 
-`npm install node-red-contrib-telegrambot@18.1.1` then `node-red-restart`. V18.1.1 keeps the `>=20`
-floor and `undici@7`.
+`npm install node-red-contrib-telegrambot@18.1.1` then `node-red-restart`. V18.1.1 is identical apart from
+the `>=20` floor.
 
 # Migrating to V18.0.0
 

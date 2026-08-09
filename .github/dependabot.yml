@@ -5,6 +5,17 @@ updates:
       schedule:
           interval: weekly
       open-pull-requests-limit: 5
+      ignore:
+          # undici 8 removed the legacy dispatcher handler wrappers. We hand our
+          # Agent to Node's BUILT-IN fetch (node-telegram-bot-api spreads
+          # request.fetchOptions into it), and that fetch comes from Node's own
+          # bundled undici — which still drives a dispatcher through the legacy
+          # callbacks. A v8 dispatcher is accepted but never completes a request:
+          # every integration test either times out or fails with
+          # "EFATAL: fetch failed". Lift this once Node bundles undici 8.
+          # See doc/architecture/adr/0011-stay-on-undici-7.md (#496).
+          - dependency-name: undici
+            update-types: [version-update:semver-major]
     - package-ecosystem: github-actions
       directory: /
       schedule:

@@ -11,7 +11,7 @@
     "dependencies": {
         "fetch-socks": "^1.3.3",
         "node-telegram-bot-api": "^1.2.0",
-        "undici": "^7.0.0"
+        "undici": "^8.10.0"
     },
     "overrides": {
         "tough-cookie": "^4.1.3",

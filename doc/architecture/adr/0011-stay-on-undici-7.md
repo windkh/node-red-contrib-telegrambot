@@ -28,14 +28,38 @@ The mechanism is how this package wires its transport (`telegrambot/lib/undici-p
 2. `node-telegram-bot-api` spreads `request.fetchOptions` into a call to Node's **built-in** `fetch`.
 3. That built-in fetch comes from Node's **own bundled** undici, not from ours.
 
-undici v8.0.0's release notes list **"Remove legacy handler wrappers"** (and "Enable h2 by default"). Node's
-bundled undici still drives a dispatcher through the legacy handler callbacks. A v8 dispatcher is therefore
-accepted by `fetch` — the object passes whatever check it makes, which is why `dispatch()` is still reached —
-but the response is never delivered back through callbacks that no longer exist. Hence `fetch failed` on the
-short paths and 30-second timeouts on the polling ones.
+undici v8.0.0's release notes list **"Remove legacy handler wrappers"**. Node's bundled undici still hands a
+dispatcher a *legacy-shaped* handler; undici 8 no longer accepts one and rejects it outright.
+
+This was reproduced directly, rather than inferred. On Node 24.19.0 with `undici@8.10.0` installed over the
+tree, against a local HTTP server:
+
+```
+node v24.19.0 | bundled undici 7.29.0 | standalone undici 8.10.0
+
+OK     builtin fetch, no dispatcher         : 200 "pong"
+FAIL   builtin fetch, undici-8 dispatcher   : TypeError: fetch failed
+                                              (cause: invalid onRequestStart method)
+       -> dispatch() reached: true
+OK     undici-8 fetch, undici-8 dispatcher  : 200 "pong"
+```
+
+Three things follow from those three lines:
+
+- **The server is reachable** and the failure is not environmental (line 1).
+- **Our production path is the broken one** (line 2). `dispatch()` *is* reached — which is exactly why
+  `test/lib/undici-pool.test.js` kept passing — but undici 8 then rejects the handler Node's bundled undici
+  supplies, with `invalid onRequestStart method`. That surfaces to the caller as `fetch failed`, and to
+  `node-telegram-bot-api` as `EFATAL: fetch failed`.
+- **undici 8 itself is fine** (line 3). Its own `fetch` drives its own dispatcher without complaint. The
+  defect is exclusively in mixing the two majors.
+
+The full integration suite reproduces it too: with `undici@7.29.0` all 14 integration subtests pass; with
+`undici@8.10.0` **zero** pass, with the same `0 !== 1` and `EFATAL: fetch failed` assertions seen on CI.
 
 This is not a Node-version problem and not a test problem. **Two undici majors cannot be mixed across the
-built-in-fetch boundary**, and we are on the wrong side of it until Node ships a bundled undici 8.
+built-in-fetch boundary**, and we are on the wrong side of it until Node ships a bundled undici 8. Note that
+even Node 24.19 — the newest line in our CI matrix — still bundles undici **7.29.0**, so that wait is real.
 
 Alternatives considered:
 
@@ -64,7 +88,9 @@ Minor and patch updates to undici 7 continue to flow, so security fixes are not 
 - **undici 7 security releases still arrive** via minor/patch bumps. If undici 7 ever stops receiving them,
   this ADR has to be revisited urgently — that is the real risk being carried.
 - **The ignore rule hides a real upgrade.** It must be lifted, not forgotten, once a Node release bundles
-  undici 8. `process.versions.undici` on the minimum supported Node is the thing to check.
+  undici 8. `process.versions.undici` on the minimum supported Node is the thing to check — it reads
+  `7.29.0` on Node 24.19.0, so nothing in the current matrix is close yet. The probe in the Context section
+  is three lines of script and re-answers the question in seconds whenever it is worth re-asking.
 - **`test/lib/undici-pool.test.js` overstates its guarantee.** Its end-to-end test is named for catching
   "Node's bundled undici doesn't accept our dispatcher" regressions, but it passed through exactly such a
   regression because it asserts only that `dispatch()` was reached. Making it assert a completed response

@@ -24,3 +24,13 @@ jobs:
             - run: npm run format:check
             - run: npm test
             - run: npm run coverage:check
+            # Uploaded from one matrix leg only — the report is identical across them, and
+            # two legs writing the same artifact name is an error. Makes a coverage
+            # regression inspectable from the failing run instead of only reproducible locally.
+            - name: Upload coverage report
+              if: matrix.node-version == '22.x'
+              uses: actions/upload-artifact@v7
+              with:
+                  name: coverage-report
+                  path: coverage/
+                  retention-days: 14

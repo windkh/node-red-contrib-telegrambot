@@ -17,4 +17,10 @@ jobs:
             - uses: actions/setup-node@v7
               with:
                   node-version: 20.x
-            - run: npx --yes node-red-standards audit
+            # Resolved from Git, not the npm registry: this package is deliberately
+            # unpublished (README "Install", option B), so a bare
+            # `npx --yes node-red-standards` fails every run with E404 before it can
+            # audit anything — which reads as drift when it is really a missing
+            # package. The repo is public, so no token is needed. If it is ever
+            # published, the short form becomes available and this can go back.
+            - run: npx --yes github:windkh/node-red-standards audit

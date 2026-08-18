@@ -1,58 +1,51 @@
-# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
-# For more information see: https://help.github.com/actions/language-and-framework-guides/publishing-nodejs-packages
-
-name: Node.js Package
+name: Publish to npm
 
 on:
     release:
-        types: [created]
+        # 'published' — not 'created', which also fires when a *draft* release is saved and
+        # would push unreleased code to npm.
+        types: [published]
 
 jobs:
-    # The same gate as CI, re-run here on purpose. A release is cut from a tag, and
-    # nothing guarantees that tag points at a commit CI ever saw. `npm publish` is
-    # irreversible — a version number cannot be reused once taken — so verify rather
-    # than assume.
+    # The same gate as CI, re-run here on purpose. A release is cut from a tag, and nothing
+    # guarantees that tag points at a commit CI ever saw — so verify before publishing rather
+    # than assume. npm publish is irreversible: a version cannot be replaced once taken.
     build:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
             - uses: actions/setup-node@v7
               with:
-                  node-version: 22
+                  # Must satisfy the STRICTEST `engines.node` among repos using this standard,
+                  # not this standard's own >=20 baseline. A repo may raise its floor
+                  # (node-red@5 requires >=22.9), and a 20.x pin then fails `npm ci` with
+                  # EBADENGINE — breaking the release of exactly the repos that are most
+                  # current. Raise this when a repo goes past 22. Deliberately a fixed LTS
+                  # rather than `node-version-file: package.json`: setup-node resolves a
+                  # `>=` range to the newest Node in existence, so a brand-new major could
+                  # block a release on a day nobody chose.
+                  node-version: 22.x
             - run: npm ci
             - run: npm run lint
             - run: npm run format:check
             - run: npm test
 
     publish-npm:
-        # Without this the publish would run regardless of the gate above.
+        # Without this the publish runs regardless of the checks above.
         needs: build
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
             - uses: actions/setup-node@v7
               with:
-                  node-version: 22
-                  registry-url: https://registry.npmjs.org/
+                  node-version: 22.x
+                  registry-url: https://registry.npmjs.org
             - run: npm ci
-            # GitHub releases flagged "pre-release" publish to the `beta`
-            # dist-tag so existing users on Manage Palette (which tracks
-            # `latest`) don't auto-upgrade onto unproven builds. Stable
-            # releases publish to `latest` as before.
+            # A GitHub release flagged "pre-release" goes to the `beta` dist-tag, so users
+            # on Manage Palette — which tracks `latest` — are not auto-upgraded onto an
+            # unproven build. A plain `npm publish` would move `latest` to the beta and
+            # push it to every install; `latest` cannot be walked back to an earlier
+            # version by publishing, only by a separate dist-tag change.
             - run: npm publish ${{ github.event.release.prerelease && '--tag beta' || '' }}
               env:
-                  NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-
-    # publish-gpr:
-    #   needs: build
-    #   runs-on: ubuntu-latest
-    #   steps:
-    #     - uses: actions/checkout@v7
-    #     - uses: actions/setup-node@v7
-    #       with:
-    #         node-version: 20
-    #         registry-url: https://npm.pkg.github.com/
-    #     - run: npm ci
-    #     - run: npm publish
-    #       env:
-    #         NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

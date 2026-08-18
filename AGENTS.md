@@ -51,6 +51,12 @@
 - Node's default discovery runs **every** `.js` under `test/`, whatever it is named, so shared helpers and
   fixtures belong outside that directory (e.g. `test-helpers/`). The test script deliberately takes no path
   arguments: a `'test/**/*.test.js'` glob would need Node >= 21 and fails on Node 20, which is still supported.
+- The test script deliberately has **no `--test-force-exit`**. It calls `process.exit()` as soon as the last
+  test finishes, racing libuv's teardown of undici keep-alive sockets and mock HTTP servers — on Windows that
+  aborts the process _after_ the results are in, so the runner marks a whole file failed while every test in
+  it passed (`Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`). A suite that exits on its own has
+  also _proved_ it leaks no handles, which the flag hides. If the suite ever stops exiting, find the open
+  handle — don't reinstate the flag.
 - `test-helpers/fake-red.js` is a minimal Node-RED stand-in shipped by the standard. A node file exports
   `function (RED) {…}`, so without a RED object its contents cannot run at all — which is why node files
   tend to sit at 0% coverage while the logic extracted from them is well covered. Use it to instantiate a
@@ -76,7 +82,7 @@
 
 ## Shared: package.json scripts
 
-`lint`, `lint:fix`, `format`, `format:check`, `test` (`node --test` with `--test-force-exit --test-timeout=30000 --test-concurrency=1`, no path args), `coverage` / `coverage:check` (c8 over `npm test`).
+`lint`, `lint:fix`, `format`, `format:check`, `test` (`node --test` with `--test-timeout=30000 --test-concurrency=1`, no path args), `coverage` / `coverage:check` (c8 over `npm test`).
 
 <!-- END node-red-standards:managed -->
 
@@ -84,50 +90,13 @@
 
 <!-- Repo-specific rules go here. `nrstd sync` never touches this section. -->
 
-### Tests: no `--test-force-exit` (deviation from the shared standard)
+### CI matrix: Node 22/24, not the standard's 20/22
 
-The shared block above documents the standard `test` script as including `--test-force-exit`. This
-repo deliberately omits it. `--test-force-exit` calls `process.exit()` as soon as the last test
-finishes, and on Windows that races libuv's teardown of the undici keep-alive sockets and mock HTTP
-servers these tests open, aborting the process:
+`.github/workflows/node.js.yml` is a synced template, so `nrstd sync --force` would put
+`node-version: [20.x, 22.x]` back. This package dropped Node 20 in V19 ([ADR 0010](doc/architecture/adr/0010-drop-node-20.md))
+and declares `engines.node >= 22.19`, so a 20.x leg fails `npm ci` with `EBADENGINE`. Keep
+`[22.x, 24.x]`; the standard's own baseline is still >=20, which is why the template differs.
 
-```
-Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 94
-```
-
-The abort happens *after* every test has passed, so the runner still reports the whole file as
-failed. It needed several `helper.load`/`unload` cycles in one file to trigger — each of the four
-affected files passed in isolation — which is why it looked like flakiness rather than a flag
-problem.
-
-Without the flag the suite drains its own handles and exits cleanly (~2.5 s slower). Keep it that
-way: a clean exit *proves* no handle was leaked, whereas force-exit hid the question. The cost is
-that a future genuine leak shows up as a hang instead of a fast failure — if the suite ever stops
-exiting, find the open handle rather than reinstating the flag.
-
-`nrstd sync` only fills in missing scripts and migrates mocha ones, explicitly leaving an existing
-`node --test ...` alone, so this customization survives a sync. The managed block's wording will
-still mention the flag until the standard itself changes.
-
-### Releases: `npm-publish.yml` diverges from the synced template on purpose
-
-`nrstd sync` maps `templates/workflows/npm-publish.yml` onto this file, so a plain sync reports it as
-`differs (kept)` and **`nrstd sync --force` would overwrite it**. Do not take the template wholesale —
-two of its differences are regressions here:
-
-- **Node version.** The template pins `20.x`. This package declares `engines.node >= 22.19` (ADR 0010,
-  the V19 breaking change), so `npm ci` on Node 20 fails with `EBADENGINE`. Keep `22`.
-- **Pre-release routing.** This repo publishes with
-  `npm publish ${{ github.event.release.prerelease && '--tag beta' || '' }}` so a GitHub release flagged
-  *pre-release* lands on the `beta` dist-tag and Manage Palette users tracking `latest` are not
-  auto-upgraded onto an unproven build (used throughout the V18 betas). The template has a plain
-  `npm publish`, which would push a beta straight to `latest`.
-
-What the template gets right and was adopted: the `build` job runs the full gate (`lint`,
-`format:check`, `test`) and `publish-npm` declares `needs: build`. A release is cut from a tag and
-nothing guarantees that tag points at a commit CI ever saw, and `npm publish` cannot be undone — a
-version number is gone once taken.
-
-Still not adopted from the template: `on.release.types: [published]` instead of `[created]`.
-`created` also fires when a *draft* release is saved, which would publish unreleased code. Worth
-changing; left alone here only because it is unrelated to the gate.
+Everything else in the workflows now matches the standard — the `--test-force-exit` removal, the
+release gate, the pre-release `--tag beta` routing and the Git-resolved `nrstd audit` invocation all
+live in the standard as of node-red-standards 0.4.1, so they are no longer deviations to track here.

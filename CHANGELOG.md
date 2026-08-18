@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [19.0.1] - 2026-08-18
+### Fix a crash that took down the whole Node-RED process during a polling outage (#503). `TypeError: Cannot read properties of null (reading 'stopPolling')`. The `polling_error` listener is bound to one specific bot instance, but it acted on `self.telegramBot` — the instance *currently* installed on the config node. Those two diverge: `abortBot()` nulls `self.telegramBot` and the polling-burst `scheduleRestart()` then installs a freshly constructed bot, while the retired instance's aborted `getUpdates` settles afterwards and emits `polling_error` on the listener still bound to it. The cheap recovery path then dereferenced the nulled `self.telegramBot`, and because the listener runs from a promise rejection inside an EventEmitter, nothing could catch the throw — Node-RED exited with `status=1/FAILURE` (the reporter hit it on a Full Deploy during a sustained `EFATAL: fetch failed` storm). When a replacement bot *had* already been built, the same stale event instead stopped and restarted the **new** bot's polling and pushed entries into its circuit-breaker window, prolonging the outage it was meant to recover from.
+
+### The listener now handles an event only while the instance it is bound to is still the installed one; events from a retired instance are ignored (logged in verbose mode). The two deferred callbacks on that path — the poll-status reset and `restartPolling`'s 3 s timer — were only checking that `self.telegramBot` is truthy, which a replacement bot satisfies; they now check instance identity too, so a timer armed for the old bot can no longer restart the polling of the new one. No configuration change; only the recovery path is affected.
+
 # [19.0.0] - 2026-08-09
 
 ### **Breaking: drop Node 20, require Node >= 22.19.** `node-red@5` itself declares `engines: { node: ">=22.9" }`, so the old `>=20.0.0` promised a configuration our own host runtime rules out — while obliging us to keep testing it and to weigh it in every dependency decision. Node 20 also reached EOL on 2026-04-30 and gets no further security fixes. The floor is `>=22.19.0` rather than `>=22.9` so that a future undici 8 attempt needs no second major bump. See [ADR 0010](doc/architecture/adr/0010-drop-node-20.md)

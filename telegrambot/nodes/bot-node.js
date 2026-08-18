@@ -387,8 +387,11 @@ module.exports = function (RED) {
                 }
                 self.pollingRestartTimer = setTimeout(function () {
                     self.pollingRestartTimer = null;
-                    // Check if abort was called in the meantime.
-                    if (self.telegramBot) {
+                    // Check whether the bot was aborted or already replaced by
+                    // scheduleRestart in the meantime. Restarting the polling of a
+                    // *different* instance than the one this timer was armed for would
+                    // disrupt the fresh bot that scheduleRestart just built (#503).
+                    if (self.telegramBot === newTelegramBot) {
                         // v1.0.0's `stopPolling({cancel: true})` uses AbortController
                         // internally to cancel the in-flight getUpdates and sets the
                         // polling instance's `_abort = true` to halt the recursive
@@ -397,12 +400,12 @@ module.exports = function (RED) {
                         // by hand because v0.x's `{cancel: true}` didn't set _abort.
                         self.telegramBot.stopPolling({ cancel: true }).then(
                             function () {
-                                if (self.telegramBot) {
+                                if (self.telegramBot === newTelegramBot) {
                                     self.telegramBot.startPolling({ restart: true });
                                 }
                             },
                             function () {
-                                if (self.telegramBot) {
+                                if (self.telegramBot === newTelegramBot) {
                                     self.telegramBot.startPolling({ restart: true });
                                 }
                             }
@@ -453,13 +456,15 @@ module.exports = function (RED) {
 
             self.status = 'connected';
 
-            newTelegramBot.on('polling_error', function (error) {
+            // Body of the polling_error listener. Extracted so the listener itself is
+            // just the staleness check above it; see #503.
+            function handlePollingError(error) {
                 self.setStatus('error', 'polling error');
 
                 // We reset the polling status after the 80% of the timeout
                 setTimeout(function () {
-                    // check if abort was called in the meantime.
-                    if (self.telegramBot) {
+                    // check if abort was called or the bot replaced in the meantime.
+                    if (self.telegramBot === newTelegramBot) {
                         self.setStatus('info', 'polling');
                     }
                 }, self.pollInterval * 0.8);
@@ -554,6 +559,25 @@ module.exports = function (RED) {
                     if (self.verbose) {
                         self.warn(hint);
                     }
+                }
+            }
+
+            newTelegramBot.on('polling_error', function (error) {
+                // Only the instance that is currently installed may act on its own
+                // polling errors. abortBot() nulls self.telegramBot and
+                // scheduleRestart() replaces it with a freshly constructed bot, yet
+                // the aborted getUpdates of the previous instance still settles
+                // afterwards and emits polling_error on the instance this listener is
+                // bound to. Acting on that stale event dereferenced null at the cheap
+                // recovery path (issue #503: "Cannot read properties of null (reading
+                // 'stopPolling')" — an uncaught exception inside a promise-driven
+                // emitter, so nothing could catch it and the whole Node-RED process
+                // exited) and, when a new bot had already been built, restarted the
+                // new bot's polling and polluted its circuit-breaker windows.
+                if (self.telegramBot === newTelegramBot) {
+                    handlePollingError(error);
+                } else if (self.verbose) {
+                    self.warn('Ignoring polling error from a retired bot instance: ' + formatErrorChain(error));
                 }
             });
 

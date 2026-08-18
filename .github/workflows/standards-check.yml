@@ -1,0 +1,20 @@
+# Synced into target repos by `nrstd sync` as .github/workflows/standards-check.yml.
+# Fails CI if the repo drifts from the shared standard. Tool-neutral (no AI).
+# `nrstd audit` exits non-zero below 10/10, so a repo adopting this should run
+# `nrstd sync --write` first — otherwise its next push goes red on pre-existing drift.
+name: Standards check
+on:
+    push:
+        branches: [master, main]
+    pull_request:
+permissions:
+    contents: read
+jobs:
+    standards:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v7
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 20.x
+            - run: npx --yes node-red-standards audit

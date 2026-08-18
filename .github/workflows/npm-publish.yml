@@ -8,6 +8,10 @@ on:
         types: [created]
 
 jobs:
+    # The same gate as CI, re-run here on purpose. A release is cut from a tag, and
+    # nothing guarantees that tag points at a commit CI ever saw. `npm publish` is
+    # irreversible — a version number cannot be reused once taken — so verify rather
+    # than assume.
     build:
         runs-on: ubuntu-latest
         steps:
@@ -17,8 +21,11 @@ jobs:
                   node-version: 22
             - run: npm ci
             - run: npm run lint
+            - run: npm run format:check
+            - run: npm test
 
     publish-npm:
+        # Without this the publish would run regardless of the gate above.
         needs: build
         runs-on: ubuntu-latest
         steps:

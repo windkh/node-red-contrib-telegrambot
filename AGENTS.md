@@ -108,3 +108,26 @@ exiting, find the open handle rather than reinstating the flag.
 `nrstd sync` only fills in missing scripts and migrates mocha ones, explicitly leaving an existing
 `node --test ...` alone, so this customization survives a sync. The managed block's wording will
 still mention the flag until the standard itself changes.
+
+### Releases: `npm-publish.yml` diverges from the synced template on purpose
+
+`nrstd sync` maps `templates/workflows/npm-publish.yml` onto this file, so a plain sync reports it as
+`differs (kept)` and **`nrstd sync --force` would overwrite it**. Do not take the template wholesale —
+two of its differences are regressions here:
+
+- **Node version.** The template pins `20.x`. This package declares `engines.node >= 22.19` (ADR 0010,
+  the V19 breaking change), so `npm ci` on Node 20 fails with `EBADENGINE`. Keep `22`.
+- **Pre-release routing.** This repo publishes with
+  `npm publish ${{ github.event.release.prerelease && '--tag beta' || '' }}` so a GitHub release flagged
+  *pre-release* lands on the `beta` dist-tag and Manage Palette users tracking `latest` are not
+  auto-upgraded onto an unproven build (used throughout the V18 betas). The template has a plain
+  `npm publish`, which would push a beta straight to `latest`.
+
+What the template gets right and was adopted: the `build` job runs the full gate (`lint`,
+`format:check`, `test`) and `publish-npm` declares `needs: build`. A release is cut from a tag and
+nothing guarantees that tag points at a commit CI ever saw, and `npm publish` cannot be undone — a
+version number is gone once taken.
+
+Still not adopted from the template: `on.release.types: [published]` instead of `[created]`.
+`created` also fires when a *draft* release is saved, which would publish unreleased code. Worth
+changing; left alone here only because it is unrelated to the gate.

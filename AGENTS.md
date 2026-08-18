@@ -83,3 +83,28 @@
 ## Project-specific rules
 
 <!-- Repo-specific rules go here. `nrstd sync` never touches this section. -->
+
+### Tests: no `--test-force-exit` (deviation from the shared standard)
+
+The shared block above documents the standard `test` script as including `--test-force-exit`. This
+repo deliberately omits it. `--test-force-exit` calls `process.exit()` as soon as the last test
+finishes, and on Windows that races libuv's teardown of the undici keep-alive sockets and mock HTTP
+servers these tests open, aborting the process:
+
+```
+Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 94
+```
+
+The abort happens *after* every test has passed, so the runner still reports the whole file as
+failed. It needed several `helper.load`/`unload` cycles in one file to trigger — each of the four
+affected files passed in isolation — which is why it looked like flakiness rather than a flag
+problem.
+
+Without the flag the suite drains its own handles and exits cleanly (~2.5 s slower). Keep it that
+way: a clean exit *proves* no handle was leaked, whereas force-exit hid the question. The cost is
+that a future genuine leak shows up as a hang instead of a fast failure — if the suite ever stops
+exiting, find the open handle rather than reinstating the flag.
+
+`nrstd sync` only fills in missing scripts and migrates mocha ones, explicitly leaving an existing
+`node --test ...` alone, so this customization survives a sync. The managed block's wording will
+still mention the flag until the standard itself changes.

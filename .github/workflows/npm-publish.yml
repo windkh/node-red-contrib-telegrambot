@@ -20,6 +20,12 @@ on:
             - 'v*'
             - 'V*'
 
+# Least privilege for GITHUB_TOKEN, declared at the top so it covers every job. The one job
+# that needs more (github-release, which creates the release) raises it to `contents: write`
+# for itself. npm authentication is a separate secret and is unaffected by this.
+permissions:
+    contents: read
+
 jobs:
     # The same gate as CI, re-run here on purpose, and on the same matrix. A release is cut from
     # a tag, and nothing guarantees that tag points at a commit CI ever saw -- a tag can be

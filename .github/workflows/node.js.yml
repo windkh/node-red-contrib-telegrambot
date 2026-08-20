@@ -6,6 +6,13 @@ on:
     pull_request:
         branches: [master, main]
 
+# Least privilege for GITHUB_TOKEN. Without an explicit block a workflow inherits the
+# repository default, which on many repos is read *and write* to everything -- flagged by
+# CodeQL as actions/missing-workflow-permissions. This job only reads the checkout; the
+# artifact upload authenticates with the runtime token, not GITHUB_TOKEN.
+permissions:
+    contents: read
+
 jobs:
     build:
         runs-on: ubuntu-latest

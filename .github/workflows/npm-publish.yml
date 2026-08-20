@@ -1,16 +1,63 @@
+# Publish to npm, driven by a version tag.
+#
+# `git push --tags` is the whole release. Previously this triggered on
+# `release: [published]`, which meant creating a release in the GitHub UI first -- a manual step
+# that gets forgotten. It did get forgotten: node-red-contrib-shelly sat at 11.12.1 in the repo
+# and 11.12.0 on npm because the tag existed and the release did not. The tag is the thing a
+# maintainer already creates, so make it the trigger and let the workflow create the release.
+#
+# Adopted from node-red-contrib-ntrip, which had been doing this since before the standard
+# existed. See node-red-standards issue #2 for the comparison.
+#
+# NOTE: pushing a tag now publishes. There is no second confirmation step, and `npm publish` is
+# irreversible -- a version cannot be replaced once taken. The `verify` job below is what stands
+# between a tag and the registry.
 name: Publish to npm
 
 on:
-    release:
-        # 'published' — not 'created', which also fires when a *draft* release is saved and
-        # would push unreleased code to npm.
-        types: [published]
+    push:
+        tags:
+            - 'v*'
+            - 'V*'
 
 jobs:
-    # The same gate as CI, re-run here on purpose. A release is cut from a tag, and nothing
-    # guarantees that tag points at a commit CI ever saw — so verify before publishing rather
-    # than assume. npm publish is irreversible: a version cannot be replaced once taken.
-    build:
+    # The same gate as CI, re-run here on purpose, and on the same matrix. A release is cut from
+    # a tag, and nothing guarantees that tag points at a commit CI ever saw -- a tag can be
+    # moved, or cut from a branch that never opened a PR. So verify rather than assume, and
+    # verify on every supported Node version, not just one: a tag is exactly the moment a
+    # version-specific failure is most expensive to discover.
+    verify:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                node-version: [20.x, 22.x]
+        steps:
+            - uses: actions/checkout@v7
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: ${{ matrix.node-version }}
+                  cache: npm
+            - run: npm ci
+            # npm publishes the version in package.json, not the one in the tag name. Without
+            # this check `git tag v1.2.4` on a commit that still says 1.2.3 publishes 1.2.3 and
+            # leaves a tag that lies about it -- and 1.2.4 can then never be published from a
+            # corrected commit, because the number was already burned.
+            - name: Tag matches package.json
+              run: |
+                  TAG_VERSION="${GITHUB_REF_NAME#[vV]}"
+                  PKG_VERSION="$(node -p "require('./package.json').version")"
+                  if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+                      echo "::error::tag ${GITHUB_REF_NAME} means version ${TAG_VERSION}, but package.json says ${PKG_VERSION}. Fix one of them, delete the tag, and push it again."
+                      exit 1
+                  fi
+                  echo "tag ${GITHUB_REF_NAME} and package.json agree on ${PKG_VERSION}"
+            - run: npm run lint
+            - run: npm run format:check
+            - run: npm test
+
+    publish-npm:
+        # Without this the publish runs regardless of the checks above.
+        needs: verify
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v7
@@ -18,34 +65,63 @@ jobs:
               with:
                   # Must satisfy the STRICTEST `engines.node` among repos using this standard,
                   # not this standard's own >=20 baseline. A repo may raise its floor
-                  # (node-red@5 requires >=22.9), and a 20.x pin then fails `npm ci` with
-                  # EBADENGINE — breaking the release of exactly the repos that are most
+                  # (node-red@5 requires >=22.9), and a 20.x pin then warns or fails on
+                  # `npm ci` -- breaking the release of exactly the repos that are most
                   # current. Raise this when a repo goes past 22. Deliberately a fixed LTS
                   # rather than `node-version-file: package.json`: setup-node resolves a
                   # `>=` range to the newest Node in existence, so a brand-new major could
                   # block a release on a day nobody chose.
                   node-version: 22.x
-            - run: npm ci
-            - run: npm run lint
-            - run: npm run format:check
-            - run: npm test
-
-    publish-npm:
-        # Without this the publish runs regardless of the checks above.
-        needs: build
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v7
-            - uses: actions/setup-node@v7
-              with:
-                  node-version: 22.x
+                  cache: npm
                   registry-url: https://registry.npmjs.org
             - run: npm ci
-            # A GitHub release flagged "pre-release" goes to the `beta` dist-tag, so users
-            # on Manage Palette — which tracks `latest` — are not auto-upgraded onto an
-            # unproven build. A plain `npm publish` would move `latest` to the beta and
-            # push it to every install; `latest` cannot be walked back to an earlier
-            # version by publishing, only by a separate dist-tag change.
-            - run: npm publish ${{ github.event.release.prerelease && '--tag beta' || '' }}
+            # A semver pre-release (anything after a `-`, e.g. v1.2.3-beta.1) goes to the `beta`
+            # dist-tag, so users on Manage Palette -- which tracks `latest` -- are not
+            # auto-upgraded onto an unproven build. A plain `npm publish` would move `latest` to
+            # the pre-release and push it to every install, and `latest` cannot be walked back
+            # by publishing, only by a separate dist-tag change.
+            #
+            # Every pre-release identifier maps to `beta`, including `-rc` and `-alpha`. Mapping
+            # each to its own dist-tag would be more precise but adds a name nobody tracks; the
+            # property that matters is only "not latest".
+            - name: Publish
+              run: |
+                  VERSION="${GITHUB_REF_NAME#[vV]}"
+                  case "$VERSION" in
+                      *-*) echo "pre-release ${VERSION} -> dist-tag beta"; npm publish --tag beta ;;
+                      *)   echo "release ${VERSION} -> dist-tag latest";   npm publish ;;
+                  esac
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    github-release:
+        # Last, and only after the publish succeeded: a release pointing at a version that is
+        # not on npm is worse than no release at all.
+        needs: publish-npm
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  # Generated notes are built from the commits since the previous tag, so the
+                  # full history has to be present.
+                  fetch-depth: 0
+            # `gh` is preinstalled on GitHub runners, so this needs no third-party action --
+            # worth a few lines of shell for a workflow that runs in every repo and holds a
+            # publish token.
+            - name: Create the GitHub release
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  VERSION="${GITHUB_REF_NAME#[vV]}"
+                  # Idempotent on purpose. The npm publish above has already happened and cannot
+                  # be repeated, so a re-run of this job must not fail on a release that exists.
+                  if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+                      echo "release ${GITHUB_REF_NAME} already exists, leaving it alone"
+                  else
+                      case "$VERSION" in
+                          *-*) gh release create "$GITHUB_REF_NAME" --generate-notes --prerelease ;;
+                          *)   gh release create "$GITHUB_REF_NAME" --generate-notes ;;
+                      esac
+                  fi

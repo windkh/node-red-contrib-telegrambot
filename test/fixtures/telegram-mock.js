@@ -116,7 +116,13 @@ function startMock() {
             } else if (ct.includes('application/x-www-form-urlencoded')) {
                 body = parseFormBody(raw);
             } else if (ct.includes('multipart/form-data')) {
-                const boundary = (ct.match(/boundary=(.+)$/) || [])[1];
+                // Character class, not `(.+)$`. Two reasons, and the correctness one is the
+                // stronger: a Content-Type may carry parameters after the boundary
+                // (`multipart/form-data; boundary=abc; charset=utf-8`), and `(.+)$` swallows
+                // them into the boundary. It is also linear -- `(.+)$` backtracks
+                // quadratically when the anchor fails, which is what CodeQL reports as
+                // js/polynomial-redos.
+                const boundary = (ct.match(/boundary=([^;\s]+)/) || [])[1];
                 if (boundary) body = parseMultipart(raw, boundary);
             }
 

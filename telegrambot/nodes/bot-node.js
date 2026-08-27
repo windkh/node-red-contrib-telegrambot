@@ -255,8 +255,6 @@ module.exports = function (RED) {
         }
 
         this.createTelegramBotForWebhookMode = function () {
-            let newTelegramBot;
-
             const webHook = {
                 autoOpen: false,
                 port: this.localBotPort,
@@ -272,7 +270,7 @@ module.exports = function (RED) {
                 testEnvironment: this.testEnvironment,
             };
 
-            newTelegramBot = self.instantiateBot(this.token, options);
+            const newTelegramBot = self.instantiateBot(this.token, options);
             if (!newTelegramBot) {
                 return null;
             }
@@ -414,8 +412,6 @@ module.exports = function (RED) {
                 }, 3000); // 3 seconds to not flood the output with too many messages.
             }
 
-            let newTelegramBot;
-
             const polling = {
                 autoStart: true,
                 interval: this.pollInterval,
@@ -449,7 +445,7 @@ module.exports = function (RED) {
                 baseApiUrl: this.baseApiUrl,
                 testEnvironment: this.testEnvironment,
             };
-            newTelegramBot = self.instantiateBot(this.token, options);
+            const newTelegramBot = self.instantiateBot(this.token, options);
             if (!newTelegramBot) {
                 return null;
             }
@@ -585,13 +581,11 @@ module.exports = function (RED) {
         };
 
         this.createTelegramBotForSendOnlyMode = function () {
-            let newTelegramBot;
-
             const options = {
                 baseApiUrl: this.baseApiUrl,
                 testEnvironment: this.testEnvironment,
             };
-            newTelegramBot = self.instantiateBot(this.token, options);
+            const newTelegramBot = self.instantiateBot(this.token, options);
             if (newTelegramBot) {
                 self.status = 'send only mode';
             }

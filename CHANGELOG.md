@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 
 ### Registering a bot command is idempotent too. `registerCommand` appended to `commandsByLanguage` unconditionally, so a command node that started twice sent Telegram the same command twice via `setMyCommands`. It now replaces that node's previous entry instead of appending a second copy. This is reachable from the send-only → started transition as well, not only from the webhook race.
 
+### Clear the three `prefer-const` lint warnings in `bot-node.js`. Each of the three bot-construction functions declared `let newTelegramBot;` and then assigned it exactly once; the assignment is now the declaration. The polling variant's `restartPolling` closure reads the binding, but only from callbacks that run long after construction, so moving the declaration below it changes nothing. No behaviour change — `npm run lint` is now warning-free.
+
 ### The receiver's `reply` node needed no change — its `start()` only sets a status and attaches nothing. Regression coverage lands in `test/integration/webhook.test.js`, which previously loaded a webhook flow with a receiver but only asserted that `setWebHook` was called, never pushing an update through and counting what came out — which is why this went unnoticed. Both new tests fail against the old code.
 
 # [19.0.1] - 2026-08-18

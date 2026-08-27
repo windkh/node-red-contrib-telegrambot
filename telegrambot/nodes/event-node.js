@@ -103,8 +103,15 @@ module.exports = function (RED) {
                         text: 'connected',
                     });
 
-                    node.eventHandler = (botMsg) => this.processMessage(botMsg);
-                    telegramBot.on(this.event, node.eventHandler);
+                    // Guarded for the same reason as the receiver (#510): this node starts
+                    // on construction and again on the config node's 'started' broadcast,
+                    // which in webhook mode arrives afterwards. Re-attaching would also
+                    // overwrite node.eventHandler, so stop() could only detach the second
+                    // listener and the first would leak for the life of the bot.
+                    if (!node.eventHandler) {
+                        node.eventHandler = (botMsg) => this.processMessage(botMsg);
+                        telegramBot.on(this.event, node.eventHandler);
+                    }
                 } else {
                     node.status({
                         fill: 'grey',

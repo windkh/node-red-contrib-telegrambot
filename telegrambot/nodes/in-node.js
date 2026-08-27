@@ -91,39 +91,49 @@ module.exports = function (RED) {
                         });
                     }
 
-                    if (handleProcessUpdates) {
-                        const updateHandler = (botMsg) => {
-                            const botDetails = {
-                                botname: this.config.botname,
-                                testEnvironment: this.config.testEnvironment,
-                                baseApiUrl: this.config.telegramBot.options.baseApiUrl,
+                    // A receiver starts itself on construction and starts again on the
+                    // config node's 'started' broadcast. In webhook mode both paths run:
+                    // the broadcast fires from the setWebhook promise, which resolves after
+                    // the receivers are already constructed and started, so every handler
+                    // would be attached a second time and one update would leave the node
+                    // twice (#510). Attach only while nothing of ours is attached; stop()
+                    // empties the list, so a genuine restart re-attaches, and a bot that
+                    // came up in send-only mode still attaches once it starts receiving.
+                    if (node.attachedListeners.length === 0) {
+                        if (handleProcessUpdates) {
+                            const updateHandler = (botMsg) => {
+                                const botDetails = {
+                                    botname: this.config.botname,
+                                    testEnvironment: this.config.testEnvironment,
+                                    baseApiUrl: this.config.telegramBot.options.baseApiUrl,
+                                };
+
+                                const payload = {
+                                    type: 'update',
+                                    content: botMsg,
+                                };
+
+                                const msg = {
+                                    payload: payload,
+                                    telegramBot: botDetails,
+                                };
+                                node.send([msg, null]);
                             };
+                            telegramBot.on('update', updateHandler);
+                            node.attachedListeners.push({ event: 'update', handler: updateHandler });
+                        }
 
-                            const payload = {
-                                type: 'update',
-                                content: botMsg,
-                            };
+                        const messageHandler = (botMsg) => this.processMessage('message', botMsg);
+                        telegramBot.on('message', messageHandler);
+                        node.attachedListeners.push({ event: 'message', handler: messageHandler });
 
-                            const msg = {
-                                payload: payload,
-                                telegramBot: botDetails,
-                            };
-                            node.send([msg, null]);
-                        };
-                        telegramBot.on('update', updateHandler);
-                        node.attachedListeners.push({ event: 'update', handler: updateHandler });
-                    }
-
-                    const messageHandler = (botMsg) => this.processMessage('message', botMsg);
-                    telegramBot.on('message', messageHandler);
-                    node.attachedListeners.push({ event: 'message', handler: messageHandler });
-
-                    if (handleAllUpdates) {
-                        events.forEach((event) => {
-                            const handler = (botMsg) => this.processMessage(event, botMsg);
-                            telegramBot.on(event, handler);
-                            node.attachedListeners.push({ event: event, handler: handler });
-                        });
+                        if (handleAllUpdates) {
+                            events.forEach((event) => {
+                                const handler = (botMsg) => this.processMessage(event, botMsg);
+                                telegramBot.on(event, handler);
+                                node.attachedListeners.push({ event: event, handler: handler });
+                            });
+                        }
                     }
                 }
             } else {

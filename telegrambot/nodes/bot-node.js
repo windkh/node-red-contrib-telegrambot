@@ -1262,6 +1262,7 @@ module.exports = function (RED) {
                 language: language,
                 scope: scope,
             };
+            const previousInfo = self.commandsByNode[node];
             self.commandsByNode[node] = commandInfo;
 
             // if there is no language we can not register it at the server.
@@ -1269,7 +1270,20 @@ module.exports = function (RED) {
                 if (!self.commandsByLanguage[language]) {
                     self.commandsByLanguage[language] = [];
                 }
-                self.commandsByLanguage[language].push(commandInfo);
+
+                // A command node can register more than once for the same command - it
+                // starts on construction and again on the config node's 'started'
+                // broadcast (#510), and a bot that came up in send-only mode registers
+                // once more when it starts receiving. Replace the node's previous entry
+                // instead of appending a second copy, which setMyCommands would send to
+                // Telegram as a duplicate command.
+                const commands = self.commandsByLanguage[language];
+                const previousIndex = previousInfo ? commands.indexOf(previousInfo) : -1;
+                if (previousIndex === -1) {
+                    commands.push(commandInfo);
+                } else {
+                    commands[previousIndex] = commandInfo;
+                }
             }
         };
 

@@ -57,11 +57,21 @@
   it passed (`Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`). A suite that exits on its own has
   also _proved_ it leaks no handles, which the flag hides. If the suite ever stops exiting, find the open
   handle — don't reinstate the flag.
-- `test-helpers/fake-red.js` is a minimal Node-RED stand-in shipped by the standard. A node file exports
-  `function (RED) {…}`, so without a RED object its contents cannot run at all — which is why node files
-  tend to sit at 0% coverage while the logic extracted from them is well covered. Use it to instantiate a
-  node and drive its input handler, with `nock` intercepting the requests it makes, so the assertion is
-  about what actually went to the device rather than what a parser intended.
+- A node file exports `function (RED) {…}`, so without a RED object its contents cannot run at all —
+  which is why node files tend to sit at 0% coverage. **Fix that structurally, not with a fake runtime.**
+  Almost nothing in such a closure needs `RED`: move it into a plain module beside the node file and test
+  it directly, with `nock` intercepting the requests so the assertion is about what actually went to the
+  device rather than what a parser intended. What remains in the node file is glue — `createNode`,
+  `getNode`, status calls, handler registration.
+- Where a test does need a Node-RED shape, **mock the node object, not the RED runtime**: keep the
+  dispatcher as `handleInput(node, msg)` and hand it a plain object capturing `status` / `warn` /
+  `error` / `send`. Such a mock is repo-specific — keep it in `test-helpers/`, local to the repo. The
+  standard deliberately ships no shared RED harness; a shared one invites tests to reach business logic
+  through it, which is what leaves the logic in the closure.
+- Still keep one **wiring test** for the node file, with a minimal RED stub inline in that test file:
+  otherwise nothing loads the node file and a wrong `require` path passes CI and fails at Node-RED start.
+- Discovery is repo-wide: `node --test` runs `**/*.test.?(c|m)js` anywhere outside `node_modules`, so a
+  sample spec under `examples/` is executed too. Name those files something else.
 
 ## Shared: Documentation
 
@@ -74,15 +84,32 @@
 
 - CI (`.github/workflows/node.js.yml`) must pass: lint, format:check, test, coverage. The coverage
   report is uploaded as a build artifact, so a threshold failure can be inspected from the run.
-- Releases go through `.github/workflows/npm-publish.yml`. It re-runs lint, format:check and test in a
-  `build` job and publishes only on `needs: build` — a release is cut from a tag, and nothing guarantees
-  that tag points at a commit CI ever saw. `npm publish` is irreversible, so the gate is not optional.
+- Releases go through `.github/workflows/npm-publish.yml`, triggered by pushing a version tag (`v*` /
+  `V*`). **Pushing a tag publishes** — there is no second confirmation and `npm publish` is
+  irreversible. The `verify` job is the whole safety margin: it re-runs lint, format:check and test on
+  the CI matrix, and `publish-npm` declares `needs: verify`. A release is cut from a tag, and nothing
+  guarantees that tag points at a commit CI ever saw.
+- The tag must agree with `package.json`; `verify` fails otherwise. npm publishes the manifest version,
+  not the tag name, so a mismatch publishes the wrong number under a tag that lies about it — and burns
+  the intended number for good.
+- A semver pre-release tag (`v1.2.3-beta.1`) publishes to the `beta` dist-tag, so Manage Palette users
+  tracking `latest` are not pulled onto it. The workflow creates the GitHub release itself with
+  generated notes, so `git push --tags` is the whole release.
 - `.github/workflows/standards-check.yml` runs `nrstd audit` and fails the build on drift from the standard.
 - Never bump the major version without an ADR explaining the breaking change.
 
 ## Shared: package.json scripts
 
 `lint`, `lint:fix`, `format`, `format:check`, `test` (`node --test` with `--test-timeout=30000 --test-concurrency=1`, no path args), `coverage` / `coverage:check` (c8 over `npm test`).
+
+The `c8` block carries `reporter: ["text", "lcov"]` — CI uploads `coverage/lcov.info`, and without the
+lcov reporter that step ships nothing. Coverage threshold **values** are the repo's own call; `nrstd
+sync` never sets or changes them.
+
+But `c8.lines` must be stated, and `audit` checks that it is: c8 defaults `lines` to **90** (branches,
+functions and statements default to 0), so a repo that states nothing runs a 90% gate nobody chose.
+Omitting the other three reads as "no gate" and is fine. Pick `lines` from the current measurement,
+rounded down.
 
 <!-- END node-red-standards:managed -->
 

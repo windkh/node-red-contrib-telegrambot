@@ -16,6 +16,16 @@ updates:
           # See doc/architecture/adr/0011-stay-on-undici-7.md (#496).
           - dependency-name: undici
             update-types: [version-update:semver-major]
+          # node-telegram-bot-api v2 is a from-scratch redesign with no backward
+          # compatibility: TelegramBot became Bot, positional arguments became params
+          # objects, the event emitter became koa-style middleware. Dependabot proposed it
+          # as #508 and both build legs died with "Class extends value undefined is not a
+          # constructor or null" -- the class this package extends no longer exists.
+          # The port is planned in steps in #501, with the analysis in
+          # doc/architecture/adr/0012-node-telegram-bot-api-v2.md. Lift this when that
+          # work starts; until then the PR would reopen weekly and stay red.
+          - dependency-name: node-telegram-bot-api
+            update-types: [version-update:semver-major]
     - package-ecosystem: github-actions
       directory: /
       schedule:

@@ -23,7 +23,7 @@
   don't declare a binding only to pass `undefined` around, and don't assign a value no later
   statement reads.
 - Format: Prettier (`.prettierrc.json`) — 4-space indent, single quotes, es5 trailing commas.
-- Target Node.js >= 20.
+- Target Node.js >= 22.13.
 - Avoid `var` — use `const`, or `let` only when the binding is reassigned (enforced by `no-var` / `prefer-const`).
 - One statement per line — don't pack multiple instructions onto a single line; keep lines simple to read (enforced by `max-statements-per-line`).
 - Keep functions short, with a single exit:
@@ -50,7 +50,9 @@
   Import `{ describe, it }` from `node:test` and assert with `node:assert`. Coverage via `c8`.
 - Node's default discovery runs **every** `.js` under `test/`, whatever it is named, so shared helpers and
   fixtures belong outside that directory (e.g. `test-helpers/`). The test script deliberately takes no path
-  arguments: a `'test/**/*.test.js'` glob would need Node >= 21 and fails on Node 20, which is still supported.
+  arguments: a bare directory is read as a module specifier on Node 22 ("Cannot find module"), and keeping
+  helpers out of `test/` is the simpler rule. A glob (`node --test 'test/**/*.test.js'`) does work on the
+  supported range and a repo may scope discovery that way if it prefers.
 - The test script deliberately has **no `--test-force-exit`**. It calls `process.exit()` as soon as the last
   test finishes, racing libuv's teardown of undici keep-alive sockets and mock HTTP servers — on Windows that
   aborts the process _after_ the results are in, so the runner marks a whole file failed while every test in

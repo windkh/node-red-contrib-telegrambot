@@ -1,5 +1,7 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
+const http = require('node:http');
+const { Readable } = require('node:stream');
 const { Agent } = require('undici');
 const { buildDispatcher, closeDispatcher } = require('../../telegrambot/lib/undici-pool');
 
@@ -93,6 +95,85 @@ describe('undici-pool', function () {
         it('tolerates a dispatcher without a close method', async function () {
             await closeDispatcher({});
             assert.strictEqual(true, true);
+        });
+    });
+
+    describe('headers timeout', function () {
+        // bot-node passes agent.headersTimeout so a socket black-holed by a WAN
+        // failover surfaces as an error the retry/recovery paths can act on,
+        // instead of sitting on undici's 300 s default. These two tests pin the
+        // behaviour that makes the setting safe: it fires when no response is
+        // coming, and it does not fire while we are still uploading.
+
+        function listen(server) {
+            return new Promise(function (resolve) {
+                server.listen(0, '127.0.0.1', function () {
+                    resolve('http://127.0.0.1:' + server.address().port);
+                });
+            });
+        }
+
+        function shutdown(server) {
+            server.closeAllConnections();
+            server.close();
+        }
+
+        it('rejects a black-holed request instead of hanging', async function () {
+            // Accepts the connection, reads the body, never answers - what a
+            // black-holed flow looks like from the client side.
+            const server = http.createServer(function (req) {
+                req.resume();
+            });
+            const url = await listen(server);
+            const dispatcher = buildDispatcher({ agent: { headersTimeout: 300 } });
+            let code = null;
+            try {
+                await fetch(url, { method: 'POST', body: 'x', dispatcher });
+            } catch (e) {
+                code = e.cause ? e.cause.code : e.code;
+            } finally {
+                await closeDispatcher(dispatcher).catch(() => {});
+                shutdown(server);
+            }
+            assert.strictEqual(code, 'UND_ERR_HEADERS_TIMEOUT');
+        });
+
+        it('does not abort an upload that takes longer than the timeout', async function () {
+            // headersTimeout is armed once the request has been written, so a slow
+            // upload is not on its clock. If this ever regresses, sending a large
+            // photo or video over a slow uplink starts failing.
+            const server = http.createServer(function (req, res) {
+                req.resume();
+                req.on('end', function () {
+                    res.writeHead(200, { 'content-type': 'application/json' });
+                    res.end('{"ok":true}');
+                });
+            });
+            const url = await listen(server);
+            const dispatcher = buildDispatcher({ agent: { headersTimeout: 300 } });
+            let chunks = 6;
+            const body = new Readable({
+                read() {
+                    const self = this;
+                    if (chunks > 0) {
+                        chunks--;
+                        setTimeout(function () {
+                            self.push(Buffer.alloc(1024, 0x41));
+                        }, 100);
+                    } else {
+                        self.push(null);
+                    }
+                },
+            });
+            let status = 0;
+            try {
+                const response = await fetch(url, { method: 'POST', body, duplex: 'half', dispatcher });
+                status = response.status;
+            } finally {
+                await closeDispatcher(dispatcher).catch(() => {});
+                shutdown(server);
+            }
+            assert.strictEqual(status, 200);
         });
     });
 

@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [19.0.3] - 2026-09-11
+
+### Arm a 20 s response-header deadline on every Bot API call. The bot's undici dispatcher is now built with `headersTimeout: 20000` instead of undici's 300 s default, so a request on a keep-alive socket that has stopped delivering fails in 20 s rather than five minutes. This is the normal outcome of a WAN failover or an IP change: the established flow is black-holed, no RST is ever delivered, and the request never settles. While it hangs, `telegramPolling._polling()` does not reschedule and emits neither `polling_error` nor `error`, so `recordPollingError`, `scheduleRestart` and `destroyDispatcher` — the #440 / #442 recovery machinery — are never reached; the bot shows a green "polling" status while every sender queues behind the same dead socket, and only a redeploy clears it.
+
+### The deadline is on the response headers, not the request, so it is not a cap on upload duration: `headersTimeout` starts once the request body has been written, and a large photo or video over a slow uplink is unaffected (covered by a regression test). It sits above `pollTimeout` (10 s) with room to spare, since `getUpdates` long-polls for that long before Telegram writes the response headers. `connectTimeout` and `bodyTimeout` keep undici's defaults. The setting rides on the agent options, so SOCKS-proxied bots get it too.
+
 # [19.0.2] - 2026-08-27
 
 ### Fix duplicate messages out of the receiver, event and command nodes in **webhook** mode (#510). Every one of these nodes starts twice: once from its own constructor, and once more when the config node broadcasts `'started'`. Both paths attached listeners, so a single Telegram update left the node twice — identical `message_id`, a fresh `_msgid` each — while polling was unaffected because its creation path broadcasts no `'started'` at all. The webhook path does, from inside the `setWebhook()` promise, which resolves *after* the receiver nodes have been constructed and have already started themselves; nothing precedes that broadcast with a `'stopped'`, so nothing detached first. Introduced in 17.3.1 by the fix that made the webhook-success branch broadcast its status — without it, downstream nodes stayed stuck at "not connected" — which exposed a double-start that had been latent and harmless since before 17.1.3.

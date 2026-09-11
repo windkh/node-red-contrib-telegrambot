@@ -67,6 +67,26 @@ module.exports = function (RED) {
     const POLLING_ERROR_THRESHOLD = 5;
     const POLLING_ERROR_WINDOW_MS = 60000;
 
+    // Response-header deadline for every Bot API call, applied to the bot's undici
+    // dispatcher (see buildDispatcherOptions).
+    //
+    // undici's default headersTimeout is 300 s, so a keep-alive socket that dies
+    // silently is only noticed five minutes later. That is the normal outcome of a
+    // WAN failover or an IP change: the old flow is black-holed, no RST is ever
+    // delivered, and an in-flight request simply never settles. Until the timer
+    // expires telegramPolling._polling() does not reschedule and emits no
+    // 'polling_error' / 'error', so recordPollingError, scheduleRestart and
+    // destroyDispatcher -- the #440 / #442 recovery machinery -- are never reached:
+    // the bot keeps a green "polling" status while every sender queues behind the
+    // same dead socket.
+    //
+    // headersTimeout only counts while we are waiting for a response, not while the
+    // request body is being written, so this is not a cap on upload duration -- a
+    // large photo or video over a slow uplink is unaffected. It must stay comfortably
+    // above pollTimeout (10 s), because getUpdates long-polls for that long before
+    // Telegram writes the response headers.
+    const REQUEST_HEADERS_TIMEOUT_MS = 20000;
+
     // --------------------------------------------------------------------------------------------
 
     const botsByToken = {};
@@ -206,7 +226,7 @@ module.exports = function (RED) {
         // V17.4.13 #442 defence is preserved via close+rebuild on
         // `scheduleRestart`.
         this.buildDispatcherOptions = function () {
-            const agent = { keepAliveTimeout: 4000 };
+            const agent = { keepAliveTimeout: 4000, headersTimeout: REQUEST_HEADERS_TIMEOUT_MS };
             if (self.addressFamily === 4 || self.addressFamily === 6) {
                 agent.connect = { family: self.addressFamily };
             }

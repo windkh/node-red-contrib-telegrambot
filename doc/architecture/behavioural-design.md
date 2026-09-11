@@ -84,11 +84,13 @@ processMessage(chatId, msg, ...)
 telegramBot.sendXxx(args)
       │
       ▼ .catch
-      ▼            ┌───────────────────────────┐
-processError ─────►│ retry  on 429 / ENOTFOUND │
-      │           │ ECONNRESET — queueManager   │
-      │           │ .repeatProcessMessage       │
-      │           └───────────────────────────┘
+      ▼            ┌─────────────────────────────┐
+processError ─────►│ retry on 429, or a transient │
+      │           │ network code found in the    │
+      │           │ cause chain (lib/transient-  │
+      │           │ errors) — queueManager       │
+      │           │ .repeatProcessMessage        │
+      │           └─────────────────────────────┘
       ▼ .then
 processResult
       │

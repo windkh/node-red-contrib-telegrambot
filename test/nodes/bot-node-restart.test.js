@@ -385,6 +385,26 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
         });
     });
 
+    it('buildDispatcherOptions arms a headers timeout that outlasts a long poll', function (t, done) {
+        // Without it undici waits out its 300 s default before reporting a socket
+        // black-holed by a WAN failover, and no recovery path runs in the meantime.
+        // The value must exceed pollTimeout (10 s) or every getUpdates long poll
+        // would time out instead of returning normally.
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const opts = n.buildDispatcherOptions();
+                assert.strictEqual(typeof opts.agent.headersTimeout, 'number');
+                assert.ok(opts.agent.headersTimeout > n.pollTimeout * 1000);
+                assert.ok(opts.agent.headersTimeout < 300000);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
     it('buildDispatcherOptions sets the family override when addressFamily is 4 or 6', function (t, done) {
         const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly', addressfamily: 4 }];
         helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
@@ -429,6 +449,10 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
                     password: 'p',
                 });
                 assert.strictEqual(typeof opts.socks.port, 'number');
+                // The agent options travel with the SOCKS path too — fetch-socks
+                // hands them to the Agent it builds, so a proxied bot gets the same
+                // headers deadline as a direct one.
+                assert.strictEqual(typeof opts.agent.headersTimeout, 'number');
                 done();
             } catch (err) {
                 done(err);

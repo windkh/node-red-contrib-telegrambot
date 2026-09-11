@@ -1497,3 +1497,126 @@ describe('telegram sender (out-node) — callApi raw-API escape hatch', function
         });
     });
 });
+
+describe('telegram sender (out-node) — transient network failures are retried, not dropped', function () {
+    before(function (t, done) {
+        helper.startServer(done);
+    });
+
+    after(function (t, done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    function flow() {
+        return [
+            { id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' },
+            { id: 's1', type: 'telegram sender', bot: 'b1', wires: [['out']] },
+            { id: 'out', type: 'helper' },
+        ];
+    }
+
+    // The shape node-telegram-bot-api hands us when the connection fails: the
+    // syscall code is in the cause chain, never in the top-level message.
+    function transportFailure(code, message) {
+        const leaf = new Error(message);
+        leaf.code = code;
+        const fatal = new Error('EFATAL: fetch failed');
+        fatal.code = 'EFATAL';
+        fatal.cause = new TypeError('fetch failed', { cause: leaf });
+        return fatal;
+    }
+
+    // Fails the first send with `error`, then succeeds — a connection that was
+    // down for one attempt, which is what a failover looks like to the sender.
+    function makeFlakyBotStub(record, error) {
+        const stub = { options: { baseApiUrl: 'https://api.telegram.org' } };
+        let calls = 0;
+        stub.sendMessage = function () {
+            calls++;
+            record.push(Array.from(arguments));
+            let result;
+            if (calls === 1) {
+                result = Promise.reject(error);
+            } else {
+                result = Promise.resolve({ message_id: 42 });
+            }
+            return result;
+        };
+        return stub;
+    }
+
+    function assertRetried(code, message, done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const cfg = helper.getNode('b1');
+                const record = [];
+                const statuses = [];
+                const errors = [];
+                // One stub for the life of the test: getTelegramBot is called again
+                // on every retry, and a fresh stub would reset the failure counter.
+                const bot = makeFlakyBotStub(record, transportFailure(code, message));
+                cfg.getTelegramBot = function () {
+                    return bot;
+                };
+                s.error = function (e) {
+                    errors.push(e);
+                };
+                s.warn = function () {};
+                const status = s.status.bind(s);
+                s.status = function (o) {
+                    statuses.push(o);
+                    status(o);
+                };
+                // Retry sleeps retryDelayErrorNoConnection (10 s) before the second
+                // attempt; shorten it so the test does not wait that long.
+                s.retryDelayErrorNoConnection = 0.05;
+
+                s.receive({ payload: { chatId: 123, type: 'message', content: 'hello' } });
+
+                setTimeout(function () {
+                    try {
+                        // The failure was announced as a retry of the real code, and
+                        // the message was sent again rather than reported and dropped.
+                        const retryStatus = statuses.find(function (o) {
+                            return o.text && o.text.indexOf('retrying in') !== -1;
+                        });
+                        assert.ok(retryStatus, 'expected a "retrying in" status for ' + code);
+                        assert.ok(retryStatus.text.startsWith(code), 'expected status to name ' + code);
+                        assert.strictEqual(errors.length, 0);
+                        assert.strictEqual(record.length, 2);
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                }, 400);
+            } catch (err) {
+                done(err);
+            }
+        });
+    }
+
+    it('retries a connection reset (pre-19.0.4 this was reported and dropped)', function (t, done) {
+        assertRetried('ECONNRESET', 'read ECONNRESET', done);
+    });
+
+    it('retries a socket closed under the request', function (t, done) {
+        assertRetried('UND_ERR_SOCKET', 'other side closed', done);
+    });
+
+    it('retries a request that ran out its headers timeout', function (t, done) {
+        assertRetried('UND_ERR_HEADERS_TIMEOUT', 'Headers Timeout Error', done);
+    });
+
+    it('retries an unreachable network', function (t, done) {
+        assertRetried('ENETUNREACH', 'connect ENETUNREACH 149.154.167.220:443', done);
+    });
+
+    it('retries a DNS failure', function (t, done) {
+        assertRetried('ENOTFOUND', 'getaddrinfo ENOTFOUND api.telegram.org', done);
+    });
+});

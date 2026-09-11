@@ -5,6 +5,7 @@ module.exports = function (RED) {
     const QueueManager = require('../lib/queue-manager.js');
     const safeStringify = require('../lib/safe-stringify.js');
     const { migrateLegacyOptions } = require('../lib/legacy-options.js');
+    const { findTransientErrorCode } = require('../lib/transient-errors.js');
 
     // Methods the `callApi` raw-API escape hatch refuses to invoke: the
     // connection/polling lifecycle, webhook (de)registration, and the
@@ -195,18 +196,16 @@ module.exports = function (RED) {
                 retryAfter = exception.response.body.parameters.retry_after || node.retryDelayError429;
                 retry = true;
             } else {
-                const errorNotFound = String(exception).includes('ENOTFOUND');
-                if (errorNotFound) {
-                    retryReason = 'ENOTFOUND';
+                // Any failure that kept the request from completing is worth
+                // repeating, not just the two codes this used to name. The code
+                // is found by walking the cause chain: node-telegram-bot-api
+                // reports `EFATAL: fetch failed` and the real one sits below it
+                // (see lib/transient-errors.js).
+                const transientCode = findTransientErrorCode(exception);
+                if (transientCode) {
+                    retryReason = transientCode;
                     retryAfter = node.retryDelayErrorNoConnection;
                     retry = true;
-                } else {
-                    const errorConnectionReset = String(exception).includes('ECONNRESET');
-                    if (errorConnectionReset) {
-                        retryReason = 'ECONNRESET';
-                        retryAfter = node.retryDelayErrorNoConnection;
-                        retry = true;
-                    }
                 }
             }
 

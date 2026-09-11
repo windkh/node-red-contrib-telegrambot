@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [19.0.4] - 2026-09-11
+
+### Retry the sender's network failures instead of reporting and dropping the message. `processError` classified a failure by searching the stringified exception for `ENOTFOUND` or `ECONNRESET`. Since V18 moved the transport to `fetch`, that string never contains either: node-telegram-bot-api reports every transport failure as `FatalError: EFATAL: fetch failed`, Node's fetch wraps the real failure as `TypeError: fetch failed`, and the code that says what actually happened — `ECONNRESET`, `ENOTFOUND`, `UND_ERR_HEADERS_TIMEOUT` — sits two levels down in `.cause`. Both checks had therefore been dead since 18.0.0, and *every* connection failure took the non-retry path: `node.error`, and the message gone. The 429/flood-wait branch was unaffected, because `ETELEGRAM` messages do carry their text at the top level.
+
+### Classification now walks the cause chain (new `lib/transient-errors.js`, `findTransientErrorCode`), and covers the whole family rather than two members of it: `ECONNRESET`, `ECONNREFUSED`, `ECONNABORTED`, `ENOTFOUND`, `EAI_AGAIN`, `ETIMEDOUT`, `EHOSTDOWN`, `EHOSTUNREACH`, `ENETDOWN`, `ENETRESET`, `ENETUNREACH`, `EPIPE`, plus undici's `UND_ERR_SOCKET`, `UND_ERR_CONNECT_TIMEOUT`, `UND_ERR_HEADERS_TIMEOUT` and `UND_ERR_BODY_TIMEOUT`. These are all the same transient fault — the request never reached Telegram, or its answer never came back — and all deserve the existing `retryDelayErrorNoConnection` treatment. `AggregateError.errors` is walked too, which is the shape a dual-stack host produces when both its A and AAAA addresses fail.
+
+### `UND_ERR_CLOSED` and `UND_ERR_DESTROYED` are deliberately not retried: they mean the dispatcher was closed by us (node close, redeploy, `scheduleRestart`), where a retry would fight the shutdown that caused it. Errors Telegram answered with (`ETELEGRAM`) keep taking the non-retry path, so a malformed-Markdown or bad-chat-id failure still surfaces immediately instead of looping. The status text names the code that was found (`ECONNRESET: retrying in 10s`) rather than the `EFATAL` wrapper it arrived in.
+
+### This pairs with the 20 s headers timeout added in 19.0.3. That change is what turns a socket black-holed by a WAN failover into a reportable error; without this one, the error it produces would have been reported and the message dropped.
+
 # [19.0.3] - 2026-09-11
 
 ### Arm a 20 s response-header deadline on every Bot API call. The bot's undici dispatcher is now built with `headersTimeout: 20000` instead of undici's 300 s default, so a request on a keep-alive socket that has stopped delivering fails in 20 s rather than five minutes. This is the normal outcome of a WAN failover or an IP change: the established flow is black-holed, no RST is ever delivered, and the request never settles. While it hangs, `telegramPolling._polling()` does not reschedule and emits neither `polling_error` nor `error`, so `recordPollingError`, `scheduleRestart` and `destroyDispatcher` — the #440 / #442 recovery machinery — are never reached; the bot shows a green "polling" status while every sender queues behind the same dead socket, and only a redeploy clears it.

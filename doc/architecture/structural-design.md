@@ -146,7 +146,7 @@ The sender node is the only consumer.
                          telegramBot.sendXxx(...)
                               │
                               ▼ .catch / .then
-                         processError(...) — retry on 429/ENOTFOUND/ECONNRESET
+                         processError(...) — retry on 429 / transient network
                          processResult(...)   — emit msg + processNext(chatId)
 ```
 

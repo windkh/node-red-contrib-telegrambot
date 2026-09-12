@@ -28,7 +28,7 @@ describe('transient-errors — findTransientErrorCode', function () {
     });
 
     it("does not appear in the top-level error's text, which is why the chain is walked", function () {
-        // Guards the assumption the whole module exists for: the pre-19.0.4 check
+        // Guards the assumption the whole module exists for: the pre-19.0.3 check
         // was String(exception).includes('ECONNRESET') against exactly this error.
         const error = wrapped('ECONNRESET', 'read ECONNRESET');
         assert.strictEqual(String(error).includes('ECONNRESET'), false);

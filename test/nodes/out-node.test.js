@@ -1600,7 +1600,7 @@ describe('telegram sender (out-node) — transient network failures are retried,
         });
     }
 
-    it('retries a connection reset (pre-19.0.4 this was reported and dropped)', function (t, done) {
+    it('retries a connection reset (pre-19.0.3 this was reported and dropped)', function (t, done) {
         assertRetried('ECONNRESET', 'read ECONNRESET', done);
     });
 
@@ -1618,5 +1618,73 @@ describe('telegram sender (out-node) — transient network failures are retried,
 
     it('retries a DNS failure', function (t, done) {
         assertRetried('ENOTFOUND', 'getaddrinfo ENOTFOUND api.telegram.org', done);
+    });
+
+    // Never recovers: what a wrong SOCKS proxy or a wrong local Bot API URL
+    // looks like to the sender.
+    function makeDeadBotStub(record, error) {
+        const stub = { options: { baseApiUrl: 'https://api.telegram.org' } };
+        stub.sendMessage = function () {
+            record.push(Array.from(arguments));
+            return Promise.reject(error);
+        };
+        return stub;
+    }
+
+    it('gives up after maxNetworkRetries, reports on the error output and advances the queue', function (t, done) {
+        // The error output is the reason the bound matters to a flow: without it
+        // a permanently offline host would never let the flow know.
+        const errorFlow = [
+            { id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' },
+            { id: 's1', type: 'telegram sender', bot: 'b1', haserroroutput: true, wires: [['out'], ['err']] },
+            { id: 'out', type: 'helper' },
+            { id: 'err', type: 'helper' },
+        ];
+        helper.load(telegrambotModule, errorFlow, { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const cfg = helper.getNode('b1');
+                const err = helper.getNode('err');
+                const record = [];
+                const reported = [];
+                const bot = makeDeadBotStub(
+                    record,
+                    transportFailure('ECONNREFUSED', 'connect ECONNREFUSED 127.0.0.1:1080')
+                );
+                cfg.getTelegramBot = function () {
+                    return bot;
+                };
+                err.on('input', function (msg) {
+                    reported.push(msg);
+                });
+                s.warn = function () {};
+                s.retryDelayErrorNoConnection = 0.02;
+                s.maxNetworkRetries = 2;
+
+                // Two messages on the same chat: the second can only run once
+                // the first has been given up on and the queue head advanced.
+                s.receive({ payload: { chatId: 123, type: 'message', content: 'first' } });
+                s.receive({ payload: { chatId: 123, type: 'message', content: 'second' } });
+
+                setTimeout(function () {
+                    try {
+                        // first: 1 attempt + 2 retries; second: 1 + 2 as well, each
+                        // reported exactly once, so the bound is per message.
+                        assert.strictEqual(record.length, 6);
+                        assert.strictEqual(record[0][1], 'first');
+                        assert.strictEqual(record[3][1], 'second');
+                        assert.strictEqual(reported.length, 2);
+                        assert.ok(reported[0].error.startsWith('Giving up after 2 retries (ECONNREFUSED).'));
+                        assert.strictEqual(reported[0].payload.content, 'first');
+                        assert.strictEqual(reported[1].payload.content, 'second');
+                        done();
+                    } catch (e) {
+                        done(e);
+                    }
+                }, 500);
+            } catch (e) {
+                done(e);
+            }
+        });
     });
 });

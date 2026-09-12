@@ -89,7 +89,9 @@ processError ─────►│ retry on 429, or a transient │
       │           │ network code found in the    │
       │           │ cause chain (lib/transient-  │
       │           │ errors) — queueManager       │
-      │           │ .repeatProcessMessage        │
+      │           │ .repeatProcessMessage; at    │
+      │           │ most maxNetworkRetries (30)  │
+      │           │ per message, then error path │
       │           └─────────────────────────────┘
       ▼ .then
 processResult

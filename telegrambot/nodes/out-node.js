@@ -82,6 +82,20 @@ module.exports = function (RED) {
         this.retryDelayError429 = 3; // 3s when too many requests
         this.retryDelayErrorNoConnection = 10; // 10s when not connected to internet
 
+        // Upper bound on consecutive network retries for one message. At the
+        // 10 s delay this tolerates a five-minute outage -- a WAN failover or a
+        // PPPoE re-dial -- and then gives up through the normal error path, so
+        // a host that is permanently offline (wrong SOCKS proxy, wrong local
+        // Bot API URL) reports each message once instead of retrying forever
+        // while the chat's queue grows without bound. 429 flood waits are not
+        // counted: there Telegram itself says how long to wait.
+        this.maxNetworkRetries = 30;
+
+        // chatId -> network retries already spent on the message at the head of
+        // that chat's queue. Only the head is ever retried, so one counter per
+        // chat is enough. Reset when the head is sent or given up on.
+        this.networkRetries = new Map();
+
         // Set of deprecation-warn strings that have already been emitted for
         // this node, so each deprecated msg.payload.options form is reported
         // exactly once per node lifetime instead of once per send. Cleared on
@@ -190,6 +204,7 @@ module.exports = function (RED) {
             let retry = false;
             let retryAfter = 10;
             let retryReason = 'ERROR';
+            let giveUpNote = '';
             const error429 = String(exception).includes('Too Many Requests: retry after');
             if (error429) {
                 retryReason = 'FLOODING';
@@ -203,14 +218,22 @@ module.exports = function (RED) {
                 // (see lib/transient-errors.js).
                 const transientCode = findTransientErrorCode(exception);
                 if (transientCode) {
-                    retryReason = transientCode;
-                    retryAfter = node.retryDelayErrorNoConnection;
-                    retry = true;
+                    const attempts = (node.networkRetries.get(chatId) || 0) + 1;
+                    if (attempts <= node.maxNetworkRetries) {
+                        node.networkRetries.set(chatId, attempts);
+                        retryReason = transientCode;
+                        retryAfter = node.retryDelayErrorNoConnection;
+                        retry = true;
+                    } else {
+                        giveUpNote = 'Giving up after ' + node.maxNetworkRetries + ' retries (' + transientCode + '). ';
+                    }
                 }
             }
 
             if (!retry) {
+                node.networkRetries.delete(chatId);
                 const errorMessage =
+                    giveUpNote +
                     'Caught exception in sender node:\r\n' +
                     exception +
                     '\r\nwhen processing message: \r\n' +
@@ -259,6 +282,7 @@ module.exports = function (RED) {
 
         this.processResult = function (chatId, result, msg, nodeSend, nodeDone) {
             node.messagesProcessed++;
+            node.networkRetries.delete(chatId);
             node.status({
                 fill: 'green',
                 shape: 'ring',
@@ -1272,6 +1296,7 @@ module.exports = function (RED) {
 
             // Reset the dedup set so a redeploy gets a fresh warn cycle.
             node.deprecationWarnsSeen.clear();
+            node.networkRetries.clear();
 
             node.status({});
             done();

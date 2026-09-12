@@ -84,8 +84,11 @@ module.exports = function (RED) {
     // request body is being written, so this is not a cap on upload duration -- a
     // large photo or video over a slow uplink is unaffected. It must stay comfortably
     // above pollTimeout (10 s), because getUpdates long-polls for that long before
-    // Telegram writes the response headers.
-    const REQUEST_HEADERS_TIMEOUT_MS = 20000;
+    // Telegram writes the response headers, and it leaves Telegram room to process
+    // a large upload server-side before it answers (its 504s in #454 show that
+    // response latency is not always tight). 30 s costs ten more seconds per
+    // outage than 20 s would and cuts off no legitimate response we know of.
+    const REQUEST_HEADERS_TIMEOUT_MS = 30000;
 
     // --------------------------------------------------------------------------------------------
 

@@ -221,6 +221,27 @@ Legend:
 For more details of the content types listed above also refer to the [**telegram api description**](https://core.telegram.org/bots/api#available-types) and the [**telegram bot api description**](https://core.telegram.org/bots/api).
 
 
+### Per-message request timeout
+By default the bot waits up to 30 seconds for the Telegram server to start answering a request before treating the connection as dead and rebuilding it. A single message can raise (or lower) that deadline just for itself by setting `msg.payload.options.requestTimeoutMs` (in milliseconds) before sending:
+
+```json
+{
+    "payload": {
+        "type": "mediaGroup",
+        "options": { "requestTimeoutMs": 120000 },
+        "content": [
+            { "type": "photo", "media": "/pic/frame_1.jpg" },
+            { "type": "photo", "media": "/pic/frame_2.jpg" }
+        ]
+    }
+}
+```
+
+This is useful for `mediaGroup` messages: the photos upload fine, but Telegram can take longer than 30 seconds to process an album of several photos before it answers. The option applies to that message only — other messages keep the default. It works for every message type that passes `msg.payload.options` and must be a positive number (in milliseconds); anything else is ignored and removed. If the deadline is exceeded, the message fails with a `HTTP timeout` error on the error output.
+
+A separate failure mode applies when media is passed as a URL: Telegram's servers fetch the URL themselves, and if that fetch is slow or fails they answer with a server-side error such as `WEBPAGE_CURL_FAILED` instead of sending the album — the request timeout above cannot help, because Telegram never answers at all. The mitigation is to supply the file data instead of a URL (a local path, `Buffer` or stream), which is uploaded directly and avoids Telegram's server-side fetch entirely.
+
+
 ### Error handling
 There are two ways of how to handle errors in the sender node:
 1. Default: all errors can be handled in a catch-all node. 
@@ -1461,6 +1482,8 @@ return msg;
 
 To send several photos as an album you can use the mediaGroup type. For this type of media group you have to set the content to an array of object type [InputMediaPhoto](https://core.telegram.org/bots/api#inputmediaphoto).
 The contents of the `msg.payload`object is shown below (in JSON format).
+
+If sending an album times out (the photos upload but the answer never arrives), give that message a longer deadline with `msg.payload.options.requestTimeoutMs` — see *Per-message request timeout*.
 
 An example flow sending a media group is shown in the following figure:
 

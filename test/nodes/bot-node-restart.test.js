@@ -475,9 +475,92 @@ describe('bot-node — undici dispatcher wiring on scheduleRestart (#442, V18.0.
                 // the bot's request.fetchOptions.dispatcher (the v1.1.1 hook).
                 assert.ok(n.dispatcher !== undefined && n.dispatcher !== null);
                 assert.strictEqual(bot.options.request.fetchOptions.dispatcher, n.dispatcher);
+                // The per-message timeout transport rides on the lib's fetch seam
+                // (options.request.fetch); see lib/per-request-timeout.js.
+                assert.strictEqual(typeof bot.options.request.fetch, 'function');
                 // And it is NOT installed under the old process-global symbol.
                 assert.notStrictEqual(global[Symbol.for('undici.globalDispatcher.1')], n.dispatcher);
                 done();
+            } catch (err) {
+                done(err);
+            } finally {
+                helper.getNode('b1') &&
+                    helper.getNode('b1').destroyDispatcher &&
+                    helper
+                        .getNode('b1')
+                        .destroyDispatcher()
+                        .catch(() => {});
+            }
+        });
+    });
+
+    it('TelegramBotEx._request lifts requestTimeoutMs into opts.timeoutMs and stamps the transport marker', function (t, done) {
+        // msg.payload.options is spread into the Telegram form by the lib, so a
+        // message can raise its own request deadline. The override must lift the
+        // value into opts.timeoutMs (the lib's per-request AbortController), stamp
+        // the __requestTimeoutMs marker for the fetch wrapper, and remove the key
+        // from the form so it never reaches Telegram.
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const bot = n.instantiateBot('123:fake', { baseApiUrl: 'https://api.telegram.org' });
+                let captured = null;
+                bot.http.request = function (method, opts) {
+                    captured = { method, opts };
+                    return Promise.resolve(null);
+                };
+                bot._request('sendMediaGroup', {
+                    form: { chat_id: 1, requestTimeoutMs: 120000.9, caption: 'x' },
+                    formData: {
+                        photo0: { value: Buffer.from('x'), contentType: 'image/jpeg', filename: 'a.jpg' },
+                    },
+                })
+                    .then(function () {
+                        assert.strictEqual(captured.method, 'sendMediaGroup');
+                        assert.strictEqual(captured.opts.timeoutMs, 120000);
+                        assert.strictEqual(captured.opts.form.requestTimeoutMs, undefined);
+                        assert.strictEqual(captured.opts.form.__requestTimeoutMs, '120000');
+                        assert.strictEqual(captured.opts.form.chat_id, 1);
+                        assert.strictEqual(captured.opts.form.caption, 'x');
+                        done();
+                    })
+                    .catch(done);
+            } catch (err) {
+                done(err);
+            } finally {
+                helper.getNode('b1') &&
+                    helper.getNode('b1').destroyDispatcher &&
+                    helper
+                        .getNode('b1')
+                        .destroyDispatcher()
+                        .catch(() => {});
+            }
+        });
+    });
+
+    it('TelegramBotEx._request strips an invalid requestTimeoutMs without arming a deadline or marker', function (t, done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        helper.load(telegrambotModule, flow, { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const bot = n.instantiateBot('123:fake', { baseApiUrl: 'https://api.telegram.org' });
+                let captured = null;
+                bot.http.request = function (method, opts) {
+                    captured = opts;
+                    return Promise.resolve(null);
+                };
+                bot._request('sendMessage', {
+                    form: { chat_id: 1, text: 'hi', requestTimeoutMs: 'abc' },
+                })
+                    .then(function () {
+                        assert.strictEqual(captured.timeoutMs, undefined);
+                        assert.strictEqual(captured.form.requestTimeoutMs, undefined);
+                        assert.strictEqual(captured.form.__requestTimeoutMs, undefined);
+                        assert.strictEqual(captured.form.text, 'hi');
+                        done();
+                    })
+                    .catch(done);
             } catch (err) {
                 done(err);
             } finally {

@@ -1,6 +1,7 @@
 const { formatErrorChain } = require('../lib/error-chain');
 const { evalContextExpression } = require('../lib/context-expression');
 const { buildDispatcher, closeDispatcher } = require('../lib/undici-pool');
+const { buildFetchWrapper } = require('../lib/per-request-timeout');
 
 // node-telegram-bot-api v1.1.2 restored CommonJS consumption (dual ESM + CJS
 // build), so we load the constructor synchronously at module load: require()
@@ -49,6 +50,24 @@ class TelegramBotEx extends TelegramBot {
     processUpdate(update) {
         this.emit('update', update);
         super.processUpdate(update);
+    }
+
+    // Lift msg.payload.options.requestTimeoutMs into the per-request
+    // opts.timeoutMs (an AbortController deadline honoured by the lib's
+    // HttpClient) and stamp the __requestTimeoutMs marker so the fetch wrapper
+    // installed in instantiateBot can raise THIS request's undici
+    // headersTimeout to match. The key is removed from the form either way so
+    // it never reaches Telegram; see lib/per-request-timeout.js.
+    _request(method, opts = {}) {
+        if (opts.form && opts.form.requestTimeoutMs !== undefined) {
+            const raw = opts.form.requestTimeoutMs;
+            if (typeof raw === 'number' && raw > 0) {
+                opts.timeoutMs = Math.floor(raw);
+                opts.form.__requestTimeoutMs = String(opts.timeoutMs);
+            }
+            delete opts.form.requestTimeoutMs;
+        }
+        return super._request(method, opts);
     }
 }
 
@@ -636,6 +655,12 @@ module.exports = function (RED) {
             // clobbering any request fields a caller may already have set.
             const request = Object.assign({}, options.request);
             request.fetchOptions = Object.assign({}, request.fetchOptions, { dispatcher });
+            // Per-message timeout transport: the wrapper reads the
+            // __requestTimeoutMs marker stamped by TelegramBotEx._request and
+            // raises that request's undici headersTimeout (see
+            // lib/per-request-timeout.js). Requests without a marker pass
+            // through unchanged, so polling and ordinary sends are unaffected.
+            request.fetch = buildFetchWrapper(dispatcher);
             const optionsWithTransport = Object.assign({}, options, { request });
             const bot = new TelegramBotEx(token, optionsWithTransport);
             return bot;

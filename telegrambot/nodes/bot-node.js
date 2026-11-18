@@ -404,9 +404,19 @@ module.exports = function (RED) {
                 // Without it, a burst of polling_error events queues N parallel 3 s timers
                 // and the bot ends up scheduling several startPolling calls in parallel
                 // (the root cause behind issue #442's "12 cycles in 3 minutes" pattern).
-                if (self.pollingRestartTimer) {
-                    return;
+                //
+                // The guard is shared by every instance this config node builds, so only
+                // the installed instance may arm it (#542). The cheap path calls this
+                // once its stopPolling() settles, which for the polling error raised by
+                // abortBot cancelling the in-flight getUpdates is after the teardown has
+                // finished: a retired instance arming here would block the restart of
+                // the bot that replaced it, leaving that bot deaf for good.
+                if (!self.pollingRestartTimer && self.telegramBot === newTelegramBot) {
+                    armPollingRestart();
                 }
+            }
+
+            function armPollingRestart() {
                 self.pollingRestartTimer = setTimeout(function () {
                     self.pollingRestartTimer = null;
                     // Check whether the bot was aborted or already replaced by
@@ -861,6 +871,17 @@ module.exports = function (RED) {
                 const stopped = self.telegramBot ? stopTransport(self.telegramBot) : Promise.resolve();
                 self.abortPromise = stopped.then(function () {
                     self.abortPromise = null;
+                    // pollingRestartTimer is the config node's, not the instance's, but
+                    // only the instance that armed it can use it — its callback does
+                    // nothing once that instance is gone. Left armed, it made the next
+                    // instance's restartPolling() return early, so a polling error
+                    // right after a burst restart stopped the new bot's polling for
+                    // good while sending kept working (#542). Cleared here, at the end
+                    // of the teardown rather than its start, because until telegramBot
+                    // is nulled the old instance's errors are still handled and could
+                    // re-arm it.
+                    clearTimeout(self.pollingRestartTimer);
+                    self.pollingRestartTimer = null;
                     self.status = 'disconnected';
                     self.setStatus('stopped', 'stopped ' + hint);
                     self.telegramBot = null;

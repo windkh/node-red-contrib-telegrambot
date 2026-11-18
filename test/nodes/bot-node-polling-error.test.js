@@ -129,6 +129,47 @@ describe('bot-node — stale polling_error handling (issue #503)', function () {
         })
     );
 
+    // #542 / #543: the old instance's cheap-path restart timer was still armed when a
+    // burst restart installed a new bot, so the new bot's first polling error found
+    // the shared single-flight guard taken, stopped polling, and never restarted it.
+    it(
+        'restarts polling of a rebuilt bot whose first poll fails inside the old timer window (#542)',
+        withPollingBot(function (node, oldBot, done) {
+            node.pollingErrorTimes = [];
+            // Old instance takes the cheap path and arms the 3 s restart timer.
+            oldBot.emit('polling_error', new Error('EFATAL: fetch failed'));
+            assert.notStrictEqual(node.pollingRestartTimer, null, 'cheap path should arm the timer');
+
+            // What scheduleRestart does: tear down, then build a fresh bot.
+            node.abortBot('pre-restart', function () {
+                try {
+                    assert.strictEqual(node.pollingRestartTimer, null, 'teardown must release the timer');
+                    const newBot = node.getTelegramBot();
+                    assert.notStrictEqual(newBot, oldBot);
+
+                    // The new instance's first poll fails within the old 3 s window.
+                    node.pollingErrorTimes = [];
+                    newBot.emit('polling_error', new Error('ETELEGRAM: 502 Bad Gateway'));
+
+                    // The cheap path stops polling, waits 3 s, then restarts it. Pre-fix,
+                    // that restart was dropped and the bot never polled again.
+                    const deadline = Date.now() + 6000;
+                    (function tick() {
+                        if (newBot.isPolling()) {
+                            done();
+                        } else if (Date.now() > deadline) {
+                            done(new Error('new bot never resumed polling'));
+                        } else {
+                            setTimeout(tick, 50);
+                        }
+                    })();
+                } catch (err) {
+                    done(err);
+                }
+            });
+        })
+    );
+
     it(
         'still handles polling errors from the instance that is installed',
         withPollingBot(function (node, bot, done) {

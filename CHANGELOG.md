@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [19.0.5] - 2026-11-18
+
+### Dependency updates only, no code change. The `qs` override rises to `^6.17.1` (#545), so installs resolve the current `qs` rather than anything from 6.15.2 up. The lockfile, which is what CI tests against, moves `undici` to 7.30.1 (#536) and `ip-address` to 10.7.5 (#538), and the dev toolchain to `node-red` 5.0.9 with `multer` 2.5.0 (#534, #546 — the latter fixes CVE-2026-113872 in the Node-RED that the tests run), `eslint` 10.13.0 (#535), `fast-uri` 3.1.9 (#537) and `follow-redirects` 1.16.2 (#539). The `undici` and `ip-address` updates sit inside ranges already declared, so a fresh install picked them up before this release too.
+
 # [19.0.4] - 2026-11-18
 
 ### Fix a crash of the whole Node-RED process when a **webhook** bot is stopped twice at once (#540, github010000). Stopping a webhook bot is asynchronous: `abortBot` first asks Telegram to drop the webhook (`deleteWebhook`) and only then closes the local listener. It checked `self.telegramBot` once at the start and read it again after that round trip. A second `abortBot` arriving in between — rapid redeploys, where node close overlaps a failed `openWebHook` (port still in use) or a failed `setWebhook` — passed the same check; the first to finish set `telegramBot` to null, and the other then threw `Cannot read properties of null (reading 'closeWebHook')` inside a promise callback. Nothing caught it, so the unhandled rejection took down Node-RED, not only the bot.

@@ -624,6 +624,88 @@ describe('bot-node — abortBot stops polling cleanly (#440, updated for v1.0.0)
             }
         });
     });
+
+    // #540: two aborts of a webhook bot overlapping the deleteWebhook round trip.
+    // Previously both started a teardown; the first nulled telegramBot and the
+    // second threw on `null.closeWebHook()` inside a promise callback, which
+    // crashed the Node-RED process.
+    it('collapses concurrent aborts of a webhook bot into one teardown (#540)', function (t, done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const calls = [];
+                const pendingDeletes = [];
+                n.telegramBot = {
+                    _webHook: {},
+                    deleteWebhook: function () {
+                        calls.push('deleteWebhook');
+                        return new Promise(function (resolve) {
+                            pendingDeletes.push(resolve);
+                        });
+                    },
+                    closeWebHook: function () {
+                        calls.push('closeWebHook');
+                        return Promise.resolve();
+                    },
+                };
+                const finished = [];
+                function check() {
+                    try {
+                        assert.deepStrictEqual(finished, ['failed-to-listen', 'closing']);
+                        assert.deepStrictEqual(calls, ['deleteWebhook', 'closeWebHook']);
+                        assert.strictEqual(n.telegramBot, null);
+                        assert.strictEqual(n.abortPromise, null);
+                        assert.strictEqual(n.status, 'disconnected');
+                        done();
+                    } catch (err) {
+                        done(err);
+                    }
+                }
+                n.abortBot('Failed to listen on configured port', function () {
+                    finished.push('failed-to-listen');
+                    // The answer to a second deleteWebhook, had one been sent, arrives
+                    // only now — after the first teardown already cleared telegramBot.
+                    pendingDeletes.slice(1).forEach(function (resolve) {
+                        resolve(true);
+                    });
+                });
+                n.abortBot('closing', function () {
+                    finished.push('closing');
+                    // Let any stray callback still queued run before asserting.
+                    setImmediate(check);
+                });
+                pendingDeletes[0](true);
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
+    it('runs a fresh teardown for an abort that starts after the previous one finished', function (t, done) {
+        helper.load(telegrambotModule, flow(), { b1: { token: 'fake' } }, function () {
+            try {
+                const n = helper.getNode('b1');
+                const first = makeFakePollingBot();
+                const second = makeFakePollingBot();
+                n.telegramBot = first.bot;
+                n.abortBot('first', function () {
+                    n.telegramBot = second.bot;
+                    n.abortBot('second', function () {
+                        try {
+                            assert.strictEqual(first.calls.stopPolling.length, 1);
+                            assert.strictEqual(second.calls.stopPolling.length, 1);
+                            assert.strictEqual(n.telegramBot, null);
+                            done();
+                        } catch (err) {
+                            done(err);
+                        }
+                    });
+                });
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
 });
 
 describe('bot-node — 409 Conflict circuit breaker (issue #441, V17.4.7)', function () {

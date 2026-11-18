@@ -1688,3 +1688,170 @@ describe('telegram sender (out-node) — transient network failures are retried,
         });
     });
 });
+
+// #541: most bot calls were chained `.catch(processError).then(processResult)`, so a
+// handled failure ran processResult as well. A retried message was dropped as if
+// sent, and a non-retryable failure advanced the queue twice. Only type 'message'
+// (sendChunks) and callApi used the correct order, which every earlier retry test
+// happened to exercise.
+describe('telegram sender (out-node) — a failed send settles exactly once (#541)', function () {
+    before(function (t, done) {
+        helper.startServer(done);
+    });
+
+    after(function (t, done) {
+        helper.stopServer(done);
+    });
+
+    afterEach(function () {
+        helper.unload();
+    });
+
+    const errorFlow = [
+        { id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' },
+        { id: 's1', type: 'telegram sender', bot: 'b1', haserroroutput: true, wires: [['out'], ['err']] },
+        { id: 'out', type: 'helper' },
+        { id: 'err', type: 'helper' },
+    ];
+
+    function transportFailure() {
+        const leaf = new Error('read ECONNRESET');
+        leaf.code = 'ECONNRESET';
+        const fatal = new Error('EFATAL: fetch failed');
+        fatal.code = 'EFATAL';
+        fatal.cause = new TypeError('fetch failed', { cause: leaf });
+        return fatal;
+    }
+
+    function badRequest() {
+        const error = new Error('ETELEGRAM: 400 Bad Request: wrong file identifier');
+        error.code = 'ETELEGRAM';
+        return error;
+    }
+
+    // Answers every call asynchronously, failing the first one with `firstError`.
+    // Records each call and the highest number of calls in flight at once: the
+    // per-chat queue must never have more than one.
+    function makeStub(methods, firstError) {
+        const state = { record: [], inFlight: 0, maxInFlight: 0 };
+        const stub = { options: { baseApiUrl: 'https://api.telegram.org' } };
+        methods.forEach(function (method) {
+            stub[method] = function (chatId, content) {
+                const failing = state.record.length === 0;
+                state.record.push([method, content]);
+                state.inFlight++;
+                state.maxInFlight = Math.max(state.maxInFlight, state.inFlight);
+                return new Promise(function (resolve, reject) {
+                    setImmediate(function () {
+                        state.inFlight--;
+                        if (failing) {
+                            reject(firstError);
+                        } else {
+                            resolve({ message_id: state.record.length });
+                        }
+                    });
+                });
+            };
+        });
+        return { stub, state };
+    }
+
+    function run(methods, firstError, messages, check, done) {
+        helper.load(telegrambotModule, errorFlow, { b1: { token: 'fake' } }, function () {
+            try {
+                const s = helper.getNode('s1');
+                const { stub, state } = makeStub(methods, firstError);
+                helper.getNode('b1').getTelegramBot = function () {
+                    return stub;
+                };
+                const sent = [];
+                const reported = [];
+                helper.getNode('out').on('input', function (msg) {
+                    sent.push(msg.payload.content);
+                });
+                helper.getNode('err').on('input', function (msg) {
+                    reported.push(msg);
+                });
+                s.warn = function () {};
+                s.retryDelayErrorNoConnection = 0.02;
+                messages.forEach(function (payload) {
+                    s.receive({ payload: Object.assign({ chatId: 123 }, payload) });
+                });
+                setTimeout(function () {
+                    try {
+                        check(state, sent, reported);
+                        done();
+                    } catch (e) {
+                        done(e);
+                    }
+                }, 300);
+            } catch (e) {
+                done(e);
+            }
+        });
+    }
+
+    const mediaTypes = [
+        ['photo', 'sendPhoto'],
+        ['document', 'sendDocument'],
+        ['video', 'sendVideo'],
+        ['audio', 'sendAudio'],
+        ['animation', 'sendAnimation'],
+        ['voice', 'sendVoice'],
+        ['sticker', 'sendSticker'],
+    ];
+
+    mediaTypes.forEach(function ([type, method]) {
+        it('retries a ' + type + ' after a network failure instead of dropping it', function (t, done) {
+            run(
+                [method, 'sendMessage'],
+                transportFailure(),
+                [
+                    { type: type, content: 'file-1' },
+                    { type: 'message', content: 'after' },
+                ],
+                function (state, sent, reported) {
+                    // Pre-fix: [file-1, after] — the retry timer found the head
+                    // already shifted, and the media never went out again.
+                    assert.deepStrictEqual(state.record, [
+                        [method, 'file-1'],
+                        [method, 'file-1'],
+                        ['sendMessage', 'after'],
+                    ]);
+                    assert.strictEqual(state.maxInFlight, 1);
+                    // One output per message, and none for the failed attempt.
+                    assert.strictEqual(sent.length, 2);
+                    assert.strictEqual(reported.length, 0);
+                },
+                done
+            );
+        });
+    });
+
+    it('a non-retryable failure reports once and keeps the next messages in order', function (t, done) {
+        run(
+            ['sendPhoto'],
+            badRequest(),
+            [
+                { type: 'photo', content: 'p1' },
+                { type: 'photo', content: 'p2' },
+                { type: 'photo', content: 'p3' },
+            ],
+            function (state, sent, reported) {
+                assert.deepStrictEqual(
+                    state.record.map(function (call) {
+                        return call[1];
+                    }),
+                    ['p1', 'p2', 'p3']
+                );
+                // Pre-fix the queue advanced twice for p1, starting p3 while p2 was
+                // still in flight.
+                assert.strictEqual(state.maxInFlight, 1);
+                assert.strictEqual(reported.length, 1);
+                assert.strictEqual(reported[0].payload.content, 'p1');
+                assert.strictEqual(sent.length, 2);
+            },
+            done
+        );
+    });
+});

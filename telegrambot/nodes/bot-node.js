@@ -1,6 +1,7 @@
 const { formatErrorChain } = require('../lib/error-chain');
 const { evalContextExpression } = require('../lib/context-expression');
 const { buildDispatcher, closeDispatcher } = require('../lib/undici-pool');
+const { stopTransport } = require('../lib/stop-transport');
 
 // node-telegram-bot-api v1.1.2 restored CommonJS consumption (dual ESM + CJS
 // build), so we load the constructor synchronously at module load: require()
@@ -844,45 +845,28 @@ module.exports = function (RED) {
             });
         });
 
+        // The teardown currently in flight, or null. Makes abortBot single-flight
+        // (#540): the stop is asynchronous (webhook mode waits for a deleteWebhook
+        // round trip), and several callers can ask for it in that window — node
+        // close, a failed openWebHook / setWebhook, scheduleRestart. Without this,
+        // each ran its own teardown; the first to finish nulled self.telegramBot
+        // and the next threw on it inside a promise callback, which took the whole
+        // Node-RED process down. A later caller now waits for the running
+        // teardown, and every caller's done fires exactly once, after it.
+        this.abortPromise = null;
+
         this.abortBot = function (hint, done) {
             self.status = 'disconnecting';
-
-            function setStatusDisconnected() {
-                self.status = 'disconnected';
-                self.setStatus('stopped', 'stopped ' + hint);
-                self.telegramBot = null;
-                done();
+            if (!self.abortPromise) {
+                const stopped = self.telegramBot ? stopTransport(self.telegramBot) : Promise.resolve();
+                self.abortPromise = stopped.then(function () {
+                    self.abortPromise = null;
+                    self.status = 'disconnected';
+                    self.setStatus('stopped', 'stopped ' + hint);
+                    self.telegramBot = null;
+                });
             }
-
-            if (self.telegramBot !== undefined && self.telegramBot !== null) {
-                if (self.telegramBot._polling) {
-                    // v1.0.0's `stopPolling({cancel: true})` aborts the in-flight
-                    // getUpdates via an AbortController AND sets the polling
-                    // instance's `_abort = true` to halt the recursive loop in
-                    // one call. Resolves once the active request settles, so the
-                    // V17.4.8 two-step (`_lastRequest.cancel()` then
-                    // `stopPolling({cancel: false})`) is no longer needed — both
-                    // halves now happen inside the public API.
-                    self.telegramBot.stopPolling({ cancel: true }).then(setStatusDisconnected, setStatusDisconnected);
-                } else if (self.telegramBot._webHook) {
-                    // Telegram keeps the previously registered webhook URL on file until we tell it
-                    // to drop it. Wait for deleteWebHook to complete (or fail) before tearing the
-                    // local listener down so a redeploy with a new URL takes effect immediately.
-                    // Either branch falls through to closing the local hook.
-                    self.telegramBot
-                        .deleteWebhook()
-                        .catch(function () {
-                            // ignore - we still want to close the local hook
-                        })
-                        .then(function () {
-                            self.telegramBot.closeWebHook().then(setStatusDisconnected, setStatusDisconnected);
-                        });
-                } else {
-                    setStatusDisconnected();
-                }
-            } else {
-                setStatusDisconnected();
-            }
+            self.abortPromise.then(done);
         };
 
         // Tear the bot down, then rebuild it after a back-off. This is the recovery

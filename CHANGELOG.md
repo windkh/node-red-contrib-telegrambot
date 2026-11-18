@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [19.0.4] - 2026-11-18
+
+### Fix a crash of the whole Node-RED process when a **webhook** bot is stopped twice at once (#540, github010000). Stopping a webhook bot is asynchronous: `abortBot` first asks Telegram to drop the webhook (`deleteWebhook`) and only then closes the local listener. It checked `self.telegramBot` once at the start and read it again after that round trip. A second `abortBot` arriving in between — rapid redeploys, where node close overlaps a failed `openWebHook` (port still in use) or a failed `setWebhook` — passed the same check; the first to finish set `telegramBot` to null, and the other then threw `Cannot read properties of null (reading 'closeWebHook')` inside a promise callback. Nothing caught it, so the unhandled rejection took down Node-RED, not only the bot.
+
+### `abortBot` is now single-flight, like `scheduleRestart`: a call that arrives while a teardown is running waits for it instead of starting a second one, and every caller's callback still fires once, after the bot is stopped. This also ends two quieter effects of the overlap — the node's close callback and the "stopped" status firing once per caller, and a second `deleteWebhook` / `closeWebHook` being sent for a bot already being torn down. The transport stop moves into `lib/stop-transport.js`, which makes every call on the bot instance it was given rather than on a field re-read after an await. A regression test reproduces the original `TypeError` against the old code.
+
 # [19.0.3] - 2026-09-12
 
 ### Arm a 30 s response-header deadline on every Bot API call (#518, alessandromatera). The bot's undici dispatcher is now built with `headersTimeout: 30000` instead of undici's 300 s default, so a request on a keep-alive socket that has stopped delivering fails in 30 s rather than five minutes. This is the normal outcome of a WAN failover or an IP change: the established flow is black-holed, no RST is ever delivered, and the request never settles. While it hangs, `telegramPolling._polling()` does not reschedule and emits neither `polling_error` nor `error`, so `recordPollingError`, `scheduleRestart` and `destroyDispatcher` — the #440 / #442 recovery machinery — are only reached once undici's 300 s timer fires; until then the bot shows a green "polling" status while every sender to that chat queues behind the dead socket.

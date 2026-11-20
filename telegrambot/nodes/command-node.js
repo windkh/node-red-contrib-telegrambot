@@ -18,6 +18,7 @@ module.exports = function (RED) {
 
         const registerCommand = config.registercommand;
         const description = config.description || '';
+        const order = config.order !== undefined && config.order !== null ? String(config.order).trim() : '';
         let language = config.language || '';
         const scope = config.scope || 'default';
 
@@ -55,7 +56,7 @@ module.exports = function (RED) {
         this.start = function () {
             const telegramBot = this.config.getTelegramBot();
             if (telegramBot) {
-                this.config.registerCommand(node.id, command, description, language, scope, registerCommand);
+                this.config.registerCommand(node.id, command, description, language, scope, registerCommand, order);
 
                 node.botname = this.config.botname;
 

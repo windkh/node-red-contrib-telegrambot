@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# [Unreleased]
+
+### Add an optional **Order** field to the command node, so the bot's `/` menu can follow a chosen order instead of the order in which command nodes happened to start. When **Register at telegram server** is ticked, `setMyCommands` now sends each scope's commands sorted by Order (ascending, whole numbers). Commands without an Order come after the ordered ones, and equal Orders keep registration order, so a flow that sets no Order sends exactly the same list as before. The editor validates the field (blank or a whole number), shows the Order after the node label, and the node help and README describe it. `setMyCommands` also sends only `command` and `description` per entry, the two fields the Bot API defines for a `BotCommand`, instead of the whole internal registration record. A regression test covers mixed orders, ties, commands without an order, and a scope that uses no order at all.
+
 # [19.0.5] - 2026-11-18
 
 ### Dependency updates only, no code change. The `qs` override rises to `^6.17.1` (#545), so installs resolve the current `qs` rather than anything from 6.15.2 up. The lockfile, which is what CI tests against, moves `undici` to 7.30.1 (#536) and `ip-address` to 10.7.5 (#538), and the dev toolchain to `node-red` 5.0.9 with `multer` 2.5.0 (#534, #546 — the latter fixes CVE-2026-113872 in the Node-RED that the tests run), `eslint` 10.13.0 (#535), `fast-uri` 3.1.9 (#537) and `follow-redirects` 1.16.2 (#539). The `undici` and `ip-address` updates sit inside ranges already declared, so a fresh install picked them up before this release too.

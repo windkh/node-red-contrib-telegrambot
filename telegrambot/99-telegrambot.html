@@ -416,6 +416,13 @@
         defaults: {
             name: { value: '' },
             command: { value: '' },
+            order: {
+                value: '',
+                required: false,
+                validate: function (v) {
+                    return v === undefined || v === null || String(v).trim() === '' || /^-?\d+$/.test(String(v).trim());
+                },
+            },
             description: { value: '' },
 
             registercommand: { value: false, required: false },
@@ -434,7 +441,11 @@
         icon: 'telegram_cmd.png',
         paletteLabel: 'command',
         label: function () {
-            return this.name || this.command || 'Telegram command';
+            var labelText = this.name || this.command || 'Telegram command';
+            if (this.order !== undefined && this.order !== null && String(this.order).trim() !== '') {
+                labelText = labelText + ' : ' + String(this.order).trim();
+            }
+            return labelText;
         },
         labelStyle: function () {
             return this.name ? 'node_label_italic' : '';
@@ -492,6 +503,10 @@
     <div class="form-row">
         <label for="node-input-command"><i class="fa fa-envelope"></i> Command</label>
         <input type="text" id="node-input-command" placeholder="Command e.g. /foo">
+    </div>
+    <div class="form-row">
+        <label for="node-input-order"><i class="fa fa-sort-numeric-asc"></i> Order</label>
+        <input type="text" id="node-input-order" placeholder="Optional menu position e.g. 10 (empty = last)">
     </div>
 
     <hr align="middle"/>
@@ -561,6 +576,12 @@
     <h3>Outputs</h3>
     <p>1. Standard Ouput: Message is sent to output 1 if it is from an authorized user and it contains the command at the beginning of the message.</p>
     <p>2. Secondary Ouput: Message is sent to output 2 if it is from an authorized user but does not contain the specified command.</p>
+
+    <h3>Order</h3>
+    <p>Optional whole number that sets the position of the command in the bot's <code>/</code> menu when
+    <b>Register at telegram server</b> is ticked. Lower numbers come first. Commands without an order come after
+    the ordered ones, in the order they were registered, so menus of existing flows do not change.
+    Commands with the same order keep their registration order.</p>
 </script>
 
 <!-- ------------------------------------------------------------------------------------------ -->

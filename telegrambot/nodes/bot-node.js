@@ -762,9 +762,37 @@ module.exports = function (RED) {
                         for (const language in botCommandsByLanguage) {
                             const botCommandsForLanguage = botCommandsByLanguage[language];
 
-                            const botCommands = botCommandsForLanguage.filter(function (botCommand) {
-                                return botCommand.scope == scope;
-                            });
+                            // Optional menu order: commands with a numeric order come first (ascending);
+                            // commands without one follow. Ties keep registration order, so a bot that
+                            // uses no order at all sends exactly the same list as before.
+                            const orderOf = function (botCommand) {
+                                const value = botCommand.order;
+                                if (value === undefined || value === null || String(value).trim() === '') {
+                                    return Number.POSITIVE_INFINITY;
+                                }
+                                const number = Number(value);
+                                return Number.isFinite(number) ? number : Number.POSITIVE_INFINITY;
+                            };
+                            const botCommands = botCommandsForLanguage
+                                .filter(function (botCommand) {
+                                    return botCommand.scope == scope;
+                                })
+                                .map(function (botCommand, index) {
+                                    return { botCommand: botCommand, index: index, order: orderOf(botCommand) };
+                                })
+                                .sort(function (a, b) {
+                                    if (a.order !== b.order) {
+                                        return a.order < b.order ? -1 : 1;
+                                    }
+                                    return a.index - b.index;
+                                })
+                                .map(function (entry) {
+                                    // only send the fields the Bot API defines for a BotCommand
+                                    return {
+                                        command: entry.botCommand.command,
+                                        description: entry.botCommand.description,
+                                    };
+                                });
 
                             if (botCommands && botCommands.length > 0) {
                                 const options = {
@@ -1276,10 +1304,11 @@ module.exports = function (RED) {
             return isPending;
         };
 
-        this.registerCommand = function (node, command, description, language, scope, registerCommand) {
+        this.registerCommand = function (node, command, description, language, scope, registerCommand, order) {
             const commandInfo = {
                 command: command,
                 description: description,
+                order: order,
                 registerCommand: registerCommand,
                 language: language,
                 scope: scope,

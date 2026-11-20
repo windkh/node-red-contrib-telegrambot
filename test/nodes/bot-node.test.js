@@ -171,6 +171,58 @@ describe('telegram bot (config node)', function () {
         });
     });
 
+    it('setMyCommands sorts each scope by the optional order and keeps registration order otherwise', function (t, done) {
+        const flow = [{ id: 'b1', type: 'telegram bot', botname: 'b', updatemode: 'sendonly' }];
+        const creds = { b1: { token: 'fake-token' } };
+        helper.load(telegrambotModule, flow, creds, function () {
+            try {
+                const n = helper.getNode('b1');
+                const calls = [];
+                n.getTelegramBot = function () {
+                    return {
+                        setMyCommands: function (commands, options) {
+                            calls.push({ commands: commands, options: options });
+                            return Promise.resolve(true);
+                        },
+                    };
+                };
+
+                // private chats: mixed orders, a tie, and two commands without an order
+                n.registerCommand('n1', 'zulu', 'Z', '', 'all_private_chats', true, '');
+                n.registerCommand('n2', 'bravo', 'B', '', 'all_private_chats', true, '20');
+                n.registerCommand('n3', 'alpha', 'A', '', 'all_private_chats', true, '5');
+                n.registerCommand('n4', 'yankee', 'Y', '', 'all_private_chats', true, undefined);
+                n.registerCommand('n5', 'charlie', 'C', '', 'all_private_chats', true, '20');
+                n.registerCommand('n6', 'delta', 'D', '', 'all_private_chats', true, '10');
+                // default scope: no order anywhere -> unchanged registration order
+                n.registerCommand('n7', 'start', 'Start', '', 'default', true);
+                n.registerCommand('n8', 'help', 'Help', '', 'default', true);
+
+                n.setMyCommands();
+
+                const byScope = {};
+                calls.forEach(function (c) {
+                    byScope[c.options.scope.type] = c.commands;
+                });
+                assert.deepStrictEqual(
+                    byScope.all_private_chats.map(function (c) {
+                        return c.command;
+                    }),
+                    ['alpha', 'delta', 'bravo', 'charlie', 'zulu', 'yankee']
+                );
+                assert.deepStrictEqual(byScope.default, [
+                    { command: 'start', description: 'Start' },
+                    { command: 'help', description: 'Help' },
+                ]);
+                // only the BotCommand fields are sent
+                assert.deepStrictEqual(Object.keys(byScope.all_private_chats[0]).sort(), ['command', 'description']);
+                done();
+            } catch (err) {
+                done(err);
+            }
+        });
+    });
+
     it('coerces n.verboselogging to a strict boolean (issue #411, V17.4.6)', function () {
         // Run cases sequentially via promise chain so each load/unload completes
         // before the next starts — interleaved helper.load calls collide.
